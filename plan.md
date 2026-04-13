@@ -180,46 +180,46 @@ Squirrel/
 ## 10) Checklist Completo de Implementação
 
 ## A. Setup Base
-- [ ] Inicializar projeto Expo (TypeScript).
-- [ ] Configurar NativeWind + Tailwind.
-- [ ] Configurar Firebase SDK + Realtime Database.
-- [ ] Definir variáveis de ambiente (chaves Firebase).
-- [ ] Configurar aliases de import e estrutura de pastas.
+- [x] Inicializar projeto Expo (TypeScript).
+- [x] Configurar NativeWind + Tailwind.
+- [x] Configurar Firebase SDK + Realtime Database.
+- [x] Definir variáveis de ambiente (chaves Firebase).
+- [x] Configurar aliases de import e estrutura de pastas.
 
 ## B. Modelagem e Tipagem
-- [ ] Criar tipos TS para turno, transação, lembrete fantasma, totais.
-- [ ] Definir enums/constantes de categorias e status.
-- [ ] Criar validadores de input monetário e textos obrigatórios.
+- [x] Criar tipos TS para turno, transação, lembrete fantasma, totais.
+- [x] Definir enums/constantes de categorias e status.
+- [x] Criar validadores de input monetário e textos obrigatórios.
 
 ## C. Regras de Cálculo
-- [ ] Implementar cálculo do Total do Sistema.
-- [ ] Implementar cálculo de Sobra com troco não devolvido.
-- [ ] Implementar ajuste manual de sobra.
-- [ ] Implementar cálculo de Espécie vs Pix Repasse.
-- [ ] Garantir que fantasmas **não** afetem Total do Sistema.
+- [x] Implementar cálculo do Total do Sistema.
+- [x] Implementar cálculo de Sobra com troco não devolvido.
+- [x] Implementar ajuste manual de sobra.
+- [x] Implementar cálculo de Espécie vs Pix Repasse.
+- [x] Garantir que fantasmas **não** afetem Total do Sistema.
 
 ## D. Firebase (Realtime)
-- [ ] Criar camada de serviço para leitura/escrita em tempo real.
-- [ ] Criar listeners por turno ativo.
-- [ ] Persistir transações com status de conferência.
-- [ ] Persistir lembretes fantasmas com `resolvido` e `comprovado_pix`.
-- [ ] Atualizar dashboard instantaneamente em qualquer alteração.
+- [x] Criar camada de serviço para leitura/escrita em tempo real.
+- [x] Criar listeners por turno ativo.
+- [x] Persistir transações com status de conferência.
+- [x] Persistir lembretes fantasmas com `resolvido` e `comprovado_pix`.
+- [x] Atualizar dashboard instantaneamente em qualquer alteração.
 
 ## E. Telas e Componentes
-- [ ] Tela de seleção de turno (novo/continuar).
-- [ ] Dashboard principal com cards de saldo.
-- [ ] Formulário de adição rápida.
-- [ ] Lista de transações com status visual.
-- [ ] Modo checklist de recibos.
-- [ ] Módulo de fantasmas em roxo.
-- [ ] Assistente de envelope (espécie/pix).
+- [x] Tela de seleção de turno (novo/continuar).
+- [x] Dashboard principal com cards de saldo.
+- [x] Formulário de adição rápida.
+- [x] Lista de transações com status visual.
+- [x] Modo checklist de recibos.
+- [x] Módulo de fantasmas em roxo.
+- [x] Assistente de envelope (espécie/pix).
 
 ## F. Experiência Operacional
-- [ ] Otimizar ações com poucos toques.
-- [ ] Teclado numérico para campos de valor.
-- [ ] Estados vazios claros e objetivos.
-- [ ] Mensagens de erro/alerta diretas.
-- [ ] Sinalização explícita para cancelamento com justificativa.
+- [x] Otimizar ações com poucos toques.
+- [x] Teclado numérico para campos de valor.
+- [x] Estados vazios claros e objetivos.
+- [x] Mensagens de erro/alerta diretas.
+- [x] Sinalização explícita para cancelamento com justificativa.
 
 ## G. Qualidade e Segurança de Regra
 - [ ] Testar cenários de pico (30+ transações).
@@ -229,10 +229,10 @@ Squirrel/
 - [ ] Validar consistência de atualização em tempo real.
 
 ## H. Organização de Código
-- [ ] Garantir componentes pequenos e reutilizáveis.
-- [ ] Separar lógica de cálculo em `features/` e `utils/`.
-- [ ] Evitar acoplamento entre UI e Firebase.
-- [ ] Padronizar nomenclatura e contratos de dados.
+- [x] Garantir componentes pequenos e reutilizáveis.
+- [x] Separar lógica de cálculo em `features/` e `utils/`.
+- [x] Evitar acoplamento entre UI e Firebase.
+- [x] Padronizar nomenclatura e contratos de dados.
 
 ## I. Entrega
 - [ ] Revisar aderência integral à especificação v5.0.
