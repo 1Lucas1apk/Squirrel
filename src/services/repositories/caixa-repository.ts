@@ -10,6 +10,7 @@ import {
 } from "firebase/database";
 
 import {
+  DividaCliente,
   LembreteFantasma,
   StatusConferencia,
   TipoFantasma,
@@ -23,6 +24,7 @@ interface AddTransacaoInput {
   naturezaOperacao: Transacao["naturezaOperacao"];
   categoria: Transacao["categoria"];
   descricao: string;
+  codigoContrato?: string; // NOVO
   valorSistema: number;
   valorRecebidoFisico: number;
   trocoSobra: number;
@@ -31,6 +33,7 @@ interface AddTransacaoInput {
 
 interface AddFantasmaInput {
   tipo: TipoFantasma;
+  pessoa?: string;
   descricao: string;
   valorReferencia: number;
   impactaPixRepasse: boolean;
@@ -38,9 +41,7 @@ interface AddFantasmaInput {
 
 function toMoney(value: unknown): number {
   const parsed = Number(value);
-  if (!Number.isFinite(parsed)) {
-    return 0;
-  }
+  if (!Number.isFinite(parsed)) return 0;
   return Math.round((parsed + Number.EPSILON) * 100) / 100;
 }
 
@@ -65,38 +66,34 @@ function mapTurno(id: string, data: Record<string, unknown>): Turno {
 }
 
 function mapTransacoes(snapshot: DataSnapshot): Transacao[] {
-  const normalizeCategoria = (value: unknown): Transacao["categoria"] => {
-    if (value === "entrada") {
-      return "entrada_prestacao";
-    }
-    const allowed: Transacao["categoria"][] = [
-      "dinheiro",
-      "entrada_prestacao",
-      "compra_vista",
-      "gar",
-      "multiplo",
-      "sangria",
-      "cancelamento",
-    ];
-    if (allowed.includes(value as Transacao["categoria"])) {
-      return value as Transacao["categoria"];
-    }
-    return "dinheiro";
-  };
-
   const raw = (snapshot.val() as Record<string, Record<string, unknown>> | null) ?? {};
   return Object.entries(raw)
     .map(([id, item]) => ({
       id,
       timestamp: Number(item.timestamp ?? 0),
       naturezaOperacao: (item.natureza_operacao as Transacao["naturezaOperacao"]) ?? "pagamento",
-      categoria: normalizeCategoria(item.categoria),
+      categoria: (item.categoria as Transacao["categoria"]) ?? "dinheiro",
       descricao: String(item.descricao ?? ""),
+      codigoContrato: item.codigo_contrato ? String(item.codigo_contrato) : undefined, // NOVO
       valorSistema: toMoney(item.valor_sistema),
       valorRecebidoFisico: toMoney(item.valor_recebido_fisico),
       trocoSobra: toMoney(item.troco_sobra),
       statusConferencia: (item.status_conferencia as StatusConferencia) ?? "pendente",
       justificativaTexto: (item.justificativa_texto as string | null | undefined) ?? null,
+    }))
+    .sort((a, b) => b.timestamp - a.timestamp);
+}
+
+function mapDividas(snapshot: DataSnapshot): DividaCliente[] {
+  const raw = (snapshot.val() as Record<string, Record<string, unknown>> | null) ?? {};
+  return Object.entries(raw)
+    .map(([id, item]) => ({
+      id,
+      cliente: String(item.cliente ?? "Desconhecido"),
+      valor: toMoney(item.valor),
+      descricao: String(item.descricao ?? ""),
+      resolvido: Boolean(item.resolvido),
+      timestamp: Number(item.timestamp ?? 0),
     }))
     .sort((a, b) => b.timestamp - a.timestamp);
 }
@@ -108,6 +105,7 @@ function mapFantasmas(snapshot: DataSnapshot): LembreteFantasma[] {
       id,
       timestamp: Number(item.timestamp ?? 0),
       tipo: (item.tipo as TipoFantasma) ?? "outro",
+      pessoa: item.pessoa ? String(item.pessoa) : undefined,
       descricao: String(item.descricao ?? ""),
       valorReferencia: toMoney(item.valor_referencia),
       impactaPixRepasse: Boolean(item.impacta_pix_repasse),
@@ -122,121 +120,74 @@ export async function criarNovoTurno(dataReferencia: string): Promise<Turno> {
   const root = ref(db, "turnos");
   const created = push(root);
   const timestamp = Date.now();
-
   await set(created, {
     data_referencia: dataReferencia,
     status_turno: "aberto",
     ajuste_manual_sobra: 0,
-    metadados: {
-      criado_em: timestamp,
-      atualizado_em: timestamp,
-    },
+    metadados: { criado_em: timestamp, atualizado_em: timestamp },
   });
-
-  return {
-    id: created.key as string,
-    dataReferencia,
-    statusTurno: "aberto",
-    ajusteManualSobra: 0,
-    totais: {
-      sistema: 0,
-      sobra: 0,
-      especieEnvelope: 0,
-      pixRepasse: 0,
-    },
-    criadoEm: timestamp,
-    atualizadoEm: timestamp,
-  };
+  return { id: created.key as string, dataReferencia, statusTurno: "aberto", ajusteManualSobra: 0, totais: { sistema: 0, sobra: 0, gavetaFisico: 0, especieEnvelope: 0, pixRepasse: 0 }, criadoEm: timestamp, atualizadoEm: timestamp };
 }
 
 export async function buscarUltimoTurnoAberto(): Promise<Turno | null> {
   const db = getRealtimeDatabase();
   const snapshot = await get(ref(db, "turnos"));
   const raw = (snapshot.val() as Record<string, Record<string, unknown>> | null) ?? {};
-  const abertos = Object.entries(raw)
-    .map(([id, data]) => mapTurno(id, data))
-    .filter((item) => item.statusTurno === "aberto")
-    .sort((a, b) => b.atualizadoEm - a.atualizadoEm);
-
+  const abertos = Object.entries(raw).map(([id, data]) => mapTurno(id, data)).filter((item) => item.statusTurno === "aberto").sort((a, b) => b.atualizadoEm - a.atualizadoEm);
   return abertos[0] ?? null;
 }
 
 export async function listarTurnosRecentes(): Promise<Turno[]> {
-  const db = getRealtimeDatabase();
-  const snapshot = await get(ref(db, "turnos"));
+  const snapshot = await get(ref(getRealtimeDatabase(), "turnos"));
   const raw = (snapshot.val() as Record<string, Record<string, unknown>> | null) ?? {};
-  return Object.entries(raw)
-    .map(([id, data]) => mapTurno(id, data))
-    .sort((a, b) => b.atualizadoEm - a.atualizadoEm);
+  return Object.entries(raw).map(([id, data]) => mapTurno(id, data)).sort((a, b) => b.atualizadoEm - a.atualizadoEm);
 }
 
 export async function buscarTurnoPorId(turnoId: string): Promise<Turno | null> {
   const snapshot = await get(ref(getRealtimeDatabase(), `turnos/${turnoId}`));
   const raw = snapshot.val() as Record<string, unknown> | null;
-  if (!raw) {
-    return null;
-  }
-  return mapTurno(turnoId, raw);
+  return raw ? mapTurno(turnoId, raw) : null;
 }
 
 export function ouvirTurno(turnoId: string, onData: (turno: Turno) => void): Unsubscribe {
   return onValue(ref(getRealtimeDatabase(), `turnos/${turnoId}`), (snapshot) => {
     const raw = snapshot.val() as Record<string, unknown> | null;
-    if (!raw) {
-      return;
-    }
-    onData(mapTurno(turnoId, raw));
+    if (raw) onData(mapTurno(turnoId, raw));
   });
 }
 
-export function ouvirTransacoes(
-  turnoId: string,
-  onData: (transacoes: Transacao[]) => void
-): Unsubscribe {
-  return onValue(ref(getRealtimeDatabase(), `transacoes/${turnoId}`), (snapshot) => {
-    onData(mapTransacoes(snapshot));
-  });
+export function ouvirTransacoes(turnoId: string, onData: (transacoes: Transacao[]) => void): Unsubscribe {
+  return onValue(ref(getRealtimeDatabase(), `transacoes/${turnoId}`), (snapshot) => onData(mapTransacoes(snapshot)));
 }
 
-export function ouvirFantasmas(
-  turnoId: string,
-  onData: (fantasmas: LembreteFantasma[]) => void
-): Unsubscribe {
-  return onValue(ref(getRealtimeDatabase(), `fantasmas_lembretes/${turnoId}`), (snapshot) => {
-    onData(mapFantasmas(snapshot));
-  });
+export function ouvirFantasmas(turnoId: string, onData: (fantasmas: LembreteFantasma[]) => void): Unsubscribe {
+  return onValue(ref(getRealtimeDatabase(), `fantasmas_lembretes/${turnoId}`), (snapshot) => onData(mapFantasmas(snapshot)));
+}
+
+// NOVO: Ouvir dívidas
+export function ouvirDividas(turnoId: string, onData: (dividas: DividaCliente[]) => void): Unsubscribe {
+  return onValue(ref(getRealtimeDatabase(), `dividas_clientes/${turnoId}`), (snapshot) => onData(mapDividas(snapshot)));
 }
 
 export async function salvarAjusteSobra(turnoId: string, ajuste: number): Promise<void> {
-  await update(ref(getRealtimeDatabase(), `turnos/${turnoId}`), {
-    ajuste_manual_sobra: ajuste,
-    "metadados/atualizado_em": Date.now(),
-  });
+  await update(ref(getRealtimeDatabase(), `turnos/${turnoId}`), { ajuste_manual_sobra: ajuste, "metadados/atualizado_em": Date.now() });
 }
 
 export async function salvarTotaisTurno(turnoId: string, totais: TotaisTurno): Promise<void> {
-  await update(ref(getRealtimeDatabase(), `turnos/${turnoId}`), {
-    totais: {
-      sistema: totais.sistema,
-      sobra: totais.sobra,
-      gaveta_fisico: totais.gavetaFisico,
-      especie_envelope: totais.especieEnvelope,
-      pix_repasse: totais.pixRepasse,
-    },
-    "metadados/atualizado_em": Date.now(),
+  await update(ref(getRealtimeDatabase(), `turnos/${turnoId}`), { 
+    totais: { sistema: totais.sistema, sobra: totais.sobra, gaveta_fisico: totais.gavetaFisico, especie_envelope: totais.especieEnvelope, pix_repasse: totais.pixRepasse }, 
+    "metadados/atualizado_em": Date.now() 
   });
 }
 
-export async function adicionarTransacao(
-  turnoId: string,
-  input: AddTransacaoInput
-): Promise<void> {
+export async function adicionarTransacao(turnoId: string, input: AddTransacaoInput): Promise<void> {
   const created = push(ref(getRealtimeDatabase(), `transacoes/${turnoId}`));
   await set(created, {
     timestamp: Date.now(),
     natureza_operacao: input.naturezaOperacao,
     categoria: input.categoria,
     descricao: input.descricao,
+    codigo_contrato: input.codigoContrato || null, // NOVO
     valor_sistema: input.valorSistema,
     valor_recebido_fisico: input.valorRecebidoFisico,
     troco_sobra: input.trocoSobra,
@@ -245,80 +196,60 @@ export async function adicionarTransacao(
   });
 }
 
-export async function atualizarConferenciaTransacao(
-  turnoId: string,
-  transacaoId: string,
-  status: StatusConferencia
-): Promise<void> {
-  await update(ref(getRealtimeDatabase(), `transacoes/${turnoId}/${transacaoId}`), {
-    status_conferencia: status,
-  });
-}
-
-export async function adicionarFantasma(turnoId: string, input: AddFantasmaInput): Promise<void> {
-  const created = push(ref(getRealtimeDatabase(), `fantasmas_lembretes/${turnoId}`));
-  await set(created, {
-    timestamp: Date.now(),
-    tipo: input.tipo,
-    pessoa: input.pessoa ?? null,
+export async function editarTransacao(turnoId: string, id: string, input: any): Promise<void> {
+  const payload: Record<string, any> = {
+    categoria: input.categoria,
     descricao: input.descricao,
-    valor_referencia: input.valorReferencia,
-    impacta_pix_repasse: input.impactaPixRepasse,
-    resolvido: false,
-    comprovado_pix: false,
-  });
+    codigo_contrato: input.codigoContrato || null, // NOVO
+    valor_sistema: input.valorSistema,
+    valor_recebido_fisico: input.valorRecebidoFisico,
+    troco_sobra: input.trocoSobra,
+    justificativa_texto: input.justificativaTexto || null,
+  };
+  await update(ref(getRealtimeDatabase(), `transacoes/${turnoId}/${id}`), payload);
 }
 
-export async function removerTransacao(turnoId: string, transacaoId: string): Promise<void> {
-  const db = getRealtimeDatabase();
-  await set(ref(db, `transacoes/${turnoId}/${transacaoId}`), null);
+export async function removerTransacao(turnoId: string, id: string): Promise<void> {
+  await set(ref(getRealtimeDatabase(), `transacoes/${turnoId}/${id}`), null);
 }
 
-export async function editarTransacao(
-  turnoId: string,
-  transacaoId: string,
-  changes: Partial<AddTransacaoInput>
-): Promise<void> {
-  const db = getRealtimeDatabase();
-  const payload: Record<string, any> = {};
-  if (changes.categoria) payload.categoria = changes.categoria;
-  if (changes.descricao !== undefined) payload.descricao = changes.descricao;
-  if (changes.valorSistema !== undefined) payload.valor_sistema = changes.valorSistema;
-  if (changes.valorRecebidoFisico !== undefined) payload.valor_recebido_fisico = changes.valorRecebidoFisico;
-  if (changes.trocoSobra !== undefined) payload.troco_sobra = changes.trocoSobra;
-  if (changes.justificativaTexto !== undefined) payload.justificativa_texto = changes.justificativaTexto;
-  
-  await update(ref(db, `transacoes/${turnoId}/${transacaoId}`), payload);
+export async function adicionarFantasma(turnoId: string, input: any): Promise<void> {
+  const created = push(ref(getRealtimeDatabase(), `fantasmas_lembretes/${turnoId}`));
+  await set(created, { ...input, timestamp: Date.now(), resolvido: false, comprovado_pix: false });
 }
 
-export async function removerFantasma(turnoId: string, fantasmaId: string): Promise<void> {
-  const db = getRealtimeDatabase();
-  await set(ref(db, `fantasmas_lembretes/${turnoId}/${fantasmaId}`), null);
+export async function atualizarFantasmaCompleto(turnoId: string, id: string, changes: any): Promise<void> {
+  await update(ref(getRealtimeDatabase(), `fantasmas_lembretes/${turnoId}/${id}`), changes);
+}
+
+export async function removerFantasma(turnoId: string, id: string): Promise<void> {
+  await set(ref(getRealtimeDatabase(), `fantasmas_lembretes/${turnoId}/${id}`), null);
+}
+
+// NOVO: Funções de Dívidas
+export async function adicionarDivida(turnoId: string, input: any): Promise<void> {
+  const created = push(ref(getRealtimeDatabase(), `dividas_clientes/${turnoId}`));
+  await set(created, { ...input, timestamp: Date.now(), resolvido: false });
+}
+
+export async function alternarDivida(turnoId: string, id: string, resolvido: boolean): Promise<void> {
+  await update(ref(getRealtimeDatabase(), `dividas_clientes/${turnoId}/${id}`), { resolvido });
+}
+
+export async function removerDivida(turnoId: string, id: string): Promise<void> {
+  await set(ref(getRealtimeDatabase(), `dividas_clientes/${turnoId}/${id}`), null);
 }
 
 export async function removerTurnoTotal(turnoId: string): Promise<void> {
   const db = getRealtimeDatabase();
-  // Remove o turno e todos os registros vinculados a ele
   await Promise.all([
     set(ref(db, `turnos/${turnoId}`), null),
     set(ref(db, `transacoes/${turnoId}`), null),
     set(ref(db, `fantasmas_lembretes/${turnoId}`), null),
+    set(ref(db, `dividas_clientes/${turnoId}`), null),
   ]);
 }
 
-export async function atualizarFantasmaCompleto(
-  turnoId: string,
-  fantasmaId: string,
-  changes: Partial<AddFantasmaInput & { resolvido: boolean; comprovado_pix: boolean }>
-): Promise<void> {
-  const payload: Record<string, any> = {};
-  if (changes.tipo) payload.tipo = changes.tipo;
-  if (changes.pessoa !== undefined) payload.pessoa = changes.pessoa;
-  if (changes.descricao !== undefined) payload.descricao = changes.descricao;
-  if (changes.valorReferencia !== undefined) payload.valor_referencia = changes.valorReferencia;
-  if (changes.impactaPixRepasse !== undefined) payload.impacta_pix_repasse = changes.impactaPixRepasse;
-  if (changes.resolvido !== undefined) payload.resolvido = changes.resolvido;
-  if (changes.comprovado_pix !== undefined) payload.comprovado_pix = changes.comprovado_pix;
-  
-  await update(ref(getRealtimeDatabase(), `fantasmas_lembretes/${turnoId}/${fantasmaId}`), payload);
+export async function atualizarConferenciaTransacao(turnoId: string, id: string, status: string): Promise<void> {
+  await update(ref(getRealtimeDatabase(), `transacoes/${turnoId}/${id}`), { status_conferencia: status });
 }

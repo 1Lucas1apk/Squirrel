@@ -10,7 +10,7 @@ export type CategoriaTransacao =
   | "cancelamento";
 
 export type StatusConferencia = "pendente" | "confirmada";
-export type TipoFantasma = "gerente_troca" | "ricardo" | "outro";
+export type TipoFantasma = "gerente_troca" | "outro";
 
 export interface Transacao {
   id: string;
@@ -18,6 +18,7 @@ export interface Transacao {
   naturezaOperacao: NaturezaOperacao;
   categoria: CategoriaTransacao;
   descricao: string;
+  codigoContrato?: string; // NOVO: Campo de contrato (Ex: 2303/1.4)
   valorSistema: number;
   valorRecebidoFisico: number;
   trocoSobra: number;
@@ -28,12 +29,22 @@ export interface Transacao {
 export interface LembreteFantasma {
   id: string;
   tipo: TipoFantasma;
-  pessoa?: string; // Nome de quem pegou/deve
+  pessoa?: string;
   descricao: string;
   valorReferencia: number;
   impactaPixRepasse: boolean;
   resolvido: boolean;
   comprovadoPix: boolean;
+  timestamp: number;
+}
+
+// NOVO: Estrutura para a aba "Devendo"
+export interface DividaCliente {
+  id: string;
+  cliente: string;
+  valor: number;
+  descricao: string;
+  resolvido: boolean;
   timestamp: number;
 }
 
