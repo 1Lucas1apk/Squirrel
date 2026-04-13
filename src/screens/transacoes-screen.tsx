@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { 
-  Plus, 
   Trash2, 
   Edit3, 
   Banknote, 
@@ -12,7 +11,9 @@ import {
   ArrowUpCircle, 
   XCircle,
   X,
-  Check
+  Check,
+  Calculator,
+  ChevronDown
 } from "lucide-react-native";
 import { MoneyInput } from "../components/common/money-input";
 import { CategoriaTransacao, NaturezaOperacao, Transacao } from "../types/domain";
@@ -47,28 +48,44 @@ function naturezaPorCategoria(categoria: CategoriaTransacao): NaturezaOperacao {
   return categoria === "entrada_prestacao" ? "entrada" : "pagamento";
 }
 
+function categoriaLabel(value: CategoriaTransacao) {
+  return categorias.find((item) => item.value === value)?.label ?? value;
+}
+
 export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar }: TransacoesScreenProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [categoria, setCategoria] = useState<CategoriaTransacao>("dinheiro");
   const [descricao, setDescricao] = useState("");
   const [valorSistema, setValorSistema] = useState(0);
-  const [valorEntregue, setValorEntregue] = useState(0);
+  
+  // Estados para Calculadora Inteligente
+  const [isCalculadora, setIsCalculadora] = useState(false);
+  const [valorCliente, setValorCliente] = useState(0);
+  const [valorTrocoEntregue, setValorTrocoEntregue] = useState(0);
+  
+  const [valorEntregueSimples, setValorEntregueSimples] = useState(0);
   const [justificativa, setJustificativa] = useState("");
   const [semTroco, setSemTroco] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
 
-  const ultimas = useMemo(() => transacoes.slice(0, 10), [transacoes]);
   const isSaida = categoria === "sangria" || categoria === "cancelamento";
-  const trocoSobra = semTroco && !isSaida ? valorEntregue - valorSistema : 0;
+  
+  // Lógica da Calculadora: Gaveta = Dinheiro do Cliente - Troco que dei
+  const valorNaGaveta = isCalculadora ? (valorCliente - valorTrocoEntregue) : valorEntregueSimples;
+  const trocoSobra = semTroco && !isSaida ? valorNaGaveta - valorSistema : 0;
+
+  const listagem = useMemo(() => showAll ? transacoes : transacoes.slice(0, 10), [transacoes, showAll]);
 
   function startEdit(item: Transacao) {
     setEditingId(item.id);
     setCategoria(item.categoria);
     setDescricao(item.descricao);
     setValorSistema(item.valorSistema);
-    setValorEntregue(item.valorRecebidoFisico);
+    setValorEntregueSimples(item.valorRecebidoFisico);
+    setIsCalculadora(false);
     setJustificativa(item.justificativaTexto || "");
-    setSemTroco(item.trocoSobra > 0);
+    setSemTroco(item.trocoSobra !== 0);
   }
 
   function cancelEdit() {
@@ -76,7 +93,9 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar 
     setCategoria("dinheiro");
     setDescricao("");
     setValorSistema(0);
-    setValorEntregue(0);
+    setValorEntregueSimples(0);
+    setValorCliente(0);
+    setValorTrocoEntregue(0);
     setJustificativa("");
   }
 
@@ -91,7 +110,7 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar 
       categoria,
       descricao: descricao.trim(),
       valorSistema: Math.abs(valorSistema),
-      valorRecebidoFisico: !isSaida ? Math.abs(valorEntregue) : 0,
+      valorRecebidoFisico: !isSaida ? Math.abs(valorNaGaveta) : 0,
       trocoSobra: !isSaida ? trocoSobra : 0,
       justificativaTexto: categoria === "cancelamento" ? justificativa.trim() : null,
     };
@@ -105,7 +124,9 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar 
       }
       setDescricao("");
       setValorSistema(0);
-      setValorEntregue(0);
+      setValorEntregueSimples(0);
+      setValorCliente(0);
+      setValorTrocoEntregue(0);
       setJustificativa("");
       setErro(null);
     } catch (e) {
@@ -120,11 +141,15 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar 
           <Text className="text-[11px] font-black uppercase tracking-[3px] text-zinc-500">
             {editingId ? "Editando Lançamento" : "Novo Lançamento"}
           </Text>
-          {editingId && (
-            <Pressable onPress={cancelEdit} className="h-8 w-8 items-center justify-center rounded-full bg-zinc-800">
-              <X size={14} color="#f4f4f5" />
-            </Pressable>
-          )}
+          <Pressable 
+            onPress={() => setIsCalculadora(!isCalculadora)}
+            className={`flex-row items-center gap-2 px-3 py-1.5 rounded-full border ${isCalculadora ? 'bg-purple-500/10 border-purple-500/30' : 'bg-zinc-800 border-zinc-700'}`}
+          >
+            <Calculator size={12} color={isCalculadora ? '#a78bfa' : '#71717a'} />
+            <Text className={`text-[9px] font-black uppercase ${isCalculadora ? 'text-purple-400' : 'text-zinc-500'}`}>
+              {isCalculadora ? 'Modo Calculadora' : 'Modo Simples'}
+            </Text>
+          </Pressable>
         </View>
 
         <View className="mb-8 flex-row flex-wrap gap-2">
@@ -149,7 +174,6 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar 
                   gap: 8,
                   backgroundColor: active ? '#f4f4f5' : '#18181b',
                   borderColor: active ? '#f4f4f5' : '#27272a',
-                  elevation: active ? 4 : 0,
                 }}
               >
                 <Icon size={14} color={active ? "#09090b" : "#71717a"} strokeWidth={3} />
@@ -168,28 +192,50 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar 
         </View>
 
         <View className="gap-4">
-          <View className="flex-row gap-4">
-            <View className="flex-1">
-              <Text className="mb-2 ml-2 text-[10px] font-black uppercase tracking-widest text-zinc-700">Sistema</Text>
-              <MoneyInput
-                placeholder="0,00"
-                className="rounded-[24px] border border-zinc-700 bg-ink-800 px-6 py-5 text-2xl font-black text-zinc-100"
-                value={valorSistema}
-                onChangeValue={setValorSistema}
-              />
-            </View>
-            {!isSaida && (
-              <View className="flex-1">
-                <Text className="mb-2 ml-2 text-[10px] font-black uppercase tracking-widest text-zinc-700">Recebido</Text>
+          <View>
+            <Text className="mb-2 ml-2 text-[10px] font-black uppercase tracking-widest text-zinc-700">Valor do Sistema (Preço)</Text>
+            <MoneyInput
+              placeholder="0,00"
+              className="rounded-[24px] border border-zinc-700 bg-ink-800 px-6 py-5 text-2xl font-black text-zinc-100"
+              value={valorSistema}
+              onChangeValue={setValorSistema}
+            />
+          </View>
+
+          {!isSaida && (
+            isCalculadora ? (
+              <View className="flex-row gap-3">
+                <View className="flex-1">
+                  <Text className="mb-2 ml-2 text-[10px] font-black uppercase tracking-widest text-zinc-700">Dinheiro Cliente</Text>
+                  <MoneyInput
+                    placeholder="0,00"
+                    className="rounded-[24px] border border-zinc-700 bg-ink-800 px-6 py-5 text-xl font-black text-zinc-100"
+                    value={valorCliente}
+                    onChangeValue={setValorCliente}
+                  />
+                </View>
+                <View className="flex-1">
+                  <Text className="mb-2 ml-2 text-[10px] font-black uppercase tracking-widest text-zinc-700">Troco que Devolvi</Text>
+                  <MoneyInput
+                    placeholder="0,00"
+                    className="rounded-[24px] border border-zinc-700 bg-ink-800 px-6 py-5 text-xl font-black text-zinc-100"
+                    value={valorTrocoEntregue}
+                    onChangeValue={setValorTrocoEntregue}
+                  />
+                </View>
+              </View>
+            ) : (
+              <View>
+                <Text className="mb-2 ml-2 text-[10px] font-black uppercase tracking-widest text-zinc-700">Valor que ficou na Gaveta</Text>
                 <MoneyInput
                   placeholder="0,00"
                   className="rounded-[24px] border border-zinc-700 bg-ink-800 px-6 py-5 text-2xl font-black text-zinc-100"
-                  value={valorEntregue}
-                  onChangeValue={setValorEntregue}
+                  value={valorEntregueSimples}
+                  onChangeValue={setValorEntregueSimples}
                 />
               </View>
-            )}
-          </View>
+            )
+          )}
 
           <TextInput
             className="rounded-[24px] border border-zinc-800 bg-ink-800 px-6 py-5 text-zinc-200 font-bold"
@@ -199,52 +245,29 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar 
             onChangeText={setDescricao}
           />
 
-          {categoria === "cancelamento" && (
-            <TextInput
-              className="rounded-[24px] border border-red-500/20 bg-red-500/5 px-6 py-5 text-red-200 font-bold"
-              placeholder="Justificativa obrigatória"
-              placeholderTextColor="#7f1d1d"
-              value={justificativa}
-              onChangeText={setJustificativa}
-              multiline
-            />
-          )}
-
           {!isSaida && (
-            <Pressable
-              className={`flex-row items-center justify-between rounded-[24px] border p-5 ${
-                semTroco 
-                  ? trocoSobra >= 0 ? "border-emerald-500/20 bg-emerald-500/5" : "border-red-500/20 bg-red-500/5"
-                  : "border-zinc-800 bg-ink-800"
+            <View
+              className={`rounded-[24px] border p-5 ${
+                trocoSobra >= 0 ? "border-emerald-500/20 bg-emerald-500/5" : "border-red-500/20 bg-red-500/5"
               }`}
-              onPress={() => setSemTroco(!semTroco)}
             >
-              <View>
-                <Text className={`text-[10px] uppercase font-black tracking-[2px] ${
-                  semTroco 
-                    ? trocoSobra >= 0 ? "text-emerald-400" : "text-red-400" 
-                    : "text-zinc-600"
-                }`}>
-                  {semTroco 
-                    ? trocoSobra >= 0 ? "Enviar Diferença para Sobra" : "Quebra de Caixa (Falta)" 
-                    : "Troco Devolvido"}
-                </Text>
-                <Text className={`text-xs font-black mt-1 ${trocoSobra >= 0 ? "text-zinc-100" : "text-red-200"}`}>
-                  {trocoSobra >= 0 ? "Sobra: " : "Falta: "}{toBrl(Math.abs(trocoSobra))}
-                </Text>
-              </View>
-              <View className={`h-8 w-8 items-center justify-center rounded-full border-2 ${
-                semTroco 
-                  ? trocoSobra >= 0 ? "border-emerald-500 bg-emerald-500" : "border-red-500 bg-red-500" 
-                  : "border-zinc-800"
-              }`}>
-                {semTroco && (
-                  trocoSobra >= 0 
-                    ? <Check size={16} color="#064e3b" strokeWidth={4} />
-                    : <X size={16} color="#450a0a" strokeWidth={4} />
+              <View className="flex-row items-center justify-between">
+                <View>
+                  <Text className={`text-[10px] uppercase font-black tracking-[2px] ${trocoSobra >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                    {trocoSobra >= 0 ? "Resultado: Sobra" : "Resultado: Falta"}
+                  </Text>
+                  <Text className={`text-xl font-black mt-1 ${trocoSobra >= 0 ? "text-zinc-100" : "text-red-200"}`}>
+                    {toBrl(Math.abs(trocoSobra))}
+                  </Text>
+                </View>
+                {isCalculadora && (
+                  <View className="items-end">
+                    <Text className="text-[8px] font-black text-zinc-600 uppercase">Ficou na gaveta:</Text>
+                    <Text className="text-xs font-black text-zinc-400">{toBrl(valorNaGaveta)}</Text>
+                  </View>
                 )}
               </View>
-            </Pressable>
+            </View>
           )}
 
           {erro && (
@@ -253,20 +276,34 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar 
             </View>
           )}
 
-          <Pressable 
-            className={`mt-2 rounded-[24px] py-6 active:opacity-80 shadow-2xl ${editingId ? "bg-zinc-100" : "bg-zinc-100"}`} 
-            onPress={onSalvar}
-          >
-            <Text className="text-center font-black uppercase tracking-[4px] text-zinc-950">
-              {editingId ? "Confirmar Edição" : "Lançar no Caixa"}
-            </Text>
-          </Pressable>
+          <View className="flex-row gap-2 mt-2">
+            {editingId && (
+              <Pressable 
+                className="flex-1 rounded-[24px] bg-zinc-800 py-6 active:bg-zinc-700" 
+                onPress={cancelEdit}
+              >
+                <Text className="text-center font-black uppercase tracking-widest text-zinc-400">Cancelar</Text>
+              </Pressable>
+            )}
+            <Pressable 
+              className="flex-[2] rounded-[24px] bg-zinc-100 py-6 active:opacity-80 shadow-2xl" 
+              onPress={onSalvar}
+            >
+              <Text className="text-center font-black uppercase tracking-[4px] text-zinc-950">
+                {editingId ? "Confirmar Edição" : "Lançar no Caixa"}
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </View>
 
       <View className="gap-4 pb-20">
-        <Text className="ml-2 text-[11px] font-black uppercase tracking-[3px] text-zinc-600">Histórico Recente</Text>
-        {ultimas.map((item) => {
+        <View className="flex-row items-center justify-between px-2">
+          <Text className="text-[11px] font-black uppercase tracking-[3px] text-zinc-600">Histórico do Turno</Text>
+          <Text className="text-[9px] font-black text-zinc-700 uppercase tracking-widest">{transacoes.length} Itens</Text>
+        </View>
+        
+        {listagem.map((item) => {
           const cat = categorias.find(c => c.value === item.categoria) || categorias[0];
           const Icon = cat.icon;
           return (
@@ -280,19 +317,21 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar 
                     {cat.label}
                   </Text>
                   <Text className="text-xl font-black text-zinc-100 tracking-tighter">{toBrl(item.valorSistema)}</Text>
-                  {item.descricao ? <Text className="text-[10px] font-bold text-zinc-500 truncate" numberOfLines={1}>{item.descricao}</Text> : null}
+                  {item.descricao ? <Text className="text-[10px] font-bold text-zinc-500 truncate uppercase tracking-tighter" numberOfLines={1}>{item.descricao}</Text> : null}
                 </View>
               </View>
               
               <View className="flex-row gap-2 ml-4">
                 <Pressable 
                   onPress={() => startEdit(item)}
+                  hitSlop={8}
                   className="h-10 w-10 items-center justify-center rounded-[14px] bg-zinc-800/50 border border-zinc-700/50"
                 >
                   <Edit3 size={16} color="#71717a" />
                 </Pressable>
                 <Pressable 
                   onPress={() => onExcluir(item.id)}
+                  hitSlop={8}
                   className="h-10 w-10 items-center justify-center rounded-[14px] bg-red-500/10 border border-red-500/20"
                 >
                   <Trash2 size={16} color="#f87171" />
@@ -301,6 +340,16 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar 
             </View>
           );
         })}
+
+        {!showAll && transacoes.length > 10 && (
+          <Pressable 
+            onPress={() => setShowAll(true)}
+            className="flex-row items-center justify-center gap-2 py-6 rounded-[32px] border border-dashed border-zinc-800"
+          >
+            <ChevronDown size={16} color="#3f3f46" />
+            <Text className="text-[10px] font-black uppercase tracking-[3px] text-zinc-600">Carregar histórico completo</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );

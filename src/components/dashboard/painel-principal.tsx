@@ -28,14 +28,14 @@ export function PainelPrincipal({
       <View className="flex-row gap-4">
         <View className="flex-1">
           <SaldoCard 
-            label="Sistema" 
+            label="Total Sistema" 
             value={toBrl(totais.sistema)} 
             icon={<Monitor size={12} color="#71717a" />}
           />
         </View>
         <View className="flex-1">
           <SaldoCard 
-            label="Sobra" 
+            label="Sobra (Acumulada)" 
             value={toBrl(totais.sobra)} 
             tone="green" 
             icon={<Coins size={12} color="#34d399" />}
@@ -44,7 +44,7 @@ export function PainelPrincipal({
       </View>
 
       <SaldoCard 
-        label="Gaveta Físico (Número de Ouro)" 
+        label="Gaveta Físico (Dinheiro Real)" 
         value={toBrl(totais.gavetaFisico)} 
         tone="yellow" 
         icon={<Vault size={14} color="#facc15" />}
@@ -59,10 +59,10 @@ export function PainelPrincipal({
         </View>
         
         <View className="gap-3">
-          <View className="flex-row items-center justify-between rounded-[24px] bg-ink-800 border border-zinc-800 p-5">
+          <View className="flex-row items-center justify-between rounded-[24px] bg-ink-800 border border-zinc-800 p-5 shadow-inner">
             <View className="flex-row items-center gap-3">
               <Wallet size={18} color="#71717a" />
-              <Text className="text-xs font-bold text-zinc-400">Espécie</Text>
+              <Text className="text-xs font-bold text-zinc-400 uppercase tracking-tighter">Espécie (Cédulas)</Text>
             </View>
             <Text className="text-xl font-black text-zinc-100 tracking-tighter">{toBrl(totais.especieEnvelope)}</Text>
           </View>
@@ -70,17 +70,24 @@ export function PainelPrincipal({
           <View className="flex-row items-center justify-between rounded-[24px] bg-blue-500/5 border border-blue-500/20 p-5">
             <View className="flex-row items-center gap-3">
               <ArrowRightLeft size={18} color="#60a5fa" />
-              <Text className="text-xs font-bold text-blue-400">Pix Repasse</Text>
+              <Text className="text-xs font-bold text-blue-400 uppercase tracking-tighter">Repasse via Pix</Text>
             </View>
             <Text className="text-xl font-black text-blue-100 tracking-tighter">{toBrl(totais.pixRepasse)}</Text>
           </View>
+        </View>
+        
+        <View className="mt-4 px-2">
+          <Text className="text-[9px] font-bold text-zinc-600 uppercase text-center leading-4 tracking-tighter">
+            Priorizando dinheiro físico para o malote. 
+            Os centavos quebrados e a sobra foram direcionados para o saldo do seu Pix pessoal.
+          </Text>
         </View>
       </View>
 
       <View className="flex-row gap-4">
         <View className="flex-1">
           <SaldoCard
-            label="Fantasmas"
+            label="Pendências"
             value={String(pendenciasFantasma)}
             tone="purple"
             icon={<Ghost size={12} color="#a78bfa" />}
@@ -88,7 +95,7 @@ export function PainelPrincipal({
         </View>
         <View className="flex-1 rounded-[32px] border border-zinc-800 bg-ink-900 p-4 items-center justify-center border-dashed">
            <Info size={20} color="#3f3f46" />
-           <Text className="text-[8px] font-black text-zinc-600 uppercase mt-2 tracking-widest text-center">Status Online</Text>
+           <Text className="text-[8px] font-black text-zinc-600 uppercase mt-2 tracking-widest text-center">Caixa em Operação</Text>
         </View>
       </View>
     </View>
