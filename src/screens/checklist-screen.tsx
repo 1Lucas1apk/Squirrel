@@ -1,16 +1,21 @@
 import { useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, Text, TextInput, View, Modal } from "react-native";
 import { Transacao } from "../types/domain";
 import { toBrl } from "../utils/currency";
 import { Search, CheckCircle2, Circle, AlertCircle } from "lucide-react-native";
+import { MoneyInput } from "../components/common/money-input";
 
 interface ChecklistScreenProps {
   transacoes: Transacao[];
   onToggle: (transacao: Transacao) => Promise<void>;
+  isFechado?: boolean;
 }
 
-export function ChecklistScreen({ transacoes, onToggle }: ChecklistScreenProps) {
+export function ChecklistScreen({ transacoes, onToggle, isFechado }: ChecklistScreenProps) {
   const [busca, setBusca] = useState("");
+
+  const [itemEmErro, setItemEmErro] = useState<string | null>(null);
+  const [valorRealPago, setValorRealPago] = useState(0);
 
   function getCategoriaLabel(categoria: Transacao["categoria"]) {
     const map: Record<Transacao["categoria"], string> = {
@@ -35,6 +40,43 @@ export function ChecklistScreen({ transacoes, onToggle }: ChecklistScreenProps) 
 
   return (
     <View className="gap-6 pb-20">
+      {/* Modal de Erro Rápido - Fixo na Tela */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={itemEmErro !== null}
+        onRequestClose={() => setItemEmErro(null)}
+      >
+        <View className="flex-1 bg-black/80 items-center justify-center p-6">
+          <View className="w-full max-w-[400px] rounded-[40px] border border-red-500/30 bg-ink-900 p-8 shadow-2xl">
+            <Text className="text-xl font-black text-white uppercase tracking-widest mb-2">Valor Incorreto?</Text>
+            <Text className="text-xs font-bold text-zinc-500 uppercase mb-6">Quanto foi pago na realidade?</Text>
+            
+            <MoneyInput 
+              value={valorRealPago} 
+              onChangeValue={setValorRealPago}
+              className="rounded-[24px] border border-red-800/40 bg-red-950/20 px-6 py-5 text-3xl font-black text-red-100 mb-6"
+            />
+
+            <View className="flex-row gap-3">
+              <Pressable 
+                className="flex-1 rounded-2xl bg-zinc-800 py-4" 
+                onPress={() => setItemEmErro(null)}
+              >
+                <Text className="text-center font-black text-zinc-400 uppercase text-[10px]">Cancelar</Text>
+              </Pressable>
+              <Pressable 
+                className="flex-[2] rounded-2xl bg-red-500 py-4" 
+                onPress={() => {
+                  setItemEmErro(null);
+                }}
+              >
+                <Text className="text-center font-black text-white uppercase text-[10px]">Confirmar Erro</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
       <View className="rounded-[32px] border border-zinc-800 bg-ink-900 p-6 shadow-2xl">
         <View className="flex-row items-center gap-3 mb-4 ml-1">
           <Search size={14} color="#71717a" />
@@ -71,13 +113,23 @@ export function ChecklistScreen({ transacoes, onToggle }: ChecklistScreenProps) 
           return (
             <Pressable
               key={item.id}
-              onPress={() => onToggle(item)}
+              disabled={isFechado}
+              onPress={() => !isFechado && onToggle(item)}
+              onLongPress={() => {
+                if (!isFechado) {
+                  setValorRealPago(item.valorRecebidoFisico);
+                  setItemEmErro(item.id);
+                }
+              }}
+              delayLongPress={500}
               className={`rounded-[32px] border p-6 shadow-sm ${
                 isConfirmada 
                   ? "border-emerald-500/20 bg-emerald-500/5 opacity-40" 
-                  : isCancelamento
+                  : item.statusConferencia === "incorreto"
                     ? "border-red-500/40 bg-red-500/10"
-                    : "border-zinc-800 bg-ink-900"
+                    : isCancelamento
+                      ? "border-red-500/40 bg-red-500/10"
+                      : "border-zinc-800 bg-ink-900"
               }`}
             >
               <View className="flex-row items-center justify-between">

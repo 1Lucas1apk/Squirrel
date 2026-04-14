@@ -14,6 +14,7 @@ import {
   buscarUltimoTurnoAberto,
   criarNovoTurno,
   editarTransacao,
+  atualizarStatusTurno, // ADICIONADO
   listarTurnosRecentes,
   ouvirFantasmas,
   ouvirTransacoes,
@@ -93,6 +94,9 @@ export function useCaixaSeguro() {
   return {
     turno, transacoes, fantasmas, dividas, historicoTurnos, totais, loading, error,
     iniciarNovoDia, continuarDiaAnterior, carregarHistoricoTurnos, abrirTurnoPorId,
+    // NOVO: Ações de Turno
+    fecharTurno: () => turno && atualizarStatusTurno(turno.id, "fechado"),
+    reabrirTurno: () => turno && atualizarStatusTurno(turno.id, "aberto"),
     excluirTurno: (id: string) => removerTurnoTotal(id),
     definirAjusteSobra: (v: number) => turno && salvarAjusteSobra(turno.id, v),
     criarTransacao: (i: any) => turno && adicionarTransacao(turno.id, i),

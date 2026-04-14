@@ -9,8 +9,14 @@ export type CategoriaTransacao =
   | "sangria"
   | "cancelamento";
 
-export type StatusConferencia = "pendente" | "confirmada";
-export type TipoFantasma = "gerente_troca" | "outro";
+export type StatusConferencia = "pendente" | "confirmada" | "incorreto";
+
+// Tipos de Fantasmas simplificados e avançados
+export type TipoFantasma = 
+  | "pessoa"            // Geral (ex-Ricardo)
+  | "destroca_pix"      // Pegou espécie e mandou pix
+  | "emprestimo"        // Pegou emprestado para o caixa
+  | "outro";
 
 export interface Transacao {
   id: string;
@@ -18,7 +24,7 @@ export interface Transacao {
   naturezaOperacao: NaturezaOperacao;
   categoria: CategoriaTransacao;
   descricao: string;
-  codigoContrato?: string; // NOVO: Campo de contrato (Ex: 2303/1.4)
+  codigoContrato?: string;
   valorSistema: number;
   valorRecebidoFisico: number;
   trocoSobra: number;
@@ -38,7 +44,6 @@ export interface LembreteFantasma {
   timestamp: number;
 }
 
-// NOVO: Estrutura para a aba "Devendo"
 export interface DividaCliente {
   id: string;
   cliente: string;
@@ -46,6 +51,17 @@ export interface DividaCliente {
   descricao: string;
   resolvido: boolean;
   timestamp: number;
+}
+
+// Estrutura para conferência física de notas
+export interface ContagemCedulas {
+  n100: number;
+  n50: number;
+  n20: number;
+  n10: number;
+  n5: number;
+  n2: number;
+  moedas: number;
 }
 
 export interface TotaisTurno {
@@ -58,9 +74,12 @@ export interface TotaisTurno {
 
 export interface Turno {
   id: string;
+  caixaId?: string;      // ID do Caixa (ex: 2701)
+  operadorId?: string;   // ID do Operador (ex: 1306)
   dataReferencia: string;
   statusTurno: "aberto" | "fechado";
   ajusteManualSobra: number;
+  contagem?: ContagemCedulas;
   totais: TotaisTurno;
   criadoEm: number;
   atualizadoEm: number;

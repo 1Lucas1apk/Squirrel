@@ -240,6 +240,13 @@ export async function removerDivida(turnoId: string, id: string): Promise<void> 
   await set(ref(getRealtimeDatabase(), `dividas_clientes/${turnoId}/${id}`), null);
 }
 
+export async function atualizarStatusTurno(turnoId: string, status: "aberto" | "fechado"): Promise<void> {
+  await update(ref(getRealtimeDatabase(), `turnos/${turnoId}`), {
+    status_turno: status,
+    "metadados/atualizado_em": Date.now(),
+  });
+}
+
 export async function removerTurnoTotal(turnoId: string): Promise<void> {
   const db = getRealtimeDatabase();
   await Promise.all([

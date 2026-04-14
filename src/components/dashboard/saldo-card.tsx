@@ -34,9 +34,10 @@ export function SaldoCard({ label, value, tone = "default", icon }: SaldoCardPro
         </Text>
       </View>
       <Text 
-        className={`text-[34px] font-black tracking-tighter ${toneTextClass[tone]}`}
+        className={`text-[30px] font-black tracking-tighter ${toneTextClass[tone]}`}
         numberOfLines={1}
         adjustsFontSizeToFit
+        minimumFontScale={0.5}
       >
         {value}
       </Text>

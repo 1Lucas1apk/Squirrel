@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, Text, TextInput, View, ScrollView } from "react-native";
+import { Pressable, Text, TextInput, View, ScrollView, Alert } from "react-native";
 import { MoneyInput } from "../components/common/money-input";
 import { LembreteFantasma, TipoFantasma } from "../types/domain";
 import { toBrl } from "../utils/currency";
@@ -29,6 +29,7 @@ interface FantasmasScreenProps {
   onToggleResolvido: (item: LembreteFantasma) => Promise<void>;
   onToggleComprovado: (item: LembreteFantasma) => Promise<void>;
   onExcluir: (id: string) => Promise<void>;
+  isFechado?: boolean;
 }
 
 const tipos: { value: TipoFantasma; label: string; icon: any }[] = [
@@ -42,6 +43,7 @@ export function FantasmasScreen({
   onToggleResolvido,
   onToggleComprovado,
   onExcluir,
+  isFechado,
 }: FantasmasScreenProps) {
   const [tipo, setTipo] = useState<TipoFantasma>("gerente_troca");
   const [pessoa, setPessoa] = useState("");
@@ -49,6 +51,17 @@ export function FantasmasScreen({
   const [valorReferencia, setValorReferencia] = useState(0);
   const [impactaPixRepasse, setImpactaPixRepasse] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+
+  const handleExcluir = (id: string) => {
+    Alert.alert(
+      "Remover Pendência",
+      "Deseja realmente excluir esta nota fantasma? Isso apagará o registro permanentemente.",
+      [
+        { text: "Sair", style: "cancel" },
+        { text: "Confirmar", style: "destructive", onPress: () => onExcluir(id) }
+      ]
+    );
+  };
 
   async function onSalvar() {
     if (!descricao.trim()) {
@@ -77,116 +90,118 @@ export function FantasmasScreen({
 
   return (
     <View className="gap-6 pb-20">
-      {/* Formulário de Criação */}
-      <View className="rounded-[40px] border border-purple-500/20 bg-purple-500/5 p-6 shadow-2xl">
-        <View className="flex-row items-center gap-3 mb-6 ml-1">
-          <Ghost size={14} color="#a78bfa" />
-          <Text className="text-[10px] font-black uppercase tracking-[3px] text-purple-400">
-            Novo Registro Fantasma
-          </Text>
-        </View>
-        
-        <View className="mb-6 flex-row gap-2">
-          {tipos.map((item) => {
-            const active = tipo === item.value;
-            const Icon = item.icon;
-            return (
-              <Pressable
-                key={item.value}
-                onPress={() => setTipo(item.value)}
-                hitSlop={8}
-                style={{
-                  flex: 1,
-                  borderRadius: 20,
-                  borderWidth: 1,
-                  paddingHorizontal: 16,
-                  paddingVertical: 16,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 8,
-                  backgroundColor: active ? '#a78bfa' : 'rgba(88, 28, 135, 0.2)',
-                  borderColor: active ? '#c4b5fd' : 'rgba(126, 34, 206, 0.3)',
-                  elevation: active ? 4 : 0,
-                }}
-              >
-                <Icon size={14} color={active ? "#2e1065" : "#a78bfa"} strokeWidth={3} />
-                <Text style={{
-                  fontSize: 10,
-                  fontWeight: '900',
-                  textTransform: 'uppercase',
-                  letterSpacing: 1,
-                  color: active ? '#2e1065' : '#a78bfa'
-                }}>
-                  {item.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-
-        <View className="gap-4">
-          <TextInput
-            className="rounded-[24px] border border-purple-800/40 bg-purple-950/20 px-6 py-5 text-purple-100 font-bold"
-            placeholder="Quem? (Ex: Ricardo, Gerente...)"
-            placeholderTextColor="#4c1d95"
-            value={pessoa}
-            onChangeText={setPessoa}
-          />
-
-          <TextInput
-            className="rounded-[24px] border border-purple-800/40 bg-purple-950/20 px-6 py-5 text-purple-100 font-bold"
-            placeholder="O que aconteceu?"
-            placeholderTextColor="#4c1d95"
-            value={descricao}
-            onChangeText={setDescricao}
-            multiline
-          />
-
-          <View>
-            <View className="flex-row items-center gap-2 mb-2 ml-2">
-              <DollarSign size={10} color="#581c87" />
-              <Text className="text-[10px] font-black uppercase tracking-widest text-purple-900">Valor de Referência</Text>
-            </View>
-            <MoneyInput
-              placeholder="0,00"
-              placeholderTextColor="#4c1d95"
-              className="rounded-[24px] border border-purple-800/40 bg-purple-950/30 px-6 py-5 text-3xl font-black text-purple-100"
-              value={valorReferencia}
-              onChangeValue={setValorReferencia}
-            />
+      {/* Formulário de Criação - Oculto se fechado */}
+      {!isFechado && (
+        <View className="rounded-[40px] border border-purple-500/20 bg-purple-500/5 p-6 shadow-2xl">
+          <View className="flex-row items-center gap-3 mb-6 ml-1">
+            <Ghost size={14} color="#a78bfa" />
+            <Text className="text-[10px] font-black uppercase tracking-[3px] text-purple-400">
+              Novo Registro Fantasma
+            </Text>
+          </View>
+          
+          <View className="mb-6 flex-row gap-2">
+            {tipos.map((item) => {
+              const active = tipo === item.value;
+              const Icon = item.icon;
+              return (
+                <Pressable
+                  key={item.value}
+                  onPress={() => setTipo(item.value)}
+                  hitSlop={8}
+                  style={{
+                    flex: 1,
+                    borderRadius: 20,
+                    borderWidth: 1,
+                    paddingHorizontal: 16,
+                    paddingVertical: 16,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    backgroundColor: active ? '#a78bfa' : 'rgba(88, 28, 135, 0.2)',
+                    borderColor: active ? '#c4b5fd' : 'rgba(126, 34, 206, 0.3)',
+                    elevation: active ? 4 : 0,
+                  }}
+                >
+                  <Icon size={14} color={active ? "#2e1065" : "#a78bfa"} strokeWidth={3} />
+                  <Text style={{
+                    fontSize: 10,
+                    fontWeight: '900',
+                    textTransform: 'uppercase',
+                    letterSpacing: 1,
+                    color: active ? '#2e1065' : '#a78bfa'
+                  }}>
+                    {item.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
 
-          <Pressable
-            className={`flex-row items-center justify-between rounded-[24px] border p-5 ${
-              impactaPixRepasse ? "border-purple-400/30 bg-purple-400/10" : "border-purple-800/30 bg-purple-950/20"
-            }`}
-            onPress={() => setImpactaPixRepasse(!impactaPixRepasse)}
-          >
-            <View className="flex-1">
-              <Text className={impactaPixRepasse ? "text-purple-100 font-black text-[10px] uppercase tracking-widest" : "text-purple-400/40 font-bold text-[10px] uppercase tracking-widest"}>
-                {impactaPixRepasse ? "Impacta no Malote" : "Apenas Lembrete"}
-              </Text>
-              <Text className="text-[9px] text-purple-400/60 mt-1 uppercase font-bold tracking-tighter">
-                {impactaPixRepasse ? "Este valor será descontado do físico." : "Não afeta os cálculos de fechamento."}
-              </Text>
-            </View>
-            <View className={`h-8 w-8 items-center justify-center rounded-full border-2 ${impactaPixRepasse ? "border-purple-400 bg-purple-400 shadow-lg shadow-purple-500/50" : "border-purple-800"}`}>
-               {impactaPixRepasse && <CheckCircle2 size={16} color="#2e1065" strokeWidth={3} />}
-            </View>
-          </Pressable>
+          <View className="gap-4">
+            <TextInput
+              className="rounded-[24px] border border-purple-800/40 bg-purple-950/20 px-6 py-5 text-purple-100 font-bold"
+              placeholder="Quem? (Ex: Ricardo, Gerente...)"
+              placeholderTextColor="#4c1d95"
+              value={pessoa}
+              onChangeText={setPessoa}
+            />
 
-          {erro && (
-            <View className="rounded-2xl bg-red-500/10 py-3 border border-red-500/20">
-              <Text className="text-center text-[10px] font-black text-red-400 uppercase tracking-widest">{erro}</Text>
-            </View>
-          )}
+            <TextInput
+              className="rounded-[24px] border border-purple-800/40 bg-purple-950/20 px-6 py-5 text-purple-100 font-bold"
+              placeholder="O que aconteceu?"
+              placeholderTextColor="#4c1d95"
+              value={descricao}
+              onChangeText={setDescricao}
+              multiline
+            />
 
-          <Pressable className="mt-2 rounded-[24px] bg-purple-400 py-6 active:bg-purple-300 shadow-2xl shadow-purple-500/40" onPress={onSalvar}>
-            <Text className="text-center font-black uppercase tracking-[4px] text-purple-950">Lançar Pendência</Text>
-          </Pressable>
+            <View>
+              <View className="flex-row items-center gap-2 mb-2 ml-2">
+                <DollarSign size={10} color="#581c87" />
+                <Text className="text-[10px] font-black uppercase tracking-widest text-purple-900">Valor de Referência</Text>
+              </View>
+              <MoneyInput
+                placeholder="0,00"
+                placeholderTextColor="#4c1d95"
+                className="rounded-[24px] border border-purple-800/40 bg-purple-950/30 px-6 py-5 text-3xl font-black text-purple-100"
+                value={valorReferencia}
+                onChangeValue={setValorReferencia}
+              />
+            </View>
+
+            <Pressable
+              className={`flex-row items-center justify-between rounded-[24px] border p-5 ${
+                impactaPixRepasse ? "border-purple-400/30 bg-purple-400/10" : "border-purple-800/30 bg-purple-950/20"
+              }`}
+              onPress={() => setImpactaPixRepasse(!impactaPixRepasse)}
+            >
+              <View className="flex-1">
+                <Text className={impactaPixRepasse ? "text-purple-100 font-black text-[10px] uppercase tracking-widest" : "text-purple-400/40 font-bold text-[10px] uppercase tracking-widest"}>
+                  {impactaPixRepasse ? "Impacta no Malote" : "Apenas Lembrete"}
+                </Text>
+                <Text className="text-[9px] text-purple-400/60 mt-1 uppercase font-bold tracking-tighter">
+                  {impactaPixRepasse ? "Este valor será descontado do físico." : "Não afeta os cálculos de fechamento."}
+                </Text>
+              </View>
+              <View className={`h-8 w-8 items-center justify-center rounded-full border-2 ${impactaPixRepasse ? "border-purple-400 bg-purple-400 shadow-lg shadow-purple-500/50" : "border-purple-800"}`}>
+                 {impactaPixRepasse && <CheckCircle2 size={16} color="#2e1065" strokeWidth={3} />}
+              </View>
+            </Pressable>
+
+            {erro && (
+              <View className="rounded-2xl bg-red-500/10 py-3 border border-red-500/20">
+                <Text className="text-center text-[10px] font-black text-red-400 uppercase tracking-widest">{erro}</Text>
+              </View>
+            )}
+
+            <Pressable className="mt-2 rounded-[24px] bg-purple-400 py-6 active:bg-purple-300 shadow-2xl shadow-purple-500/40" onPress={onSalvar}>
+              <Text className="text-center font-black uppercase tracking-[4px] text-purple-950">Lançar Pendência</Text>
+            </Pressable>
+          </View>
         </View>
-      </View>
+      )}
 
       {/* Lista de Pendências */}
       <View className="gap-4">
@@ -220,19 +235,22 @@ export function FantasmasScreen({
                 </Text>
               </View>
               
-              <Pressable 
-                onPress={() => onExcluir(item.id)}
-                hitSlop={12}
-                className="h-10 w-10 items-center justify-center rounded-[14px] bg-red-500/10 border border-red-500/20"
-              >
-                <Trash2 size={16} color="#f87171" />
-              </Pressable>
+              {!isFechado && (
+                <Pressable 
+                  onPress={() => onExcluir(item.id)}
+                  hitSlop={12}
+                  className="h-10 w-10 items-center justify-center rounded-[14px] bg-red-500/10 border border-red-500/20"
+                >
+                  <Trash2 size={16} color="#f87171" />
+                </Pressable>
+              )}
             </View>
 
             <View className="flex-row gap-3">
               {/* Botão Resolvido */}
               <Pressable
-                onPress={() => onToggleResolvido(item)}
+                onPress={() => !isFechado && onToggleResolvido(item)}
+                disabled={isFechado}
                 hitSlop={15}
                 style={{
                   flex: 1,
@@ -246,6 +264,7 @@ export function FantasmasScreen({
                   backgroundColor: item.resolvido ? '#10b981' : 'rgba(167, 139, 250, 0.1)',
                   borderColor: item.resolvido ? '#10b981' : 'rgba(167, 139, 250, 0.3)',
                   elevation: item.resolvido ? 8 : 0,
+                  opacity: isFechado ? 0.8 : 1,
                 }}
               >
                 {item.resolvido ? (
@@ -266,7 +285,8 @@ export function FantasmasScreen({
               
               {/* Botão Pix */}
               <Pressable
-                onPress={() => onToggleComprovado(item)}
+                onPress={() => !isFechado && onToggleComprovado(item)}
+                disabled={isFechado}
                 hitSlop={15}
                 style={{
                   flex: 1,
@@ -280,6 +300,7 @@ export function FantasmasScreen({
                   backgroundColor: item.comprovadoPix ? '#3b82f6' : '#18181b',
                   borderColor: item.comprovadoPix ? '#3b82f6' : '#27272a',
                   elevation: item.comprovadoPix ? 8 : 0,
+                  opacity: isFechado ? 0.8 : 1,
                 }}
               >
                 <DollarSign size={20} color={item.comprovadoPix ? "#172554" : "#3f3f46"} strokeWidth={3} />
