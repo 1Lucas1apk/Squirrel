@@ -1,20 +1,21 @@
 import { useState } from "react";
-import { Pressable, Text, TextInput, View, ScrollView, Alert } from "react-native";
+import { Pressable, Text, TextInput, View, ScrollView } from "react-native";
 import { MoneyInput } from "../components/common/money-input";
 import { LembreteFantasma, TipoFantasma } from "../types/domain";
 import { toBrl } from "../utils/currency";
 
 import { 
   Ghost, 
-  User, 
-  UserRound, 
   Trash2, 
   CheckCircle2, 
-  Clock, 
+  Circle, 
   DollarSign,
-  AlertTriangle,
-  ChevronRight,
-  Circle
+  ArrowUpRight,
+  ArrowDownLeft,
+  RefreshCcw,
+  MessageSquare,
+  HelpCircle,
+  Banknote
 } from "lucide-react-native";
 
 interface FantasmasScreenProps {
@@ -28,13 +29,47 @@ interface FantasmasScreenProps {
   }) => Promise<void>;
   onToggleResolvido: (item: LembreteFantasma) => Promise<void>;
   onToggleComprovado: (item: LembreteFantasma) => Promise<void>;
-  onExcluir: (id: string) => Promise<void>;
+  onExcluir: (id: string) => void;
   isFechado?: boolean;
 }
 
-const tipos: { value: TipoFantasma; label: string; icon: any }[] = [
-  { value: "gerente_troca", label: "Gerente", icon: UserRound },
-  { value: "outro", label: "Pessoa", icon: User },
+const opcoes: { value: TipoFantasma; label: string; icon: any; sub: string; impact: string; color: string; showPixCheck: boolean }[] = [
+  { 
+    value: "pix_recebido_gaveta_saiu", 
+    label: "Pix por Notas", 
+    icon: ArrowUpRight, 
+    sub: "Alguém levou dinheiro físico e mandou Pix p/ você.",
+    impact: "Aumenta o Pix Repasse / Diminui Gaveta",
+    color: "#a78bfa",
+    showPixCheck: true
+  },
+  { 
+    value: "destroca_pix_por_nota", 
+    label: "Destrocar Pix", 
+    icon: RefreshCcw, 
+    sub: "Você pôs notas na gaveta p/ cobrir seu Pix Repasse.",
+    impact: "Diminui o Pix Repasse / Soma na Gaveta",
+    color: "#34d399",
+    showPixCheck: false
+  },
+  { 
+    value: "dinheiro_emprestado", 
+    label: "Empréstimo", 
+    icon: Banknote, 
+    sub: "Notas que você pegou com alguém p/ o caixa (ex: troco).",
+    impact: "Soma na Gaveta / Não mexe no Pix",
+    color: "#fb923c",
+    showPixCheck: false
+  },
+  { 
+    value: "lembrete_geral", 
+    label: "Lembrete", 
+    icon: MessageSquare, 
+    sub: "Anotação rápida de texto sem mexer em dinheiro.",
+    impact: "Sem impacto financeiro",
+    color: "#71717a",
+    showPixCheck: false
+  },
 ];
 
 export function FantasmasScreen({
@@ -45,27 +80,17 @@ export function FantasmasScreen({
   onExcluir,
   isFechado,
 }: FantasmasScreenProps) {
-  const [tipo, setTipo] = useState<TipoFantasma>("gerente_troca");
+  const [tipo, setTipo] = useState<TipoFantasma>("pix_recebido_gaveta_saiu");
   const [pessoa, setPessoa] = useState("");
   const [descricao, setDescricao] = useState("");
   const [valorReferencia, setValorReferencia] = useState(0);
-  const [impactaPixRepasse, setImpactaPixRepasse] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
 
-  const handleExcluir = (id: string) => {
-    Alert.alert(
-      "Remover Pendência",
-      "Deseja realmente excluir esta nota fantasma? Isso apagará o registro permanentemente.",
-      [
-        { text: "Sair", style: "cancel" },
-        { text: "Confirmar", style: "destructive", onPress: () => onExcluir(id) }
-      ]
-    );
-  };
+  const selectedOp = opcoes.find(o => o.value === tipo)!;
 
   async function onSalvar() {
-    if (!descricao.trim()) {
-      setErro("Descreva a pendência.");
+    if (!pessoa.trim() && tipo !== "lembrete_geral") {
+      setErro("Informe quem está envolvido.");
       return;
     }
 
@@ -75,255 +100,168 @@ export function FantasmasScreen({
         pessoa: pessoa.trim() || undefined,
         descricao: descricao.trim(),
         valorReferencia,
-        impactaPixRepasse,
+        impactaPixRepasse: tipo === "pix_recebido_gaveta_saiu" || tipo === "destroca_pix_por_nota",
       });
 
       setDescricao("");
       setPessoa("");
       setValorReferencia(0);
-      setImpactaPixRepasse(true);
       setErro(null);
     } catch (e) {
-      setErro("Erro ao salvar fantasma.");
+      setErro("Erro ao salvar.");
     }
   }
 
   return (
     <View className="gap-6 pb-20">
-      {/* Formulário de Criação - Oculto se fechado */}
       {!isFechado && (
-        <View className="rounded-[40px] border border-purple-500/20 bg-purple-500/5 p-6 shadow-2xl">
-          <View className="flex-row items-center gap-3 mb-6 ml-1">
-            <Ghost size={14} color="#a78bfa" />
-            <Text className="text-[10px] font-black uppercase tracking-[3px] text-purple-400">
-              Novo Registro Fantasma
-            </Text>
-          </View>
+        <View className="rounded-[40px] border border-zinc-800 bg-ink-900 p-6 shadow-2xl">
+          <Text className="mb-5 text-[10px] font-black uppercase tracking-[3px] text-zinc-500">Movimentação Informal</Text>
           
-          <View className="mb-6 flex-row gap-2">
-            {tipos.map((item) => {
-              const active = tipo === item.value;
-              const Icon = item.icon;
-              return (
-                <Pressable
-                  key={item.value}
-                  onPress={() => setTipo(item.value)}
-                  hitSlop={8}
-                  style={{
-                    flex: 1,
-                    borderRadius: 20,
-                    borderWidth: 1,
-                    paddingHorizontal: 16,
-                    paddingVertical: 16,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                    backgroundColor: active ? '#a78bfa' : 'rgba(88, 28, 135, 0.2)',
-                    borderColor: active ? '#c4b5fd' : 'rgba(126, 34, 206, 0.3)',
-                    elevation: active ? 4 : 0,
-                  }}
-                >
-                  <Icon size={14} color={active ? "#2e1065" : "#a78bfa"} strokeWidth={3} />
-                  <Text style={{
-                    fontSize: 10,
-                    fontWeight: '900',
-                    textTransform: 'uppercase',
-                    letterSpacing: 1,
-                    color: active ? '#2e1065' : '#a78bfa'
-                  }}>
-                    {item.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6 -mx-2 px-2">
+            <View className="flex-row gap-2">
+              {opcoes.map((item) => {
+                const active = tipo === item.value;
+                const Icon = item.icon;
+                return (
+                  <Pressable
+                    key={item.value}
+                    onPress={() => setTipo(item.value)}
+                    style={{
+                      borderRadius: 24,
+                      borderWidth: 2,
+                      paddingHorizontal: 20,
+                      paddingVertical: 14,
+                      backgroundColor: active ? item.color : '#18181b',
+                      borderColor: active ? item.color : '#27272a',
+                    }}
+                  >
+                    <View className="flex-row items-center gap-2">
+                      <Icon size={14} color={active ? "#000" : "#71717a"} strokeWidth={3} />
+                      <Text style={{ fontSize: 10, fontWeight: '900', textTransform: 'uppercase', color: active ? '#000' : '#71717a' }}>{item.label}</Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </ScrollView>
+
+          <View className="bg-ink-800/50 border border-zinc-800 p-4 rounded-3xl mb-6 flex-row gap-3 items-start">
+            <HelpCircle size={16} color={selectedOp.color} />
+            <View className="flex-1">
+              <Text className="text-[10px] font-black uppercase text-zinc-100 mb-1">{selectedOp.label}</Text>
+              <Text className="text-xs text-zinc-500 leading-4">{selectedOp.sub}</Text>
+              <Text style={{ color: selectedOp.color }} className="text-[9px] font-black uppercase mt-2">{selectedOp.impact}</Text>
+            </View>
           </View>
 
           <View className="gap-4">
             <TextInput
-              className="rounded-[24px] border border-purple-800/40 bg-purple-950/20 px-6 py-5 text-purple-100 font-bold"
-              placeholder="Quem? (Ex: Ricardo, Gerente...)"
-              placeholderTextColor="#4c1d95"
+              className="rounded-[24px] border border-zinc-800 bg-ink-800 px-6 py-5 text-white font-bold"
+              placeholder={tipo === "lembrete_geral" ? "Título do Lembrete" : "Com quem? (Ex: Ricardo, Gerente...)"}
+              placeholderTextColor="#3f3f46"
               value={pessoa}
               onChangeText={setPessoa}
             />
 
             <TextInput
-              className="rounded-[24px] border border-purple-800/40 bg-purple-950/20 px-6 py-5 text-purple-100 font-bold"
-              placeholder="O que aconteceu?"
-              placeholderTextColor="#4c1d95"
+              className="rounded-[24px] border border-zinc-800 bg-ink-800 px-6 py-5 text-white font-bold"
+              placeholder="Mais detalhes (opcional)"
+              placeholderTextColor="#3f3f46"
               value={descricao}
               onChangeText={setDescricao}
-              multiline
             />
 
-            <View>
-              <View className="flex-row items-center gap-2 mb-2 ml-2">
-                <DollarSign size={10} color="#581c87" />
-                <Text className="text-[10px] font-black uppercase tracking-widest text-purple-900">Valor de Referência</Text>
-              </View>
-              <MoneyInput
-                placeholder="0,00"
-                placeholderTextColor="#4c1d95"
-                className="rounded-[24px] border border-purple-800/40 bg-purple-950/30 px-6 py-5 text-3xl font-black text-purple-100"
-                value={valorReferencia}
-                onChangeValue={setValorReferencia}
-              />
-            </View>
-
-            <Pressable
-              className={`flex-row items-center justify-between rounded-[24px] border p-5 ${
-                impactaPixRepasse ? "border-purple-400/30 bg-purple-400/10" : "border-purple-800/30 bg-purple-950/20"
-              }`}
-              onPress={() => setImpactaPixRepasse(!impactaPixRepasse)}
-            >
-              <View className="flex-1">
-                <Text className={impactaPixRepasse ? "text-purple-100 font-black text-[10px] uppercase tracking-widest" : "text-purple-400/40 font-bold text-[10px] uppercase tracking-widest"}>
-                  {impactaPixRepasse ? "Impacta no Malote" : "Apenas Lembrete"}
-                </Text>
-                <Text className="text-[9px] text-purple-400/60 mt-1 uppercase font-bold tracking-tighter">
-                  {impactaPixRepasse ? "Este valor será descontado do físico." : "Não afeta os cálculos de fechamento."}
-                </Text>
-              </View>
-              <View className={`h-8 w-8 items-center justify-center rounded-full border-2 ${impactaPixRepasse ? "border-purple-400 bg-purple-400 shadow-lg shadow-purple-500/50" : "border-purple-800"}`}>
-                 {impactaPixRepasse && <CheckCircle2 size={16} color="#2e1065" strokeWidth={3} />}
-              </View>
-            </Pressable>
-
-            {erro && (
-              <View className="rounded-2xl bg-red-500/10 py-3 border border-red-500/20">
-                <Text className="text-center text-[10px] font-black text-red-400 uppercase tracking-widest">{erro}</Text>
+            {tipo !== "lembrete_geral" && (
+              <View>
+                <Text className="mb-2 ml-2 text-[10px] font-black uppercase tracking-widest text-zinc-700">Valor em Dinheiro</Text>
+                <MoneyInput
+                  placeholder="0,00"
+                  className="rounded-[24px] border border-zinc-700 bg-ink-800 px-6 py-5 text-3xl font-black text-white"
+                  value={valorReferencia}
+                  onChangeValue={setValorReferencia}
+                />
               </View>
             )}
 
-            <Pressable className="mt-2 rounded-[24px] bg-purple-400 py-6 active:bg-purple-300 shadow-2xl shadow-purple-500/40" onPress={onSalvar}>
-              <Text className="text-center font-black uppercase tracking-[4px] text-purple-950">Lançar Pendência</Text>
+            {erro && <Text className="text-center text-xs text-red-400 font-bold bg-red-500/10 py-2 rounded-xl">{erro}</Text>}
+
+            <Pressable className="mt-2 rounded-[24px] bg-zinc-100 py-6 active:opacity-80" onPress={onSalvar}>
+              <Text className="text-center font-black uppercase tracking-[4px] text-zinc-950">Lançar Registro</Text>
             </Pressable>
           </View>
         </View>
       )}
 
-      {/* Lista de Pendências */}
       <View className="gap-4">
-        <Text className="ml-2 text-[11px] font-black uppercase tracking-[3px] text-zinc-600">Pendências em Aberto</Text>
-        {fantasmas.map((item) => (
-          <View 
-            key={item.id} 
-            className={`rounded-[32px] border p-6 shadow-sm ${
-              item.resolvido 
-                ? "border-zinc-800 bg-zinc-900/50 opacity-60" 
-                : "border-purple-500/20 bg-ink-900"
-            }`}
-          >
-            <View className="flex-row items-start justify-between mb-6">
-              <View className="flex-1">
-                <View className="flex-row items-center gap-2 mb-2">
-                  <View className={`px-3 py-1 rounded-full border ${item.resolvido ? "border-zinc-700 bg-zinc-800" : "border-purple-500/20 bg-purple-500/10"}`}>
-                    <Text className={`text-[9px] font-black uppercase tracking-widest ${item.resolvido ? "text-zinc-600" : "text-purple-400"}`}>
-                      {item.pessoa || "Geral"} • {item.tipo === "gerente_troca" ? "Gerente" : "Pessoa"}
-                    </Text>
+        <Text className="ml-2 text-[11px] font-black uppercase tracking-[3px] text-zinc-600">Registros Ativos</Text>
+        {fantasmas.map((item) => {
+          const op = opcoes.find(o => o.value === item.tipo) || opcoes[3];
+          const Icon = op.icon;
+          return (
+            <View key={item.id} className={`rounded-[32px] border p-6 ${item.resolvido ? "border-zinc-800 bg-zinc-900/50 opacity-40" : "border-zinc-800 bg-ink-900"}`}>
+              <View className="flex-row items-start justify-between mb-6">
+                <View className="flex-1 flex-row items-center gap-4">
+                  <View style={{ backgroundColor: item.resolvido ? '#27272a' : op.color }} className="h-12 w-12 items-center justify-center rounded-2xl">
+                    <Icon size={20} color={item.resolvido ? "#71717a" : "#000"} strokeWidth={3} />
                   </View>
-                  {item.impactaPixRepasse && !item.resolvido && (
-                    <AlertTriangle size={12} color="#facc15" />
-                  )}
+                  <View className="flex-1">
+                    <Text className="text-[9px] font-black uppercase tracking-widest text-zinc-600">{item.pessoa || "Lembrete"}</Text>
+                    <Text className={`text-xl font-black tracking-tight ${item.resolvido ? "text-zinc-500 line-through" : "text-zinc-100"}`}>{toBrl(item.valorReferencia)}</Text>
+                    {item.descricao ? <Text className="text-[10px] font-bold text-zinc-500 uppercase">{item.descricao}</Text> : null}
+                  </View>
                 </View>
-                <Text className={`text-xl font-black tracking-tight ${item.resolvido ? "text-zinc-500 line-through" : "text-purple-100"}`}>
-                  {item.descricao}
-                </Text>
-                <Text className={`text-sm font-black mt-1 uppercase ${item.resolvido ? "text-zinc-600" : "text-zinc-500"}`}>
-                  {toBrl(item.valorReferencia)}
-                </Text>
-              </View>
-              
-              {!isFechado && (
-                <Pressable 
-                  onPress={() => onExcluir(item.id)}
-                  hitSlop={12}
-                  className="h-10 w-10 items-center justify-center rounded-[14px] bg-red-500/10 border border-red-500/20"
-                >
-                  <Trash2 size={16} color="#f87171" />
-                </Pressable>
-              )}
-            </View>
-
-            <View className="flex-row gap-3">
-              {/* Botão Resolvido */}
-              <Pressable
-                onPress={() => !isFechado && onToggleResolvido(item)}
-                disabled={isFechado}
-                hitSlop={15}
-                style={{
-                  flex: 1,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 12,
-                  borderRadius: 20,
-                  borderWidth: 2,
-                  paddingVertical: 18,
-                  backgroundColor: item.resolvido ? '#10b981' : 'rgba(167, 139, 250, 0.1)',
-                  borderColor: item.resolvido ? '#10b981' : 'rgba(167, 139, 250, 0.3)',
-                  elevation: item.resolvido ? 8 : 0,
-                  opacity: isFechado ? 0.8 : 1,
-                }}
-              >
-                {item.resolvido ? (
-                  <CheckCircle2 size={20} color="#064e3b" strokeWidth={3} />
-                ) : (
-                  <Circle size={20} color="#a78bfa" strokeWidth={3} />
+                {!isFechado && (
+                  <Pressable onPress={() => onExcluir(item.id)} className="h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20"><Trash2 size={16} color="#f87171" /></Pressable>
                 )}
-                <Text style={{
-                  fontSize: 11,
-                  fontWeight: '900',
-                  textTransform: 'uppercase',
-                  letterSpacing: 1.5,
-                  color: item.resolvido ? '#064e3b' : '#a78bfa'
-                }}>
-                  {item.resolvido ? "Concluído" : "Pendente"}
-                </Text>
-              </Pressable>
-              
-              {/* Botão Pix */}
-              <Pressable
-                onPress={() => !isFechado && onToggleComprovado(item)}
-                disabled={isFechado}
-                hitSlop={15}
-                style={{
-                  flex: 1,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 12,
-                  borderRadius: 20,
-                  borderWidth: 2,
-                  paddingVertical: 18,
-                  backgroundColor: item.comprovadoPix ? '#3b82f6' : '#18181b',
-                  borderColor: item.comprovadoPix ? '#3b82f6' : '#27272a',
-                  elevation: item.comprovadoPix ? 8 : 0,
-                  opacity: isFechado ? 0.8 : 1,
-                }}
-              >
-                <DollarSign size={20} color={item.comprovadoPix ? "#172554" : "#3f3f46"} strokeWidth={3} />
-                <Text style={{
-                  fontSize: 11,
-                  fontWeight: '900',
-                  textTransform: 'uppercase',
-                  letterSpacing: 1.5,
-                  color: item.comprovadoPix ? '#172554' : '#71717a'
-                }}>
-                  {item.comprovadoPix ? "Pix OK" : "Verificar"}
-                </Text>
-              </Pressable>
+              </View>
+
+              <View className="flex-row gap-3">
+                <Pressable
+                  onPress={() => !isFechado && onToggleResolvido(item)}
+                  disabled={isFechado}
+                  style={{
+                    flex: 1,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 10,
+                    borderRadius: 20,
+                    borderWidth: 2,
+                    paddingVertical: 16,
+                    backgroundColor: item.resolvido ? '#10b981' : 'transparent',
+                    borderColor: item.resolvido ? '#10b981' : '#27272a',
+                  }}
+                >
+                  {item.resolvido ? <CheckCircle2 size={18} color="#064e3b" strokeWidth={3} /> : <Circle size={18} color="#3f3f46" strokeWidth={3} />}
+                  <Text style={{ fontSize: 10, fontWeight: '900', textTransform: 'uppercase', color: item.resolvido ? '#064e3b' : '#71717a' }}>{item.resolvido ? "Concluído" : "Resolver"}</Text>
+                </Pressable>
+                
+                {op.showPixCheck && (
+                  <Pressable
+                    onPress={() => !isFechado && onToggleComprovado(item)}
+                    disabled={isFechado}
+                    style={{
+                      flex: 1,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 10,
+                      borderRadius: 20,
+                      borderWidth: 2,
+                      paddingVertical: 16,
+                      backgroundColor: item.comprovadoPix ? '#3b82f6' : 'transparent',
+                      borderColor: item.comprovadoPix ? '#3b82f6' : '#27272a',
+                    }}
+                  >
+                    <DollarSign size={18} color={item.comprovadoPix ? "#172554" : "#3f3f46"} strokeWidth={3} />
+                    <Text style={{ fontSize: 10, fontWeight: '900', textTransform: 'uppercase', color: item.comprovadoPix ? '#172554' : '#71717a' }}>{item.comprovadoPix ? "Pix OK" : "Aguardando"}</Text>
+                  </Pressable>
+                )}
+              </View>
             </View>
-          </View>
-        ))}
-        
-        {fantasmas.length === 0 && (
-          <View className="rounded-[32px] border border-dashed border-zinc-800 py-20 items-center justify-center opacity-50">
-            <Ghost size={40} color="#27272a" strokeWidth={1} />
-            <Text className="mt-4 text-zinc-600 font-black uppercase tracking-[3px] text-[10px]">Sem lembretes</Text>
-          </View>
-        )}
+          );
+        })}
       </View>
     </View>
   );

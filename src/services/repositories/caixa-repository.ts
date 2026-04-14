@@ -17,6 +17,7 @@ import {
   TotaisTurno,
   Transacao,
   Turno,
+  ContagemCedulas
 } from "../../types/domain";
 import { getRealtimeDatabase } from "../firebase/realtime";
 
@@ -24,19 +25,12 @@ interface AddTransacaoInput {
   naturezaOperacao: Transacao["naturezaOperacao"];
   categoria: Transacao["categoria"];
   descricao: string;
-  codigoContrato?: string; // NOVO
+  codigoContrato?: string;
   valorSistema: number;
   valorRecebidoFisico: number;
   trocoSobra: number;
+  statusConferencia: StatusConferencia;
   justificativaTexto?: string | null;
-}
-
-interface AddFantasmaInput {
-  tipo: TipoFantasma;
-  pessoa?: string;
-  descricao: string;
-  valorReferencia: number;
-  impactaPixRepasse: boolean;
 }
 
 function toMoney(value: unknown): number {
@@ -48,11 +42,24 @@ function toMoney(value: unknown): number {
 function mapTurno(id: string, data: Record<string, unknown>): Turno {
   const metadados = (data.metadados as Record<string, number> | undefined) ?? {};
   const totais = (data.totais as Record<string, number> | undefined) ?? {};
+  const contagem = (data.contagem_cedulas as Record<string, number> | undefined) ?? null;
+
   return {
     id,
+    caixaId: data.caixa_id ? String(data.caixa_id) : undefined,
+    operadorId: data.operador_id ? String(data.operador_id) : undefined,
     dataReferencia: String(data.data_referencia ?? ""),
-    statusTurno: (data.status_turno as Turno["statusTurno"]) ?? "aberto",
+    statusTurno: (data.status_turn as Turno["statusTurno"]) ?? (data.status_turno as Turno["statusTurno"]) ?? "aberto",
     ajusteManualSobra: Number(data.ajuste_manual_sobra ?? 0),
+    contagem: contagem ? {
+      n100: Number(contagem.n100 || 0),
+      n50: Number(contagem.n50 || 0),
+      n20: Number(contagem.n20 || 0),
+      n10: Number(contagem.n10 || 0),
+      n5: Number(contagem.n5 || 0),
+      n2: Number(contagem.n2 || 0),
+      moedas: Number(contagem.moedas || 0),
+    } : undefined,
     totais: {
       sistema: Number(totais.sistema ?? 0),
       sobra: Number(totais.sobra ?? 0),
@@ -74,7 +81,7 @@ function mapTransacoes(snapshot: DataSnapshot): Transacao[] {
       naturezaOperacao: (item.natureza_operacao as Transacao["naturezaOperacao"]) ?? "pagamento",
       categoria: (item.categoria as Transacao["categoria"]) ?? "dinheiro",
       descricao: String(item.descricao ?? ""),
-      codigoContrato: item.codigo_contrato ? String(item.codigo_contrato) : undefined, // NOVO
+      codigoContrato: item.codigo_contrato ? String(item.codigo_contrato) : undefined,
       valorSistema: toMoney(item.valor_sistema),
       valorRecebidoFisico: toMoney(item.valor_recebido_fisico),
       trocoSobra: toMoney(item.troco_sobra),
@@ -164,7 +171,6 @@ export function ouvirFantasmas(turnoId: string, onData: (fantasmas: LembreteFant
   return onValue(ref(getRealtimeDatabase(), `fantasmas_lembretes/${turnoId}`), (snapshot) => onData(mapFantasmas(snapshot)));
 }
 
-// NOVO: Ouvir dívidas
 export function ouvirDividas(turnoId: string, onData: (dividas: DividaCliente[]) => void): Unsubscribe {
   return onValue(ref(getRealtimeDatabase(), `dividas_clientes/${turnoId}`), (snapshot) => onData(mapDividas(snapshot)));
 }
@@ -180,6 +186,23 @@ export async function salvarTotaisTurno(turnoId: string, totais: TotaisTurno): P
   });
 }
 
+// NOVO: Salvar contagem de notas
+export async function salvarContagemCedulas(turnoId: string, contagem: ContagemCedulas): Promise<void> {
+  await update(ref(getRealtimeDatabase(), `turnos/${turnoId}`), { 
+    contagem_cedulas: contagem,
+    "metadados/atualizado_em": Date.now() 
+  });
+}
+
+// NOVO: Atualizar Identificação
+export async function atualizarIdentificacao(turnoId: string, caixaId: string, operadorId: string): Promise<void> {
+  await update(ref(getRealtimeDatabase(), `turnos/${turnoId}`), { 
+    caixa_id: caixaId,
+    operador_id: operadorId,
+    "metadados/atualizado_em": Date.now() 
+  });
+}
+
 export async function adicionarTransacao(turnoId: string, input: AddTransacaoInput): Promise<void> {
   const created = push(ref(getRealtimeDatabase(), `transacoes/${turnoId}`));
   await set(created, {
@@ -187,7 +210,7 @@ export async function adicionarTransacao(turnoId: string, input: AddTransacaoInp
     natureza_operacao: input.naturezaOperacao,
     categoria: input.categoria,
     descricao: input.descricao,
-    codigo_contrato: input.codigoContrato || null, // NOVO
+    codigo_contrato: input.codigoContrato || null,
     valor_sistema: input.valorSistema,
     valor_recebido_fisico: input.valorRecebidoFisico,
     troco_sobra: input.trocoSobra,
@@ -200,7 +223,7 @@ export async function editarTransacao(turnoId: string, id: string, input: any): 
   const payload: Record<string, any> = {
     categoria: input.categoria,
     descricao: input.descricao,
-    codigo_contrato: input.codigoContrato || null, // NOVO
+    codigo_contrato: input.codigoContrato || null,
     valor_sistema: input.valorSistema,
     valor_recebido_fisico: input.valorRecebidoFisico,
     troco_sobra: input.trocoSobra,
@@ -215,18 +238,35 @@ export async function removerTransacao(turnoId: string, id: string): Promise<voi
 
 export async function adicionarFantasma(turnoId: string, input: any): Promise<void> {
   const created = push(ref(getRealtimeDatabase(), `fantasmas_lembretes/${turnoId}`));
-  await set(created, { ...input, timestamp: Date.now(), resolvido: false, comprovado_pix: false });
+  await set(created, {
+    tipo: input.tipo,
+    pessoa: input.pessoa || null,
+    descricao: input.descricao,
+    valor_referencia: input.valorReferencia,
+    impacta_pix_repasse: input.impactaPixRepasse,
+    timestamp: Date.now(),
+    resolvido: false,
+    comprovado_pix: false
+  });
 }
 
 export async function atualizarFantasmaCompleto(turnoId: string, id: string, changes: any): Promise<void> {
-  await update(ref(getRealtimeDatabase(), `fantasmas_lembretes/${turnoId}/${id}`), changes);
+  const payload: Record<string, any> = {};
+  if (changes.tipo) payload.tipo = changes.tipo;
+  if (changes.pessoa !== undefined) payload.pessoa = changes.pessoa;
+  if (changes.descricao !== undefined) payload.descricao = changes.descricao;
+  if (changes.valorReferencia !== undefined) payload.valor_referencia = changes.valorReferencia;
+  if (changes.impactaPixRepasse !== undefined) payload.impacta_pix_repasse = changes.impactaPixRepasse;
+  if (changes.resolvido !== undefined) payload.resolvido = changes.resolvido;
+  if (changes.comprovado_pix !== undefined) payload.comprovado_pix = changes.comprovado_pix;
+
+  await update(ref(getRealtimeDatabase(), `fantasmas_lembretes/${turnoId}/${id}`), payload);
 }
 
 export async function removerFantasma(turnoId: string, id: string): Promise<void> {
   await set(ref(getRealtimeDatabase(), `fantasmas_lembretes/${turnoId}/${id}`), null);
 }
 
-// NOVO: Funções de Dívidas
 export async function adicionarDivida(turnoId: string, input: any): Promise<void> {
   const created = push(ref(getRealtimeDatabase(), `dividas_clientes/${turnoId}`));
   await set(created, { ...input, timestamp: Date.now(), resolvido: false });
@@ -242,7 +282,7 @@ export async function removerDivida(turnoId: string, id: string): Promise<void> 
 
 export async function atualizarStatusTurno(turnoId: string, status: "aberto" | "fechado"): Promise<void> {
   await update(ref(getRealtimeDatabase(), `turnos/${turnoId}`), {
-    status_turno: status,
+    status_turn: status,
     "metadados/atualizado_em": Date.now(),
   });
 }

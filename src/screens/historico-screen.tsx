@@ -1,4 +1,4 @@
-import { Pressable, Text, View, Alert } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { 
   Calendar, 
   Trash2, 
@@ -58,16 +58,7 @@ export function HistoricoScreen({ turnos, loading, onRefresh, onOpen, onExcluirD
               
               <View className="flex-row items-center gap-2">
                 <Pressable 
-                  onPress={() => {
-                    Alert.alert(
-                      "Apagar Registros",
-                      "Deseja realmente deletar todo o histórico deste dia? Esta ação não pode ser desfeita.",
-                      [
-                        { text: "Sair", style: "cancel" },
-                        { text: "Confirmar", style: "destructive", onPress: () => onExcluirDia(turno.id) }
-                      ]
-                    );
-                  }}
+                  onPress={() => onExcluirDia(turno.id)}
                   className="h-10 w-10 items-center justify-center rounded-[14px] bg-red-500/10 border border-red-500/20"
                 >
                   <Trash2 size={16} color="#f87171" />

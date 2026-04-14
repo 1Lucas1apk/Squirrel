@@ -4,17 +4,17 @@ import { calcularTotaisTurno } from "../features/fechamento/calculos";
 import {
   adicionarFantasma,
   adicionarTransacao,
-  adicionarDivida, // NOVO
-  alternarDivida, // NOVO
-  removerDivida, // NOVO
-  ouvirDividas, // NOVO
+  adicionarDivida,
+  alternarDivida,
+  removerDivida,
+  ouvirDividas,
   atualizarConferenciaTransacao,
   atualizarFantasmaCompleto,
   buscarTurnoPorId,
   buscarUltimoTurnoAberto,
   criarNovoTurno,
   editarTransacao,
-  atualizarStatusTurno, // ADICIONADO
+  atualizarStatusTurno,
   listarTurnosRecentes,
   ouvirFantasmas,
   ouvirTransacoes,
@@ -24,15 +24,17 @@ import {
   removerTurnoTotal,
   salvarAjusteSobra,
   salvarTotaisTurno,
+  salvarContagemCedulas,
+  atualizarIdentificacao
 } from "../services/repositories/caixa-repository";
-import { LembreteFantasma, Transacao, Turno, DividaCliente } from "../types/domain";
+import { LembreteFantasma, Transacao, Turno, DividaCliente, ContagemCedulas } from "../types/domain";
 import { getTodayReferenceDate } from "../utils/date";
 
 export function useCaixaSeguro() {
   const [turno, setTurno] = useState<Turno | null>(null);
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [fantasmas, setFantasmas] = useState<LembreteFantasma[]>([]);
-  const [dividas, setDividas] = useState<DividaCliente[]>([]); // NOVO
+  const [dividas, setDividas] = useState<DividaCliente[]>([]);
   const [historicoTurnos, setHistoricoTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,10 +43,16 @@ export function useCaixaSeguro() {
 
   useEffect(() => {
     if (!turno?.id) return;
-    const unsubTurno = ouvirTurno(turno.id, setTurno);
+    const unsubTurno = ouvirTurno(turno.id, (data) => {
+      if (!data) {
+        setTurno(null);
+        return;
+      }
+      setTurno(data);
+    });
     const unsubTransacoes = ouvirTransacoes(turno.id, setTransacoes);
     const unsubFantasmas = ouvirFantasmas(turno.id, setFantasmas);
-    const unsubDividas = ouvirDividas(turno.id, setDividas); // NOVO
+    const unsubDividas = ouvirDividas(turno.id, setDividas);
 
     return () => {
       unsubTurno();
@@ -94,10 +102,13 @@ export function useCaixaSeguro() {
   return {
     turno, transacoes, fantasmas, dividas, historicoTurnos, totais, loading, error,
     iniciarNovoDia, continuarDiaAnterior, carregarHistoricoTurnos, abrirTurnoPorId,
-    // NOVO: Ações de Turno
     fecharTurno: () => turno && atualizarStatusTurno(turno.id, "fechado"),
     reabrirTurno: () => turno && atualizarStatusTurno(turno.id, "aberto"),
-    excluirTurno: (id: string) => removerTurnoTotal(id),
+    excluirTurno: async (id: string) => {
+      await removerTurnoTotal(id);
+      if (turno?.id === id) setTurno(null);
+      carregarHistoricoTurnos();
+    },
     definirAjusteSobra: (v: number) => turno && salvarAjusteSobra(turno.id, v),
     criarTransacao: (i: any) => turno && adicionarTransacao(turno.id, i),
     excluirTransacao: (id: string) => turno && removerTransacao(turno.id, id),
@@ -107,9 +118,10 @@ export function useCaixaSeguro() {
     excluirFantasma: (id: string) => turno && removerFantasma(turno.id, id),
     alternarFantasmaResolvido: (f: LembreteFantasma) => turno && atualizarFantasmaCompleto(turno.id, f.id, { resolvido: !f.resolvido }),
     alternarFantasmaComprovado: (f: LembreteFantasma) => turno && atualizarFantasmaCompleto(turno.id, f.id, { comprovado_pix: !f.comprovadoPix }),
-    // NOVO: Ações de Dívidas
     criarDivida: (i: any) => turno && adicionarDivida(turno.id, i),
     excluirDivida: (id: string) => turno && removerDivida(turno.id, id),
     alternarDividaStatus: (d: DividaCliente) => turno && alternarDivida(turno.id, d.id, !d.resolvido),
+    salvarContagem: (c: ContagemCedulas) => turno && salvarContagemCedulas(turno.id, c),
+    salvarIDs: (c: string, o: string) => turno && atualizarIdentificacao(turno.id, c, o),
   };
 }

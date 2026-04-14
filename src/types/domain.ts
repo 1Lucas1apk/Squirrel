@@ -11,12 +11,11 @@ export type CategoriaTransacao =
 
 export type StatusConferencia = "pendente" | "confirmada" | "incorreto";
 
-// Tipos de Fantasmas simplificados e avançados
 export type TipoFantasma = 
-  | "pessoa"            // Geral (ex-Ricardo)
-  | "destroca_pix"      // Pegou espécie e mandou pix
-  | "emprestimo"        // Pegou emprestado para o caixa
-  | "outro";
+  | "pix_recebido_gaveta_saiu" 
+  | "dinheiro_emprestado"      
+  | "destroca_pix_por_nota"    
+  | "lembrete_geral";          
 
 export interface Transacao {
   id: string;
@@ -53,7 +52,6 @@ export interface DividaCliente {
   timestamp: number;
 }
 
-// Estrutura para conferência física de notas
 export interface ContagemCedulas {
   n100: number;
   n50: number;
@@ -70,12 +68,13 @@ export interface TotaisTurno {
   gavetaFisico: number;
   especieEnvelope: number;
   pixRepasse: number;
+  pixNoCaixa: number; // NOVO: Dinheiro que entrou no Pix do operador
 }
 
 export interface Turno {
   id: string;
-  caixaId?: string;      // ID do Caixa (ex: 2701)
-  operadorId?: string;   // ID do Operador (ex: 1306)
+  caixaId?: string;
+  operadorId?: string;
   dataReferencia: string;
   statusTurno: "aberto" | "fechado";
   ajusteManualSobra: number;
