@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useCaixaSeguro } from "../hooks/use-caixa-seguro";
 import { ChecklistScreen } from "./checklist-screen";
+import { FantasmasScreen } from "./fantasmas-screen";
 import { DevendoScreen } from "./devendo-screen";
 import { HistoricoScreen } from "./historico-screen";
 import { PainelScreen } from "./painel-screen";
