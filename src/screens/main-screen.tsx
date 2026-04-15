@@ -27,13 +27,23 @@ import {
   ShieldAlert,
   MoreHorizontal,
   Settings,
-  CalendarDays
+  CalendarDays,
+  LogOut,
+  Cloud,
+  CloudOff
 } from "lucide-react-native";
+import { getDatabase, ref, onValue } from "firebase/database";
+import { getFirebaseApp } from "../services/firebase/client";
+
+import { useAuth } from "../hooks/use-auth";
 
 type SectionKey = "painel" | "transacoes" | "checklist" | "fantasmas" | "historico";
 
 export function MainScreen() {
+  const { logout } = useAuth();
   const [section, setSection] = useState<SectionKey>("painel");
+  const [isDiscreto, setIsDiscreto] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
   const [modalFechamento, setModalFechamento] = useState(false);
   const [modalMais, setModalMais] = useState(false);
   const [modalConfig, setModalConfig] = useState(false);
@@ -50,6 +60,30 @@ export function MainScreen() {
   
   const caixa = useCaixaSeguro();
   const isFechado = caixa.turno?.statusTurno === "fechado";
+
+  // Monitor de Conexão Offline
+  useEffect(() => {
+    const db = getDatabase(getFirebaseApp());
+    const connectedRef = ref(db, ".info/connected");
+    const unsub = onValue(connectedRef, (snap) => {
+      setIsOnline(!!snap.val());
+    });
+    return () => unsub();
+  }, []);
+
+  const mainSections: { key: SectionKey; label: string; icon: any }[] = useMemo(() => {
+    const sections: { key: SectionKey; label: string; icon: any }[] = [
+      { key: "painel", label: "Painel", icon: LayoutDashboard },
+      { key: "transacoes", label: "Lançar", icon: PlusCircle },
+      { key: "checklist", label: "Check", icon: CheckSquare },
+    ];
+
+    if (!isDiscreto) {
+      sections.push({ key: "fantasmas", label: "Notas", icon: Ghost });
+    }
+
+    return sections;
+  }, [isDiscreto]);
 
   // Sistema de Notificação de Pendências ao Abrir
   useEffect(() => {
@@ -131,7 +165,13 @@ export function MainScreen() {
       let extra = "";
       if (item.trocoSobra > 0) extra = ` *(+ ${toBrl(item.trocoSobra)} Sobra)*`;
       if (item.trocoSobra < 0) extra = ` *(- ${toBrl(Math.abs(item.trocoSobra))} Quebra)*`;
-      return `  ${time} • ${cat} | ${toBrl(item.valorSistema)} - ${item.descricao || (item.codigoContrato ? 'Contrato' : 'Sem desc.')}${extra}`;
+      
+      let auditoria = "";
+      if (item.statusConferencia === "incorreto") {
+        auditoria = `\n      ⚠️ ERRO: Pago ${toBrl(item.valorRecebidoFisico)} (Obs: ${item.justificativaTexto || 'Sem nota'})`;
+      }
+
+      return `  ${time} • ${cat} | ${toBrl(item.valorSistema)} - ${item.descricao || (item.codigoContrato ? 'Contrato' : 'Sem desc.')}${extra}${auditoria}`;
     };
 
     const listaEntradas = entradas.map(formatItem).join('\n');
@@ -199,13 +239,6 @@ export function MainScreen() {
     );
   }
 
-  const mainSections: { key: SectionKey; label: string; icon: any }[] = [
-    { key: "painel", label: "Painel", icon: LayoutDashboard },
-    { key: "transacoes", label: "Lançar", icon: PlusCircle },
-    { key: "checklist", label: "Check", icon: CheckSquare },
-    { key: "fantasmas", label: "Notas", icon: Ghost },
-  ];
-
   return (
     <SafeAreaView style={styles.container}>
       <Modal visible={customAlert.visible} transparent animationType="fade">
@@ -232,6 +265,9 @@ export function MainScreen() {
             <View className="gap-3">
               <Pressable onPress={() => { setModalMais(false); setModalConfig(true); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
                 <Settings size={20} color="#71717a" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">ID do Caixa/Operador</Text>
+              </Pressable>
+              <Pressable onPress={() => { setModalMais(false); logout(); }} className="flex-row items-center gap-4 bg-red-500/10 p-6 rounded-[24px] border border-red-500/20">
+                <LogOut size={20} color="#f87171" /><Text className="text-red-400 font-black uppercase tracking-widest text-xs">Sair da Conta</Text>
               </Pressable>
             </View>
           </View>
@@ -268,9 +304,14 @@ export function MainScreen() {
 
       <View className="border-b border-zinc-900 bg-ink-950 px-4 pb-4 pt-2">
         <View className="mx-auto flex w-full max-w-[460px] flex-row items-center justify-between">
-          <View>
-            <Pressable onLongPress={() => alert("SQUIL AUDIT: "+caixa.transacoes.length+" itens ativos.")} delayLongPress={5000}><Text className="text-lg font-black text-zinc-100 uppercase tracking-tighter">CAIXA</Text></Pressable>
-            <Text className="text-[10px] font-black uppercase tracking-[2px] text-zinc-600">{caixa.turno.dataReferencia} • {caixaId || 'S/C'}</Text>
+          <View className="flex-row items-center gap-3">
+            <Pressable onPress={() => setIsDiscreto(!isDiscreto)}>
+              <Text className={`text-lg font-black uppercase tracking-tighter ${isDiscreto ? 'text-zinc-700' : 'text-zinc-100'}`}>CAIXA</Text>
+              <Text className="text-[10px] font-black uppercase tracking-[2px] text-zinc-600">{caixa.turno.dataReferencia} • {caixaId || 'S/C'}</Text>
+            </Pressable>
+            <View className={`h-6 w-6 items-center justify-center rounded-full ${isOnline ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+              {isOnline ? <Cloud size={12} color="#34d399" /> : <CloudOff size={12} color="#f87171" />}
+            </View>
           </View>
           <View className="flex-row gap-2">
             <Pressable className="h-10 w-10 items-center justify-center rounded-2xl border border-zinc-800 bg-ink-900 active:bg-zinc-800" onPress={gerarRelatorio}><Share2 size={18} color="#a78bfa" /></Pressable>
@@ -285,23 +326,38 @@ export function MainScreen() {
         </View>
       </View>
 
-      <ScrollView className="flex-1" contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="always">
-        <View className="mx-auto w-full max-w-[460px]">
-          {section === "painel" && (
+      {section === "painel" ? (
+        <ScrollView className="flex-1" contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          <View className="mx-auto w-full max-w-[460px]">
             <PainelScreen 
               totais={caixa.totais} 
               fantasmas={caixa.fantasmas || []} 
               ajusteManualSobra={caixa.turno.ajusteManualSobra} 
               onAjusteSobra={caixa.definirAjusteSobra}
               isFechado={isFechado} 
+              isDiscreto={isDiscreto}
             />
-          )}
-          {section === "transacoes" && <TransacoesScreen transacoes={caixa.transacoes} onAdicionar={caixa.criarTransacao} onExcluir={(id) => mostrarAlerta("EXCLUIR", "Apagar?", () => caixa.excluirTransacao(id), true)} onEditar={caixa.editarLançamento} isFechado={isFechado} />}
-          {section === "checklist" && <ChecklistScreen transacoes={caixa.transacoes} onToggle={caixa.alternarConferencia} isFechado={isFechado} />}
-          {section === "fantasmas" && <FantasmasScreen transacoes={caixa.transacoes} fantasmas={caixa.fantasmas || []} onCriar={caixa.criarFantasma} onEditar={caixa.editarFantasma} onToggleResolvido={caixa.alternarFantasmaResolvido} onToggleComprovado={caixa.alternarFantasmaComprovado} onExcluir={(id) => mostrarAlerta("EXCLUIR", "Remover?", () => caixa.excluirFantasma(id), true)} isFechado={isFechado} />}
-          {section === "historico" && <HistoricoScreen turnos={caixa.historicoTurnos} loading={caixa.loading} onRefresh={caixa.carregarHistoricoTurnos} onOpen={(turnoId) => void caixa.abrirTurnoPorId(turnoId)} onExcluirDia={(id) => mostrarAlerta("APAGAR DIA", "Deseja deletar?", () => caixa.excluirTurno(id), true)} />}
+          </View>
+        </ScrollView>
+      ) : (
+        <View className="flex-1 px-4 pt-6">
+          <View className="mx-auto w-full max-w-[460px] flex-1">
+            {section === "transacoes" && <TransacoesScreen transacoes={caixa.transacoes} onAdicionar={caixa.criarTransacao} onExcluir={(id) => mostrarAlerta("EXCLUIR", "Apagar?", () => caixa.excluirTransacao(id), true)} onEditar={caixa.editarLançamento} isFechado={isFechado} />}
+            {section === "checklist" && (
+              <ChecklistScreen 
+                transacoes={caixa.transacoes} 
+                fantasmas={caixa.fantasmas || []}
+                onToggle={caixa.alternarConferencia} 
+                onExcluir={(id) => mostrarAlerta("EXCLUIR", "Apagar?", () => caixa.excluirTransacao(id), true)} 
+                onReportarErro={caixa.reportarErroTransacao}
+                isFechado={isFechado} 
+              />
+            )}
+            {section === "fantasmas" && <FantasmasScreen transacoes={caixa.transacoes} fantasmas={caixa.fantasmas || []} onCriar={caixa.criarFantasma} onEditar={caixa.editarFantasma} onToggleResolvido={caixa.alternarFantasmaResolvido} onToggleComprovado={caixa.alternarFantasmaComprovado} onExcluir={(id) => mostrarAlerta("EXCLUIR", "Remover?", () => caixa.excluirFantasma(id), true)} isFechado={isFechado} />}
+            {section === "historico" && <HistoricoScreen turnos={caixa.historicoTurnos} loading={caixa.loading} onRefresh={caixa.carregarHistoricoTurnos} onOpen={(turnoId) => void caixa.abrirTurnoPorId(turnoId)} onExcluirDia={(id) => mostrarAlerta("APAGAR DIA", "Deseja deletar?", () => caixa.excluirTurno(id), true)} onToggleRepasse={(id, state) => caixa.alternarRepasse(id, state)} />}
+          </View>
         </View>
-      </ScrollView>
+      )}
 
       <View style={styles.navContainer} pointerEvents="box-none">
         <View style={styles.navInner}>
@@ -315,7 +371,7 @@ export function MainScreen() {
                 onPress={() => setSection(s.key)}
                 hitSlop={10}
               >
-                <Icon size={16} color={active ? "#09090b" : "#71717a"} strokeWidth={active ? 3 : 2} />
+                <Icon size={18} color={active ? "#09090b" : "#71717a"} strokeWidth={active ? 3 : 2} />
                 {active && <Text style={styles.navLabel}>{s.label}</Text>}
               </Pressable>
             );
@@ -330,8 +386,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#0a0a0a" },
   scrollContent: { paddingHorizontal: 16, paddingTop: 24, paddingBottom: 140 },
   navContainer: { position: 'absolute', bottom: Platform.OS === 'android' ? 24 : 34, left: 0, right: 0, alignItems: 'center', paddingHorizontal: 8, zIndex: 999 },
-  navInner: { flexDirection: 'row', gap: 2, borderRadius: 32, borderWidth: 1, borderColor: '#27272a', backgroundColor: '#18181b', padding: 4, elevation: 10 },
-  navButton: { flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 24, paddingHorizontal: 10, paddingVertical: 10 },
+  navInner: { flexDirection: 'row', gap: 4, borderRadius: 32, borderWidth: 1, borderColor: '#27272a', backgroundColor: '#18181b', padding: 6, elevation: 10 },
+  navButton: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 24, paddingHorizontal: 14, paddingVertical: 12 },
   navButtonActive: { backgroundColor: '#f4f4f5' },
-  navLabel: { fontSize: 8, fontWeight: '900', color: '#09090b', textTransform: 'uppercase' }
+  navLabel: { fontSize: 10, fontWeight: '900', color: '#09090b', textTransform: 'uppercase', letterSpacing: 0.5 }
 });

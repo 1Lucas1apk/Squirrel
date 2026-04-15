@@ -25,8 +25,9 @@ import {
   salvarAjusteSobra,
   salvarTotaisTurno,
   salvarContagemCedulas,
-  atualizarIdentificacao
-} from "../services/repositories/caixa-repository";
+  atualizarIdentificacao,
+  atualizarStatusRepasse
+  } from "../services/repositories/caixa-repository";
 import { LembreteFantasma, Transacao, Turno, DividaCliente, ContagemCedulas } from "../types/domain";
 import { getTodayReferenceDate } from "../utils/date";
 
@@ -34,7 +35,6 @@ export function useCaixaSeguro() {
   const [turno, setTurno] = useState<Turno | null>(null);
   const [transacoes, setTransacoes] = useState<Transacao[]>([]);
   const [fantasmas, setFantasmas] = useState<LembreteFantasma[]>([]);
-  const [dividas, setDividas] = useState<DividaCliente[]>([]);
   const [historicoTurnos, setHistoricoTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,13 +52,11 @@ export function useCaixaSeguro() {
     });
     const unsubTransacoes = ouvirTransacoes(turno.id, setTransacoes);
     const unsubFantasmas = ouvirFantasmas(turno.id, setFantasmas);
-    const unsubDividas = ouvirDividas(turno.id, setDividas);
 
     return () => {
       unsubTurno();
       unsubTransacoes();
       unsubFantasmas();
-      unsubDividas();
     };
   }, [turno?.id]);
 
@@ -100,7 +98,7 @@ export function useCaixaSeguro() {
   }
 
   return {
-    turno, transacoes, fantasmas, dividas, historicoTurnos, totais, loading, error,
+    turno, transacoes, fantasmas, historicoTurnos, totais, loading, error,
     iniciarNovoDia, continuarDiaAnterior, carregarHistoricoTurnos, abrirTurnoPorId,
     fecharTurno: () => turno && atualizarStatusTurno(turno.id, "fechado"),
     reabrirTurno: () => turno && atualizarStatusTurno(turno.id, "aberto"),
@@ -114,15 +112,28 @@ export function useCaixaSeguro() {
     excluirTransacao: (id: string) => turno && removerTransacao(turno.id, id),
     editarLançamento: (id: string, i: any) => turno && editarTransacao(turno.id, id, i),
     alternarConferencia: (t: Transacao) => turno && atualizarConferenciaTransacao(turno.id, t.id, t.statusConferencia === "pendente" ? "confirmada" : "pendente"),
+    reportarErroTransacao: (id: string, valorReal: number, justificativa: string) => {
+      if (!turno) return;
+      const t = transacoes.find(x => x.id === id);
+      if (!t) return;
+      return editarTransacao(turno.id, id, { 
+        ...t,
+        valorRecebidoFisico: valorReal,
+        trocoSobra: valorReal - t.valorSistema,
+        statusConferencia: "incorreto",
+        justificativaTexto: justificativa
+      });
+    },
     criarFantasma: (i: any) => turno && adicionarFantasma(turno.id, i),
     editarFantasma: (id: string, i: any) => turno && atualizarFantasmaCompleto(turno.id, id, i),
     excluirFantasma: (id: string) => turno && removerFantasma(turno.id, id),
     alternarFantasmaResolvido: (f: LembreteFantasma) => turno && atualizarFantasmaCompleto(turno.id, f.id, { resolvido: !f.resolvido }),
     alternarFantasmaComprovado: (f: LembreteFantasma) => turno && atualizarFantasmaCompleto(turno.id, f.id, { comprovado_pix: !f.comprovadoPix }),
-    criarDivida: (i: any) => turno && adicionarDivida(turno.id, i),
-    excluirDivida: (id: string) => turno && removerDivida(turno.id, id),
-    alternarDividaStatus: (d: DividaCliente) => turno && alternarDivida(turno.id, d.id, !d.resolvido),
     salvarContagem: (c: ContagemCedulas) => turno && salvarContagemCedulas(turno.id, c),
     salvarIDs: (c: string, o: string) => turno && atualizarIdentificacao(turno.id, c, o),
+    alternarRepasse: async (id: string, repassado: boolean) => {
+      await atualizarStatusRepasse(id, repassado);
+      carregarHistoricoTurnos(); 
+    },
   };
 }

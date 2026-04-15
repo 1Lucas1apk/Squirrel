@@ -4,7 +4,7 @@ import { Text, View } from "react-native";
 interface SaldoCardProps {
   label: string;
   value: string;
-  tone?: "default" | "purple" | "blue" | "yellow" | "green";
+  tone?: "default" | "purple" | "blue" | "yellow" | "green" | "red";
   icon?: ReactNode;
 }
 
@@ -14,6 +14,7 @@ const toneClass: Record<NonNullable<SaldoCardProps["tone"]>, string> = {
   blue: "border-blue-600/20 bg-blue-500/5 shadow-blue-500/10",
   yellow: "border-yellow-500/20 bg-yellow-400/5 shadow-yellow-500/10",
   green: "border-emerald-600/20 bg-emerald-500/5 shadow-emerald-500/10",
+  red: "border-red-600/20 bg-red-500/5 shadow-red-500/10",
 };
 
 const toneTextClass: Record<NonNullable<SaldoCardProps["tone"]>, string> = {
@@ -22,6 +23,7 @@ const toneTextClass: Record<NonNullable<SaldoCardProps["tone"]>, string> = {
   blue: "text-blue-300",
   yellow: "text-yellow-200",
   green: "text-emerald-300",
+  red: "text-red-300",
 };
 
 export function SaldoCard({ label, value, tone = "default", icon }: SaldoCardProps) {

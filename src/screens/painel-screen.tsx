@@ -21,6 +21,7 @@ interface PainelScreenProps {
   ajusteManualSobra: number;
   onAjusteSobra: (value: number) => void;
   isFechado?: boolean;
+  isDiscreto?: boolean;
 }
 
 export function PainelScreen({
@@ -28,7 +29,8 @@ export function PainelScreen({
   fantasmas = [],
   ajusteManualSobra,
   onAjusteSobra,
-  isFechado
+  isFechado,
+  isDiscreto
 }: PainelScreenProps) {
   
   // Filtramos apenas o que justifica os números atuais do painel
@@ -40,25 +42,43 @@ export function PainelScreen({
 
   return (
     <View className="gap-8 pb-32">
+      {/* ALERTA DE EXCESSO DE ESPÉCIE */}
+      {totais.gavetaFisico > 10000 && (
+        <View className="bg-orange-500/10 border border-orange-500/20 p-5 rounded-3xl flex-row gap-3 items-center">
+          <AlertCircle size={24} color="#f97316" />
+          <View className="flex-1">
+            <Text className="text-[10px] font-black uppercase text-orange-400 tracking-widest mb-1">
+              Alto Volume de Dinheiro
+            </Text>
+            <Text className="text-orange-500/80 text-xs font-bold leading-4">
+              A gaveta possui mais de R$ 10.000,00 em espécie. Fique atento ao limite de segurança.
+            </Text>
+          </View>
+        </View>
+      )}
+
       {/* 1. RESUMO DOS TOTAIS (MATEMÁTICA ALGORÍTMICA) */}
-      <PainelPrincipal totais={totais} pendenciasFantasma={pendencias.length} />
+      <PainelPrincipal totais={totais} pendenciasFantasma={pendencias.length} isDiscreto={isDiscreto} />
 
       {/* 2. AJUSTE DE SOBRA */}
-      <View className={`rounded-[40px] border p-6 shadow-2xl ${isFechado ? 'border-zinc-900 bg-zinc-900/30' : 'border-zinc-800 bg-ink-900'}`}>
-        <View className="flex-row items-center gap-3 mb-4 ml-1">
-          <SlidersHorizontal size={14} color="#71717a" />
-          <Text className="text-[11px] font-black uppercase tracking-[3px] text-zinc-500">Ajuste de Quebra</Text>
+      {!isDiscreto && (
+        <View className={`rounded-[40px] border p-6 shadow-2xl ${isFechado ? 'border-zinc-900 bg-zinc-900/30' : 'border-zinc-800 bg-ink-900'}`}>
+          <View className="flex-row items-center gap-3 mb-4 ml-1">
+            <SlidersHorizontal size={14} color="#71717a" />
+            <Text className="text-[11px] font-black uppercase tracking-[3px] text-zinc-500">Ajuste de Quebra</Text>
+          </View>
+          <MoneyInput
+            editable={!isFechado}
+            className={`rounded-[24px] border px-6 py-5 text-3xl font-black shadow-inner ${isFechado ? 'border-zinc-800 bg-zinc-900 text-zinc-600' : 'border-zinc-700 bg-ink-800 text-zinc-100'}`}
+            value={ajusteManualSobra}
+            onChangeValue={onAjusteSobra}
+          />
         </View>
-        <MoneyInput
-          editable={!isFechado}
-          className={`rounded-[24px] border px-6 py-5 text-3xl font-black shadow-inner ${isFechado ? 'border-zinc-800 bg-zinc-900 text-zinc-600' : 'border-zinc-700 bg-ink-800 text-zinc-100'}`}
-          value={ajusteManualSobra}
-          onChangeValue={onAjusteSobra}
-        />
-      </View>
+      )}
 
       {/* 3. INFORMATIVO DE MOVIMENTAÇÃO (O "PORQUÊ" DOS NÚMEROS) */}
-      <View className="rounded-[40px] border border-zinc-800 bg-ink-950 p-8">
+      {!isDiscreto && (
+        <View className="rounded-[40px] border border-zinc-800 bg-ink-950 p-8">
         <View className="flex-row items-center gap-3 mb-8">
           <Info size={18} color="#a78bfa" />
           <Text className="text-xl font-black text-white uppercase tracking-widest">Justificativa de Saldo</Text>
@@ -138,6 +158,7 @@ export function PainelScreen({
           </Text>
         </View>
       </View>
+      )}
     </View>
   );
 }

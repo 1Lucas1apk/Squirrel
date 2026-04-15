@@ -34,62 +34,59 @@ export function calcularTotaisTurno(
   ajusteManualSobra = 0
 ): TotaisTurno {
   const sistema = calcularTotalSistema(transacoes);
-  const trocoSobraVendas = transacoes.reduce((acc, item) => acc + clampMoney(item.trocoSobra), 0);
   
-  let pixNoCaixa = 0;      
-  let pixDiretoLoja = 0;
+  // 1. GAVETA FÍSICA REAL
+  // Soma o que foi recebido de fato (considerando sobras/erros) e abate as sangrias/estornos
+  const realEntradaFisica = transacoes.reduce((acc, item) => {
+    if (item.categoria === "sangria" || item.categoria === "cancelamento") {
+      return acc - clampMoney(item.valorSistema); 
+    }
+    return acc + clampMoney(item.valorRecebidoFisico);
+  }, 0);
+
+  let pixNoCaixa = 0;      // Pix no celular do Operador
+  let pixDiretoLoja = 0;   // Pix informal que foi p/ Gerente/Loja
   let saldoPapelAjuste = 0; 
   let emprestimosFisicos = 0; 
 
   lembretes.forEach(item => {
     const v = clampMoney(item.valorReferencia);
-    const isDiretoLoja = item.destinoPix && item.destinoPix !== "Meu Pix" && item.destinoPix !== "Operador";
+    const isMeuPix = !item.destinoPix || item.destinoPix === "Meu Pix" || item.destinoPix === "Operador";
 
     if (item.tipo === "pix_recebido_gaveta_saiu") {
-      if (isDiretoLoja) {
-        pixDiretoLoja += v;
-      } else {
-        pixNoCaixa += v;
-      }
-      saldoPapelAjuste -= v;
+      if (isMeuPix) pixNoCaixa += v; else pixDiretoLoja += v;
+      saldoPapelAjuste -= v; // Saiu nota da gaveta p/ entrar Pix
     } else if (item.tipo === "destroca_pix_por_nota") {
-      if (isDiretoLoja) {
-        pixDiretoLoja -= v;
-      } else {
-        pixNoCaixa -= v;
-      }
-      saldoPapelAjuste += v;
+      if (isMeuPix) pixNoCaixa -= v; else pixDiretoLoja -= v;
+      saldoPapelAjuste += v; // Entrou nota na gaveta p/ "limpar" Pix
     } else if (item.tipo === "dinheiro_emprestado" && !item.resolvido) {
       emprestimosFisicos += v;
     }
   });
 
-  // 1. DEFINIÇÃO DE VARIÁVEIS (Fg = Dinheiro Físico na Gaveta)
-  // Fg = (Ts + TrocoVendas + AjusteManual) + SaldoPapelAjuste + Emprestimos
-  const gavetaFisico = roundMoney(sistema + trocoSobraVendas + ajusteManualSobra + saldoPapelAjuste + emprestimosFisicos);
+  // Dinheiro que existe fisicamente na gaveta agora
+  const gavetaFisico = roundMoney(realEntradaFisica + ajusteManualSobra + saldoPapelAjuste + emprestimosFisicos);
 
-  // O sistema real que o operador precisa pagar em malote (pois a loja já recebeu pixDiretoLoja na conta dela)
-  const sistemaPendente = Math.max(0, roundMoney(sistema - pixDiretoLoja));
+  // 2. LÓGICA DO MALOTE (Target = 100% do Sistema)
+  // Dinheiro disponível para o saco (tirando o que é de terceiros/empréstimo)
+  const disponivelParaMalote = Math.max(0, roundMoney(gavetaFisico - emprestimosFisicos));
 
-  // 2. LÓGICA MATEMÁTICA CONDICIONAL (Obrigatória)
   let especieEnvelope = 0;
   let pixRepasse = 0;
 
-  // Usa o dinheiro disponível, exceto o que é empréstimo (que precisa ser devolvido)
-  const disponivelParaMalote = Math.max(0, roundMoney(gavetaFisico - emprestimosFisicos));
-
-  if (disponivelParaMalote >= sistemaPendente) {
-    // CONDIÇÃO A: Gaveta cobre o sistema integralmente
-    especieEnvelope = sistemaPendente;
+  if (disponivelParaMalote >= sistema) {
+    // Caso A: Gaveta tem tudo ou mais que o sistema. O saco vai exato com o valor do sistema.
+    especieEnvelope = sistema;
     pixRepasse = 0;
   } else {
-    // CONDIÇÃO B: Gaveta é insuficiente, usa Pix para completar
+    // Caso B: Falta papel na gaveta (devido às trocas). 
+    // O saco leva o que tem de papel e o Pix Repasse é o que você transfere no Bradesco p/ completar.
     especieEnvelope = disponivelParaMalote;
-    pixRepasse = roundMoney(sistemaPendente - disponivelParaMalote);
+    pixRepasse = roundMoney(sistema - disponivelParaMalote);
   }
 
-  // 3. SOBRA (ACUMULADA): Tudo que excede o pagamento do sistema (incluindo pixDiretoLoja que quitou o sistema)
-  // Sobra = Fg + PixNoCaixa + PixDiretoLoja - Ts - Emprestimos
+  // 3. SOBRA REAL ACUMULADA
+  // É tudo o que você tem (Gaveta + Pix no Celular + Pix com Gerente) menos o que deve à Loja (Sistema) e Empréstimos
   const sobraAcumulada = roundMoney((gavetaFisico - emprestimosFisicos) + pixNoCaixa + pixDiretoLoja - sistema);
 
   return {

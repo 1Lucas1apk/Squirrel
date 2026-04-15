@@ -86,4 +86,5 @@ export interface Turno {
   totais: TotaisTurno;
   criadoEm: number;
   atualizadoEm: number;
+  repassado?: boolean;
 }
