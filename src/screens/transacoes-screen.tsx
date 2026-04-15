@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Pressable, Text, TextInput, View, Alert } from "react-native";
+import { Pressable, Text, TextInput, View, Alert, ScrollView } from "react-native";
 import { 
   Trash2, 
   Edit3, 
@@ -11,10 +11,11 @@ import {
   ArrowUpCircle, 
   XCircle,
   X,
-  Check,
   Calculator,
   ChevronDown,
-  Hash
+  Plus,
+  Layers,
+  Link
 } from "lucide-react-native";
 import { MoneyInput } from "../components/common/money-input";
 import { CategoriaTransacao, NaturezaOperacao, Transacao } from "../types/domain";
@@ -31,6 +32,7 @@ interface TransacoesScreenProps {
     valorRecebidoFisico: number;
     trocoSobra: number;
     justificativaTexto?: string | null;
+    transacaoVinculadaId?: string;
   }) => Promise<void>;
   onExcluir: (id: string) => Promise<void>;
   onEditar: (id: string, input: any) => Promise<void>;
@@ -51,16 +53,22 @@ function naturezaPorCategoria(categoria: CategoriaTransacao): NaturezaOperacao {
   return categoria === "entrada_prestacao" ? "entrada" : "pagamento";
 }
 
-function categoriaLabel(value: CategoriaTransacao) {
-  return categorias.find((item) => item.value === value)?.label ?? value;
-}
-
 export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar, isFechado }: TransacoesScreenProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [categoria, setCategoria] = useState<CategoriaTransacao>("dinheiro");
+  
+  // Campos simples
+  const [valorSistema, setValorSistema] = useState(0);
   const [descricao, setDescricao] = useState("");
   const [codigoContrato, setCodigoContrato] = useState("");
-  const [valorSistema, setValorSistema] = useState(0);
+
+  // Vínculo
+  const [transacaoVinculadaId, setTransacaoVinculadaId] = useState("");
+  const [mostrarTransacoes, setMostrarTransacoes] = useState(false);
+
+  // Modo Avançado (Múltiplos pagamentos)
+  const [isModoAvançado, setIsModoAvançado] = useState(false);
+  const [pagamentos, setPagamentos] = useState([{ id: Math.random().toString(), valor: 0, descricao: '', contrato: '' }]);
   
   const [isCalculadora, setIsCalculadora] = useState(false);
   const [valorCliente, setValorCliente] = useState(0);
@@ -73,8 +81,11 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar,
   const [showAll, setShowAll] = useState(false);
 
   const isSaida = categoria === "sangria" || categoria === "cancelamento";
+  
+  const totalSistemaAtual = isModoAvançado ? pagamentos.reduce((acc, p) => acc + p.valor, 0) : valorSistema;
   const valorNaGaveta = isCalculadora ? (valorCliente - valorTrocoEntregue) : valorEntregueSimples;
-  const trocoSobra = semTroco && !isSaida ? valorNaGaveta - valorSistema : 0;
+  const trocoSobra = semTroco && !isSaida ? valorNaGaveta - totalSistemaAtual : 0;
+  const trocoIdeal = Math.max(0, valorCliente - totalSistemaAtual);
 
   const listagem = useMemo(() => showAll ? transacoes : transacoes.slice(0, 10), [transacoes, showAll]);
 
@@ -92,61 +103,131 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar,
   function startEdit(item: Transacao) {
     setEditingId(item.id);
     setCategoria(item.categoria);
+    setValorSistema(item.valorSistema);
     setDescricao(item.descricao);
     setCodigoContrato(item.codigoContrato || "");
-    setValorSistema(item.valorSistema);
+    setTransacaoVinculadaId(item.transacaoVinculadaId || "");
+    setIsModoAvançado(false);
     setValorEntregueSimples(item.valorRecebidoFisico);
     setIsCalculadora(false);
     setJustificativa(item.justificativaTexto || "");
     setSemTroco(item.trocoSobra !== 0);
+    setMostrarTransacoes(false);
   }
 
   function cancelEdit() {
     setEditingId(null);
     setCategoria("dinheiro");
+    setValorSistema(0);
     setDescricao("");
     setCodigoContrato("");
-    setValorSistema(0);
+    setTransacaoVinculadaId("");
+    setPagamentos([{ id: Math.random().toString(), valor: 0, descricao: '', contrato: '' }]);
     setValorEntregueSimples(0);
     setValorCliente(0);
     setValorTrocoEntregue(0);
     setJustificativa("");
+    setMostrarTransacoes(false);
   }
 
+  const addPagamento = () => {
+    setPagamentos([...pagamentos, { id: Math.random().toString(), valor: 0, descricao: '', contrato: '' }]);
+  };
+
+  const removePagamento = (id: string) => {
+    setPagamentos(pagamentos.filter(p => p.id !== id));
+  };
+
+  const updatePagamento = (id: string, field: keyof typeof pagamentos[0], value: any) => {
+    setPagamentos(pagamentos.map(p => p.id === id ? { ...p, [field]: value } : p));
+  };
+
   async function onSalvar() {
-    if (valorSistema <= 0) {
-      setErro("Informe o valor.");
-      return;
-    }
-
-    const payload = {
-      naturezaOperacao: naturezaPorCategoria(categoria),
-      categoria,
-      descricao: descricao.trim(),
-      codigoContrato: codigoContrato.trim() || undefined,
-      valorSistema: Math.abs(valorSistema),
-      valorRecebidoFisico: !isSaida ? Math.abs(valorNaGaveta) : 0,
-      trocoSobra: !isSaida ? trocoSobra : 0,
-      justificativaTexto: categoria === "cancelamento" ? justificativa.trim() : null,
-    };
-
-    try {
-      if (editingId) {
-        await onEditar(editingId, payload);
-        setEditingId(null);
-      } else {
-        await onAdicionar(payload);
+    if (isModoAvançado) {
+      const validPagamentos = pagamentos.filter(p => p.valor > 0);
+      if (validPagamentos.length === 0) {
+        setErro("Informe pelo menos um valor válido.");
+        return;
       }
-      setDescricao("");
-      setCodigoContrato("");
-      setValorSistema(0);
-      setValorEntregueSimples(0);
-      setValorCliente(0);
-      setValorTrocoEntregue(0);
-      setJustificativa("");
-      setErro(null);
-    } catch (e) {
-      setErro("Erro ao salvar.");
+
+      try {
+        let sobraRestante = trocoSobra;
+
+        for (let i = 0; i < validPagamentos.length; i++) {
+          const p = validPagamentos[i];
+          let sobraAplicada = 0;
+          let gavetaAplicada = 0;
+
+          if (i === 0) {
+             sobraAplicada = sobraRestante;
+             gavetaAplicada = !isSaida ? p.valor + sobraRestante : 0;
+          } else {
+             sobraAplicada = 0;
+             gavetaAplicada = !isSaida ? p.valor : 0;
+          }
+
+          await onAdicionar({
+            naturezaOperacao: naturezaPorCategoria(categoria),
+            categoria,
+            descricao: p.descricao.trim() || (validPagamentos.length > 1 ? `Pagamento Múltiplo ${i+1}` : ""),
+            codigoContrato: p.contrato.trim() || undefined,
+            valorSistema: Math.abs(p.valor),
+            valorRecebidoFisico: gavetaAplicada,
+            trocoSobra: sobraAplicada,
+            justificativaTexto: null,
+            transacaoVinculadaId: transacaoVinculadaId || undefined,
+          });
+        }
+        // Reset
+        setPagamentos([{ id: Math.random().toString(), valor: 0, descricao: '', contrato: '' }]);
+        setValorEntregueSimples(0);
+        setValorCliente(0);
+        setValorTrocoEntregue(0);
+        setJustificativa("");
+        setTransacaoVinculadaId("");
+        setMostrarTransacoes(false);
+        setErro(null);
+      } catch (e) {
+        setErro("Erro ao salvar.");
+      }
+    } else {
+      if (valorSistema <= 0) {
+        setErro("Informe o valor.");
+        return;
+      }
+
+      const payload = {
+        naturezaOperacao: naturezaPorCategoria(categoria),
+        categoria,
+        descricao: descricao.trim(),
+        codigoContrato: codigoContrato.trim() || undefined,
+        valorSistema: Math.abs(valorSistema),
+        valorRecebidoFisico: !isSaida ? Math.abs(valorNaGaveta) : 0,
+        trocoSobra: !isSaida ? trocoSobra : 0,
+        justificativaTexto: categoria === "cancelamento" ? justificativa.trim() : null,
+        transacaoVinculadaId: transacaoVinculadaId || undefined,
+      };
+
+      try {
+        if (editingId) {
+          await onEditar(editingId, payload);
+          setEditingId(null);
+        } else {
+          await onAdicionar(payload);
+        }
+        setDescricao("");
+        setCodigoContrato("");
+        setValorSistema(0);
+        setValorEntregueSimples(0);
+        setValorCliente(0);
+        setValorTrocoEntregue(0);
+        setJustificativa("");
+        setTransacaoVinculadaId("");
+        setMostrarTransacoes(false);
+        setErro(null);
+      } catch (e) {
+        setErro("Erro ao salvar.");
+      }
     }
   }
 
@@ -158,15 +239,42 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar,
             <Text className="text-[11px] font-black uppercase tracking-[3px] text-zinc-500">
               {editingId ? "Editando Lançamento" : "Novo Lançamento"}
             </Text>
-            <Pressable 
-              onPress={() => setIsCalculadora(!isCalculadora)}
-              className={`flex-row items-center gap-2 px-3 py-1.5 rounded-full border ${isCalculadora ? 'bg-purple-500/10 border-purple-500/30' : 'bg-zinc-800 border-zinc-700'}`}
-            >
-              <Calculator size={12} color={isCalculadora ? '#a78bfa' : '#71717a'} />
-              <Text className={`text-[9px] font-black uppercase ${isCalculadora ? 'text-purple-400' : 'text-zinc-500'}`}>
-                {isCalculadora ? 'Modo Calculadora' : 'Modo Simples'}
-              </Text>
-            </Pressable>
+            
+            {!editingId && (
+              <View className="flex-row gap-2">
+                <Pressable 
+                  onPress={() => setIsModoAvançado(!isModoAvançado)}
+                  className={`flex-row items-center gap-2 px-3 py-1.5 rounded-full border ${isModoAvançado ? 'bg-blue-500/10 border-blue-500/30' : 'bg-zinc-800 border-zinc-700'}`}
+                >
+                  <Layers size={12} color={isModoAvançado ? '#60a5fa' : '#71717a'} />
+                  <Text className={`text-[9px] font-black uppercase tracking-[1px] ${isModoAvançado ? 'text-blue-400' : 'text-zinc-500'}`}>
+                    Modo Avançado
+                  </Text>
+                </Pressable>
+
+                <Pressable 
+                  onPress={() => setIsCalculadora(!isCalculadora)}
+                  className={`flex-row items-center gap-2 px-3 py-1.5 rounded-full border ${isCalculadora ? 'bg-purple-500/10 border-purple-500/30' : 'bg-zinc-800 border-zinc-700'}`}
+                >
+                  <Calculator size={12} color={isCalculadora ? '#a78bfa' : '#71717a'} />
+                  <Text className={`text-[9px] font-black uppercase tracking-[1px] ${isCalculadora ? 'text-purple-400' : 'text-zinc-500'}`}>
+                    Calculadora
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+            
+            {editingId && (
+              <Pressable 
+                onPress={() => setIsCalculadora(!isCalculadora)}
+                className={`flex-row items-center gap-2 px-3 py-1.5 rounded-full border ${isCalculadora ? 'bg-purple-500/10 border-purple-500/30' : 'bg-zinc-800 border-zinc-700'}`}
+              >
+                <Calculator size={12} color={isCalculadora ? '#a78bfa' : '#71717a'} />
+                <Text className={`text-[9px] font-black uppercase tracking-[1px] ${isCalculadora ? 'text-purple-400' : 'text-zinc-500'}`}>
+                  Calculadora
+                </Text>
+              </Pressable>
+            )}
           </View>
 
           <View className="mb-8 flex-row flex-wrap gap-2">
@@ -202,56 +310,195 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar,
             })}
           </View>
 
-          <View className="gap-4">
-            <View>
-              <Text className="mb-2 ml-2 text-[10px] font-black uppercase tracking-widest text-zinc-700">Valor do Sistema</Text>
-              <MoneyInput
-                placeholder="0,00"
-                className="rounded-[24px] border border-zinc-700 bg-ink-800 px-6 py-5 text-2xl font-black text-zinc-100"
-                value={valorSistema}
-                onChangeValue={setValorSistema}
-              />
-            </View>
-
-            {!isSaida && (
-              isCalculadora ? (
-                <View className="flex-row gap-3">
-                  <View className="flex-1">
-                    <Text className="mb-2 ml-2 text-[10px] font-black uppercase tracking-widest text-zinc-700">Dinheiro Cliente</Text>
-                    <MoneyInput placeholder="0,00" className="rounded-[24px] border border-zinc-700 bg-ink-800 px-6 py-5 text-xl font-black text-zinc-100" value={valorCliente} onChangeValue={setValorCliente} />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="mb-2 ml-2 text-[10px] font-black uppercase tracking-widest text-zinc-700">Troco Dado</Text>
-                    <MoneyInput placeholder="0,00" className="rounded-[24px] border border-zinc-700 bg-ink-800 px-6 py-5 text-xl font-black text-zinc-100" value={valorTrocoEntregue} onChangeValue={setValorTrocoEntregue} />
-                  </View>
-                </View>
-              ) : (
+          <View className="gap-6">
+            
+            {!isModoAvançado ? (
+              <View className="gap-4">
                 <View>
-                  <Text className="mb-2 ml-2 text-[10px] font-black uppercase tracking-widest text-zinc-700">Ficou na Gaveta</Text>
-                  <MoneyInput placeholder="0,00" className="rounded-[24px] border border-zinc-700 bg-ink-800 px-6 py-5 text-2xl font-black text-zinc-100" value={valorEntregueSimples} onChangeValue={setValorEntregueSimples} />
+                  <Text className="mb-2 ml-2 text-[10px] font-black uppercase tracking-widest text-zinc-700">Valor do Sistema</Text>
+                  <MoneyInput
+                    placeholder="0,00"
+                    className="rounded-[24px] border border-zinc-700 bg-ink-800 px-6 py-5 text-2xl font-black text-zinc-100"
+                    value={valorSistema}
+                    onChangeValue={setValorSistema}
+                  />
                 </View>
-              )
+
+                {/* SEÇÃO VINCULAR TRANSAÇÃO */}
+                <View className="mt-1">
+                  <Pressable 
+                    onPress={() => setMostrarTransacoes(!mostrarTransacoes)}
+                    className={`flex-row items-center justify-between px-6 py-4 rounded-[24px] border ${transacaoVinculadaId ? 'bg-blue-500/10 border-blue-500/30' : 'bg-ink-800 border-zinc-800'}`}
+                  >
+                    <View className="flex-row items-center gap-3">
+                      <Link size={16} color={transacaoVinculadaId ? "#60a5fa" : "#71717a"} />
+                      <Text className={`font-black text-[10px] uppercase tracking-widest ${transacaoVinculadaId ? 'text-blue-400' : 'text-zinc-500'}`}>
+                        {transacaoVinculadaId ? "Lançamento Vinculado" : "Vincular a um lançamento (Opcional)"}
+                      </Text>
+                    </View>
+                    {transacaoVinculadaId ? (
+                       <Pressable onPress={() => setTransacaoVinculadaId("")} hitSlop={10}><Text className="text-blue-400 font-bold text-[9px] uppercase">Remover</Text></Pressable>
+                    ) : (
+                       <Text className="text-zinc-600 font-bold text-[9px] uppercase">Selecionar</Text>
+                    )}
+                  </Pressable>
+                  
+                  {mostrarTransacoes && !transacaoVinculadaId && (
+                    <View className="mt-2 bg-ink-950 rounded-[24px] border border-zinc-800 p-2 max-h-[200px]">
+                      <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false}>
+                        {transacoes.length === 0 ? (
+                          <Text className="text-zinc-600 text-center py-4 font-bold text-xs">Nenhum lançamento no caixa.</Text>
+                        ) : transacoes.map(t => (
+                          <Pressable 
+                            key={t.id} 
+                            onPress={() => { setTransacaoVinculadaId(t.id); setMostrarTransacoes(false); }}
+                            className="px-4 py-3 border-b border-zinc-800/50 flex-row justify-between items-center active:bg-zinc-800 rounded-xl"
+                          >
+                            <Text className="text-zinc-300 font-bold text-xs" numberOfLines={1}>{t.descricao || 'Sem descrição'}</Text>
+                            <Text className="text-zinc-500 font-black text-xs ml-2">{toBrl(t.valorSistema)}</Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                  {transacaoVinculadaId && (
+                    <Text className="ml-4 mt-2 text-[9px] text-zinc-500 font-bold uppercase tracking-tighter">
+                      → Ref: {transacoes.find(t => t.id === transacaoVinculadaId)?.descricao || 'Não encontrado'} ({toBrl(transacoes.find(t => t.id === transacaoVinculadaId)?.valorSistema || 0)})
+                    </Text>
+                  )}
+                </View>
+
+                <View className="flex-row gap-3">
+                  <View className="flex-[2]">
+                    <TextInput className="rounded-[24px] border border-zinc-800 bg-ink-800 px-6 py-5 text-zinc-200 font-bold" placeholder="Cliente / Descrição" placeholderTextColor="#3f3f46" value={descricao} onChangeText={setDescricao} />
+                  </View>
+                  <View className="flex-1">
+                    <TextInput className="rounded-[24px] border border-zinc-800 bg-ink-800 px-4 py-5 text-zinc-400 font-black text-xs" placeholder="Contrato" placeholderTextColor="#3f3f46" value={codigoContrato} onChangeText={setCodigoContrato} />
+                  </View>
+                </View>
+              </View>
+            ) : (
+              <View className="gap-3">
+                {/* SEÇÃO VINCULAR TRANSAÇÃO (Modo Multi) */}
+                <View className="mb-2">
+                  <Pressable 
+                    onPress={() => setMostrarTransacoes(!mostrarTransacoes)}
+                    className={`flex-row items-center justify-between px-6 py-4 rounded-[24px] border ${transacaoVinculadaId ? 'bg-blue-500/10 border-blue-500/30' : 'bg-ink-800 border-zinc-800'}`}
+                  >
+                    <View className="flex-row items-center gap-3">
+                      <Link size={16} color={transacaoVinculadaId ? "#60a5fa" : "#71717a"} />
+                      <Text className={`font-black text-[10px] uppercase tracking-widest ${transacaoVinculadaId ? 'text-blue-400' : 'text-zinc-500'}`}>
+                        {transacaoVinculadaId ? "Lançamento Vinculado" : "Vincular a um lançamento (Opcional)"}
+                      </Text>
+                    </View>
+                    {transacaoVinculadaId ? (
+                       <Pressable onPress={() => setTransacaoVinculadaId("")} hitSlop={10}><Text className="text-blue-400 font-bold text-[9px] uppercase">Remover</Text></Pressable>
+                    ) : (
+                       <Text className="text-zinc-600 font-bold text-[9px] uppercase">Selecionar</Text>
+                    )}
+                  </Pressable>
+                  
+                  {mostrarTransacoes && !transacaoVinculadaId && (
+                    <View className="mt-2 bg-ink-950 rounded-[24px] border border-zinc-800 p-2 max-h-[200px]">
+                      <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false}>
+                        {transacoes.length === 0 ? (
+                          <Text className="text-zinc-600 text-center py-4 font-bold text-xs">Nenhum lançamento no caixa.</Text>
+                        ) : transacoes.map(t => (
+                          <Pressable 
+                            key={t.id} 
+                            onPress={() => { setTransacaoVinculadaId(t.id); setMostrarTransacoes(false); }}
+                            className="px-4 py-3 border-b border-zinc-800/50 flex-row justify-between items-center active:bg-zinc-800 rounded-xl"
+                          >
+                            <Text className="text-zinc-300 font-bold text-xs" numberOfLines={1}>{t.descricao || 'Sem descrição'}</Text>
+                            <Text className="text-zinc-500 font-black text-xs ml-2">{toBrl(t.valorSistema)}</Text>
+                          </Pressable>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                  {transacaoVinculadaId && (
+                    <Text className="ml-4 mt-2 text-[9px] text-zinc-500 font-bold uppercase tracking-tighter">
+                      → Ref: {transacoes.find(t => t.id === transacaoVinculadaId)?.descricao || 'Não encontrado'} ({toBrl(transacoes.find(t => t.id === transacaoVinculadaId)?.valorSistema || 0)})
+                    </Text>
+                  )}
+                </View>
+
+                {pagamentos.map((pag, index) => (
+                  <View key={pag.id} className="p-6 rounded-[32px] border border-zinc-800/60 bg-ink-800/20 gap-4">
+                    <View className="flex-row justify-between items-center ml-2 mb-1">
+                      <Text className="text-[10px] font-black uppercase tracking-[2px] text-zinc-500">Valor do Sistema {pagamentos.length > 1 ? `#${index + 1}` : ''}</Text>
+                      {pagamentos.length > 1 && (
+                        <Pressable onPress={() => removePagamento(pag.id)} hitSlop={10} className="bg-red-500/10 p-1.5 rounded-lg border border-red-500/20"><Trash2 size={12} color="#f87171" /></Pressable>
+                      )}
+                    </View>
+                    <MoneyInput
+                      placeholder="0,00"
+                      className="rounded-[20px] border border-zinc-700 bg-ink-800 px-5 py-4 text-2xl font-black text-zinc-100"
+                      value={pag.valor}
+                      onChangeValue={(v) => updatePagamento(pag.id, 'valor', v)}
+                    />
+                    <View className="flex-row gap-3">
+                      <View className="flex-[2]">
+                        <TextInput className="w-full flex-1 rounded-[20px] border border-zinc-800 bg-ink-800 px-5 py-4 text-zinc-200 font-bold" placeholder="Cliente / Descrição" placeholderTextColor="#3f3f46" value={pag.descricao} onChangeText={(t) => updatePagamento(pag.id, 'descricao', t)} />
+                      </View>
+                      <View className="flex-1">
+                        <TextInput className="w-full flex-1 rounded-[20px] border border-zinc-800 bg-ink-800 px-4 py-4 text-zinc-400 font-black text-xs" placeholder="Contrato" placeholderTextColor="#3f3f46" value={pag.contrato} onChangeText={(t) => updatePagamento(pag.id, 'contrato', t)} />
+                      </View>
+                    </View>
+                  </View>
+                ))}
+                
+                {!isSaida && (
+                  <Pressable onPress={addPagamento} className="py-4 border-2 border-dashed border-blue-500/30 rounded-[24px] items-center justify-center bg-blue-500/5 flex-row gap-2 active:bg-blue-500/10">
+                    <Plus size={14} color="#60a5fa" />
+                    <Text className="text-[10px] font-black uppercase tracking-[2px] text-blue-400">Adicionar Pagamento</Text>
+                  </Pressable>
+                )}
+              </View>
             )}
 
-            <View className="flex-row gap-3">
-              <View className="flex-[2]">
-                <TextInput className="rounded-[24px] border border-zinc-800 bg-ink-800 px-6 py-5 text-zinc-200 font-bold" placeholder="Cliente / Descrição" placeholderTextColor="#3f3f46" value={descricao} onChangeText={setDescricao} />
-              </View>
-              <View className="flex-1">
-                <TextInput className="rounded-[24px] border border-zinc-800 bg-ink-800 px-4 py-5 text-zinc-400 font-black text-xs" placeholder="Contrato" placeholderTextColor="#3f3f46" value={codigoContrato} onChangeText={setCodigoContrato} />
-              </View>
-            </View>
-
+            {/* SEÇÃO DE CÁLCULO DE TROCO E GAVETA */}
             {!isSaida && (
-              <View className={`rounded-[24px] border p-5 ${trocoSobra >= 0 ? "border-emerald-500/20 bg-emerald-500/5" : "border-red-500/20 bg-red-500/5"}`}>
-                <View className="flex-row items-center justify-between">
-                  <View>
-                    <Text className={`text-[10px] uppercase font-black tracking-[2px] ${trocoSobra >= 0 ? "text-emerald-400" : "text-red-400"}`}>{trocoSobra >= 0 ? "Sobra" : "Quebra"}</Text>
-                    <Text className={`text-xl font-black mt-1 ${trocoSobra >= 0 ? "text-zinc-100" : "text-red-200"}`}>{toBrl(Math.abs(trocoSobra))}</Text>
+              <View className="bg-ink-800/30 p-5 rounded-[32px] border border-zinc-800/50 gap-4 mt-2">
+                <Text className="text-[10px] font-black uppercase tracking-[2px] text-zinc-500 mb-1 ml-2 text-center">Acerto de Contas {isModoAvançado && pagamentos.length > 1 ? `(Total: ${toBrl(totalSistemaAtual)})` : ''}</Text>
+                
+                {isCalculadora ? (
+                  <View className="flex-row gap-3">
+                    <View className="flex-1">
+                      <Text className="mb-2 ml-2 text-[10px] font-black uppercase tracking-widest text-zinc-700">Dinheiro Recebido</Text>
+                      <MoneyInput placeholder="0,00" className="rounded-[20px] border border-zinc-700 bg-ink-800 px-5 py-4 text-xl font-black text-zinc-100" value={valorCliente} onChangeValue={setValorCliente} />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="mb-2 ml-2 text-[10px] font-black uppercase tracking-widest text-zinc-700">Troco Dado</Text>
+                      <MoneyInput placeholder="0,00" className="rounded-[20px] border border-zinc-700 bg-ink-800 px-5 py-4 text-xl font-black text-zinc-100" value={valorTrocoEntregue} onChangeValue={setValorTrocoEntregue} />
+                    </View>
                   </View>
-                  <View className="items-end">
-                    <Text className="text-[8px] font-black text-zinc-600 uppercase">Gaveta Física:</Text>
-                    <Text className="text-xs font-black text-zinc-400">{toBrl(valorNaGaveta)}</Text>
+                ) : (
+                  <View>
+                    <Text className="mb-2 ml-2 text-[10px] font-black uppercase tracking-widest text-zinc-700">Ficou na Gaveta</Text>
+                    <MoneyInput placeholder="0,00" className="rounded-[20px] border border-zinc-700 bg-ink-800 px-5 py-4 text-2xl font-black text-zinc-100 text-center" value={valorEntregueSimples} onChangeValue={setValorEntregueSimples} />
+                  </View>
+                )}
+
+                <View className={`rounded-[24px] border p-5 ${trocoSobra > 0 ? "border-emerald-500/20 bg-emerald-500/5" : trocoSobra < 0 ? "border-red-500/20 bg-red-500/5" : "border-blue-500/20 bg-blue-500/5"}`}>
+                  <View className="flex-row items-center justify-between">
+                    <View>
+                      <Text className={`text-[10px] uppercase font-black tracking-[2px] ${trocoSobra > 0 ? "text-emerald-400" : trocoSobra < 0 ? "text-red-500" : "text-blue-400"}`}>
+                        {trocoSobra > 0 ? "Sobra (Ficou no Caixa)" : trocoSobra < 0 ? "Falta (Saiu do Caixa)" : "Caixa Exato"}
+                      </Text>
+                      <Text className={`text-2xl font-black mt-1 ${trocoSobra > 0 ? "text-emerald-400" : trocoSobra < 0 ? "text-red-500" : "text-blue-400"}`}>
+                        {trocoSobra === 0 ? "R$ 0,00" : (trocoSobra > 0 ? "+" : "-") + toBrl(Math.abs(trocoSobra))}
+                      </Text>
+                    </View>
+                    <View className="items-end gap-1">
+                      <Text className="text-[8px] font-black text-zinc-600 uppercase">Gaveta Física Final</Text>
+                      <Text className="text-sm font-black text-zinc-300">{toBrl(valorNaGaveta)}</Text>
+                      {isCalculadora && valorCliente > 0 && (
+                        <View className="bg-ink-900 border border-zinc-800 px-2 py-1 rounded mt-1">
+                          <Text className="text-[8px] font-black text-zinc-500 uppercase">Troco Ideal: <Text className="text-zinc-300">{toBrl(trocoIdeal)}</Text></Text>
+                        </View>
+                      )}
+                    </View>
                   </View>
                 </View>
               </View>
@@ -260,8 +507,8 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar,
             {erro && <View className="rounded-2xl bg-red-500/10 py-3 px-4 border border-red-500/20"><Text className="text-center text-[10px] font-black text-red-400 uppercase tracking-widest">{erro}</Text></View>}
 
             <View className="flex-row gap-2 mt-2">
-              {editingId && <Pressable className="flex-1 rounded-[24px] bg-zinc-800 py-6" onPress={cancelEdit}><Text className="text-center font-black uppercase tracking-widest text-zinc-400">Sair</Text></Pressable>}
-              <Pressable className="flex-[2] rounded-[24px] bg-zinc-100 py-6 shadow-2xl" onPress={onSalvar}><Text className="text-center font-black uppercase tracking-[4px] text-zinc-950">{editingId ? "Salvar" : "Lançar"}</Text></Pressable>
+              {editingId && <Pressable className="flex-1 rounded-[24px] bg-zinc-800 py-6" onPress={cancelEdit}><Text className="text-center font-black uppercase tracking-widest text-zinc-400">Cancelar</Text></Pressable>}
+              <Pressable className="flex-[2] rounded-[24px] bg-zinc-100 py-6 shadow-2xl active:bg-zinc-300" onPress={onSalvar}><Text className="text-center font-black uppercase tracking-[4px] text-zinc-950">{editingId ? "Salvar Edição" : "Registrar Operação"}</Text></Pressable>
             </View>
           </View>
         </View>
@@ -272,6 +519,8 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar,
         {listagem.map((item) => {
           const cat = categorias.find(c => c.value === item.categoria) || categorias[0];
           const Icon = cat.icon;
+          const refTransacao = item.transacaoVinculadaId ? transacoes.find(t => t.id === item.transacaoVinculadaId) : null;
+          
           return (
             <View key={item.id} className="rounded-[32px] bg-ink-900 p-6 border border-zinc-800 shadow-sm flex-row items-center justify-between">
               <View className="flex-1 flex-row items-center gap-4">
@@ -284,11 +533,19 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar,
                     {item.codigoContrato && <View className="bg-zinc-800 px-1.5 py-0.5 rounded-md border border-zinc-700"><Text className="text-[8px] font-black text-zinc-400">{item.codigoContrato}</Text></View>}
                   </View>
                   <Text className="text-xl font-black text-zinc-100 tracking-tighter">{toBrl(item.valorSistema)}</Text>
+                  
+                  {refTransacao && (
+                    <View className="flex-row items-center gap-1 mt-1">
+                      <Link size={10} color="#60a5fa" />
+                      <Text className="text-[9px] font-black text-blue-400 uppercase tracking-widest truncate flex-1" numberOfLines={1}>Ref: {refTransacao.descricao || 'Lançamento'}</Text>
+                    </View>
+                  )}
+                  
                   <View className="flex-row items-center gap-2 mt-1">
                     {item.trocoSobra !== 0 && (
-                      <View className={`px-1.5 py-0.5 rounded-md ${item.trocoSobra > 0 ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+                      <View className={`px-1.5 py-0.5 rounded-md border ${item.trocoSobra > 0 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
                         <Text className={`text-[8px] font-black uppercase ${item.trocoSobra > 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                          {item.trocoSobra > 0 ? `+ ${toBrl(item.trocoSobra)} Sobra` : `${toBrl(item.trocoSobra)} Quebra`}
+                          {item.trocoSobra > 0 ? `+ ${toBrl(item.trocoSobra)} Sobra` : `${toBrl(item.trocoSobra)} Falta`}
                         </Text>
                       </View>
                     )}
@@ -300,7 +557,7 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar,
               {!isFechado && (
                 <View className="flex-row gap-2 ml-4">
                   <Pressable onPress={() => startEdit(item)} hitSlop={8} className="h-10 w-10 items-center justify-center rounded-[14px] bg-zinc-800/50 border border-zinc-700/50"><Edit3 size={16} color="#71717a" /></Pressable>
-                  <Pressable onPress={() => onExcluir(item.id)} hitSlop={8} className="h-10 w-10 items-center justify-center rounded-[14px] bg-red-500/10 border border-red-500/20"><Trash2 size={16} color="#f87171" /></Pressable>
+                  <Pressable onPress={() => handleExcluir(item.id)} hitSlop={8} className="h-10 w-10 items-center justify-center rounded-[14px] bg-red-500/10 border border-red-500/20"><Trash2 size={16} color="#f87171" /></Pressable>
                 </View>
               )}
             </View>

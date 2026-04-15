@@ -29,6 +29,7 @@ export interface Transacao {
   trocoSobra: number;
   statusConferencia: StatusConferencia;
   justificativaTexto?: string | null;
+  transacaoVinculadaId?: string;
 }
 
 export interface LembreteFantasma {
@@ -38,6 +39,8 @@ export interface LembreteFantasma {
   descricao: string;
   valorReferencia: number;
   impactaPixRepasse: boolean;
+  destinoPix?: string;
+  transacaoVinculadaId?: string;
   resolvido: boolean;
   comprovadoPix: boolean;
   timestamp: number;
@@ -68,7 +71,8 @@ export interface TotaisTurno {
   gavetaFisico: number;
   especieEnvelope: number;
   pixRepasse: number;
-  pixNoCaixa: number; // NOVO: Dinheiro que entrou no Pix do operador
+  pixNoCaixa: number; 
+  pixDiretoLoja: number;
 }
 
 export interface Turno {

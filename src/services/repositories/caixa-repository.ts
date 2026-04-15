@@ -31,6 +31,7 @@ interface AddTransacaoInput {
   trocoSobra: number;
   statusConferencia: StatusConferencia;
   justificativaTexto?: string | null;
+  transacaoVinculadaId?: string | null;
 }
 
 function toMoney(value: unknown): number {
@@ -87,6 +88,7 @@ function mapTransacoes(snapshot: DataSnapshot): Transacao[] {
       trocoSobra: toMoney(item.troco_sobra),
       statusConferencia: (item.status_conferencia as StatusConferencia) ?? "pendente",
       justificativaTexto: (item.justificativa_texto as string | null | undefined) ?? null,
+      transacaoVinculadaId: item.transacao_vinculada_id ? String(item.transacao_vinculada_id) : undefined,
     }))
     .sort((a, b) => b.timestamp - a.timestamp);
 }
@@ -116,6 +118,8 @@ function mapFantasmas(snapshot: DataSnapshot): LembreteFantasma[] {
       descricao: String(item.descricao ?? ""),
       valorReferencia: toMoney(item.valor_referencia),
       impactaPixRepasse: Boolean(item.impacta_pix_repasse),
+      destinoPix: item.destino_pix ? String(item.destino_pix) : undefined,
+      transacaoVinculadaId: item.transacao_vinculada_id ? String(item.transacao_vinculada_id) : undefined,
       resolvido: Boolean(item.resolvido),
       comprovadoPix: Boolean(item.comprovado_pix),
     }))
@@ -228,6 +232,7 @@ export async function editarTransacao(turnoId: string, id: string, input: any): 
     valor_recebido_fisico: input.valorRecebidoFisico,
     troco_sobra: input.trocoSobra,
     justificativa_texto: input.justificativaTexto || null,
+    transacao_vinculada_id: input.transacaoVinculadaId || null,
   };
   await update(ref(getRealtimeDatabase(), `transacoes/${turnoId}/${id}`), payload);
 }
@@ -241,9 +246,11 @@ export async function adicionarFantasma(turnoId: string, input: any): Promise<vo
   await set(created, {
     tipo: input.tipo,
     pessoa: input.pessoa || null,
-    descricao: input.descricao,
+    descricao: input.descricao || null,
     valor_referencia: input.valorReferencia,
     impacta_pix_repasse: input.impactaPixRepasse,
+    destino_pix: input.destinoPix || null,
+    transacao_vinculada_id: input.transacaoVinculadaId || null,
     timestamp: Date.now(),
     resolvido: false,
     comprovado_pix: false
@@ -257,6 +264,8 @@ export async function atualizarFantasmaCompleto(turnoId: string, id: string, cha
   if (changes.descricao !== undefined) payload.descricao = changes.descricao;
   if (changes.valorReferencia !== undefined) payload.valor_referencia = changes.valorReferencia;
   if (changes.impactaPixRepasse !== undefined) payload.impacta_pix_repasse = changes.impactaPixRepasse;
+  if (changes.destinoPix !== undefined) payload.destino_pix = changes.destinoPix;
+  if (changes.transacaoVinculadaId !== undefined) payload.transacao_vinculada_id = changes.transacaoVinculadaId;
   if (changes.resolvido !== undefined) payload.resolvido = changes.resolvido;
   if (changes.comprovado_pix !== undefined) payload.comprovado_pix = changes.comprovado_pix;
 

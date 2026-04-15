@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, Text, TextInput, View, ScrollView } from "react-native";
 import { MoneyInput } from "../components/common/money-input";
-import { LembreteFantasma, TipoFantasma } from "../types/domain";
+import { LembreteFantasma, TipoFantasma, Transacao } from "../types/domain";
 import { toBrl } from "../utils/currency";
 
 import { 
@@ -11,14 +11,17 @@ import {
   Circle, 
   DollarSign,
   ArrowUpRight,
-  ArrowDownLeft,
   RefreshCcw,
   MessageSquare,
   HelpCircle,
-  Banknote
+  Banknote,
+  Edit3,
+  Link,
+  Wallet
 } from "lucide-react-native";
 
 interface FantasmasScreenProps {
+  transacoes: Transacao[];
   fantasmas: LembreteFantasma[];
   onCriar: (input: {
     tipo: TipoFantasma;
@@ -26,7 +29,10 @@ interface FantasmasScreenProps {
     descricao: string;
     valorReferencia: number;
     impactaPixRepasse: boolean;
+    destinoPix?: string;
+    transacaoVinculadaId?: string;
   }) => Promise<void>;
+  onEditar: (id: string, input: Partial<LembreteFantasma>) => Promise<void>;
   onToggleResolvido: (item: LembreteFantasma) => Promise<void>;
   onToggleComprovado: (item: LembreteFantasma) => Promise<void>;
   onExcluir: (id: string) => void;
@@ -38,7 +44,7 @@ const opcoes: { value: TipoFantasma; label: string; icon: any; sub: string; impa
     value: "pix_recebido_gaveta_saiu", 
     label: "Pix por Notas", 
     icon: ArrowUpRight, 
-    sub: "Alguém levou dinheiro físico e mandou Pix p/ você.",
+    sub: "Alguém levou dinheiro físico e mandou Pix.",
     impact: "Aumenta o Pix Repasse / Diminui Gaveta",
     color: "#a78bfa",
     showPixCheck: true
@@ -47,7 +53,7 @@ const opcoes: { value: TipoFantasma; label: string; icon: any; sub: string; impa
     value: "destroca_pix_por_nota", 
     label: "Destrocar Pix", 
     icon: RefreshCcw, 
-    sub: "Você pôs notas na gaveta p/ cobrir seu Pix Repasse.",
+    sub: "Você pôs notas na gaveta p/ cobrir Pix Repasse.",
     impact: "Diminui o Pix Repasse / Soma na Gaveta",
     color: "#34d399",
     showPixCheck: false
@@ -56,7 +62,7 @@ const opcoes: { value: TipoFantasma; label: string; icon: any; sub: string; impa
     value: "dinheiro_emprestado", 
     label: "Empréstimo", 
     icon: Banknote, 
-    sub: "Notas que você pegou com alguém p/ o caixa (ex: troco).",
+    sub: "Notas que você pegou com alguém p/ o caixa.",
     impact: "Soma na Gaveta / Não mexe no Pix",
     color: "#fb923c",
     showPixCheck: false
@@ -72,51 +78,104 @@ const opcoes: { value: TipoFantasma; label: string; icon: any; sub: string; impa
   },
 ];
 
+const DESTINOS_PIX = ["Meu Pix", "Conta da Loja", "Conta da Gerente"];
+
 export function FantasmasScreen({
+  transacoes,
   fantasmas,
   onCriar,
+  onEditar,
   onToggleResolvido,
   onToggleComprovado,
   onExcluir,
   isFechado,
 }: FantasmasScreenProps) {
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [tipo, setTipo] = useState<TipoFantasma>("pix_recebido_gaveta_saiu");
   const [pessoa, setPessoa] = useState("");
   const [descricao, setDescricao] = useState("");
   const [valorReferencia, setValorReferencia] = useState(0);
+  const [destinoPix, setDestinoPix] = useState("Meu Pix");
+  const [transacaoVinculadaId, setTransacaoVinculadaId] = useState("");
+  
+  const [mostrarTransacoes, setMostrarTransacoes] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
   const selectedOp = opcoes.find(o => o.value === tipo)!;
+
+  function startEdit(item: LembreteFantasma) {
+    setEditingId(item.id);
+    setTipo(item.tipo);
+    setPessoa(item.pessoa || "");
+    setDescricao(item.descricao || "");
+    setValorReferencia(item.valorReferencia);
+    setDestinoPix(item.destinoPix || "Meu Pix");
+    setTransacaoVinculadaId(item.transacaoVinculadaId || "");
+    setMostrarTransacoes(false);
+    setErro(null);
+  }
+
+  function cancelEdit() {
+    setEditingId(null);
+    setTipo("pix_recebido_gaveta_saiu");
+    setPessoa("");
+    setDescricao("");
+    setValorReferencia(0);
+    setDestinoPix("Meu Pix");
+    setTransacaoVinculadaId("");
+    setMostrarTransacoes(false);
+    setErro(null);
+  }
 
   async function onSalvar() {
     if (!pessoa.trim() && tipo !== "lembrete_geral") {
       setErro("Informe quem está envolvido.");
       return;
     }
+    if (valorReferencia <= 0 && tipo !== "lembrete_geral") {
+      setErro("Informe um valor maior que zero.");
+      return;
+    }
 
     try {
-      await onCriar({
+      const payload = {
         tipo,
         pessoa: pessoa.trim() || undefined,
         descricao: descricao.trim(),
         valorReferencia,
         impactaPixRepasse: tipo === "pix_recebido_gaveta_saiu" || tipo === "destroca_pix_por_nota",
-      });
+        destinoPix: tipo === "lembrete_geral" || tipo === "dinheiro_emprestado" ? undefined : destinoPix,
+        transacaoVinculadaId: transacaoVinculadaId || undefined,
+      };
+
+      if (editingId) {
+        await onEditar(editingId, payload);
+        setEditingId(null);
+      } else {
+        await onCriar(payload);
+      }
 
       setDescricao("");
       setPessoa("");
       setValorReferencia(0);
+      setDestinoPix("Meu Pix");
+      setTransacaoVinculadaId("");
+      setMostrarTransacoes(false);
       setErro(null);
     } catch (e) {
       setErro("Erro ao salvar.");
     }
   }
 
+  const isPixRelated = tipo === "pix_recebido_gaveta_saiu" || tipo === "destroca_pix_por_nota";
+
   return (
     <View className="gap-6 pb-20">
       {!isFechado && (
         <View className="rounded-[40px] border border-zinc-800 bg-ink-900 p-6 shadow-2xl">
-          <Text className="mb-5 text-[10px] font-black uppercase tracking-[3px] text-zinc-500">Movimentação Informal</Text>
+          <Text className="mb-5 text-[10px] font-black uppercase tracking-[3px] text-zinc-500">
+            {editingId ? "Editando Auditoria" : "Nova Movimentação Informal"}
+          </Text>
           
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6 -mx-2 px-2">
             <View className="flex-row gap-2">
@@ -164,14 +223,6 @@ export function FantasmasScreen({
               onChangeText={setPessoa}
             />
 
-            <TextInput
-              className="rounded-[24px] border border-zinc-800 bg-ink-800 px-6 py-5 text-white font-bold"
-              placeholder="Mais detalhes (opcional)"
-              placeholderTextColor="#3f3f46"
-              value={descricao}
-              onChangeText={setDescricao}
-            />
-
             {tipo !== "lembrete_geral" && (
               <View>
                 <Text className="mb-2 ml-2 text-[10px] font-black uppercase tracking-widest text-zinc-700">Valor em Dinheiro</Text>
@@ -184,11 +235,105 @@ export function FantasmasScreen({
               </View>
             )}
 
-            {erro && <Text className="text-center text-xs text-red-400 font-bold bg-red-500/10 py-2 rounded-xl">{erro}</Text>}
+            {/* SEÇÃO DESTINO DO PIX */}
+            {isPixRelated && (
+              <View className="mt-2 bg-ink-950 p-4 rounded-[24px] border border-zinc-800">
+                <View className="flex-row items-center gap-2 mb-4 ml-1">
+                  <Wallet size={14} color="#a78bfa" />
+                  <Text className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Destino do Dinheiro (Pix)</Text>
+                </View>
+                <View className="flex-row flex-wrap gap-2">
+                  {DESTINOS_PIX.map(dest => (
+                    <Pressable 
+                      key={dest} 
+                      onPress={() => setDestinoPix(dest)}
+                      className={`px-4 py-3 rounded-[16px] border ${destinoPix === dest ? 'bg-purple-500/20 border-purple-500/50' : 'bg-ink-800 border-zinc-800'}`}
+                    >
+                      <Text className={`text-[10px] font-black uppercase tracking-widest ${destinoPix === dest ? 'text-purple-400' : 'text-zinc-500'}`}>{dest}</Text>
+                    </Pressable>
+                  ))}
+                  <TextInput 
+                    className="flex-1 min-w-[120px] rounded-[16px] border border-zinc-800 bg-ink-800 px-4 py-3 text-white font-bold text-xs" 
+                    placeholder="Outra conta..." 
+                    placeholderTextColor="#52525b"
+                    value={!DESTINOS_PIX.includes(destinoPix) && destinoPix !== "" ? destinoPix : ""}
+                    onChangeText={setDestinoPix}
+                    onFocus={() => { if(DESTINOS_PIX.includes(destinoPix)) setDestinoPix(""); }}
+                  />
+                </View>
+                {destinoPix !== "Meu Pix" && destinoPix !== "Operador" && destinoPix !== "" && (
+                  <Text className="mt-3 text-[10px] font-bold text-purple-400 leading-4">
+                    Este valor <Text className="font-black underline">não aumentará seu Pix Repasse</Text>, pois foi direto para a Loja/Gerente e o sistema já descontará do malote físico.
+                  </Text>
+                )}
+              </View>
+            )}
 
-            <Pressable className="mt-2 rounded-[24px] bg-zinc-100 py-6 active:opacity-80" onPress={onSalvar}>
-              <Text className="text-center font-black uppercase tracking-[4px] text-zinc-950">Lançar Registro</Text>
-            </Pressable>
+            {/* SEÇÃO VINCULAR TRANSAÇÃO */}
+            {tipo !== "lembrete_geral" && (
+              <View className="mt-2">
+                <Pressable 
+                  onPress={() => setMostrarTransacoes(!mostrarTransacoes)}
+                  className={`flex-row items-center justify-between px-6 py-5 rounded-[24px] border ${transacaoVinculadaId ? 'bg-blue-500/10 border-blue-500/30' : 'bg-ink-800 border-zinc-800'}`}
+                >
+                  <View className="flex-row items-center gap-3">
+                    <Link size={16} color={transacaoVinculadaId ? "#60a5fa" : "#71717a"} />
+                    <Text className={`font-black text-xs uppercase tracking-widest ${transacaoVinculadaId ? 'text-blue-400' : 'text-zinc-500'}`}>
+                      {transacaoVinculadaId ? "Lançamento Vinculado" : "Vincular a uma venda (Opcional)"}
+                    </Text>
+                  </View>
+                  {transacaoVinculadaId ? (
+                     <Pressable onPress={() => setTransacaoVinculadaId("")} hitSlop={10}><Text className="text-blue-400 font-bold text-[10px] uppercase">Remover</Text></Pressable>
+                  ) : (
+                     <Text className="text-zinc-600 font-bold text-[10px] uppercase">Selecionar</Text>
+                  )}
+                </Pressable>
+                
+                {mostrarTransacoes && !transacaoVinculadaId && (
+                  <View className="mt-2 bg-ink-950 rounded-[24px] border border-zinc-800 p-2 max-h-[200px]">
+                    <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false}>
+                      {transacoes.length === 0 ? (
+                        <Text className="text-zinc-600 text-center py-4 font-bold text-xs">Nenhum lançamento no caixa.</Text>
+                      ) : transacoes.map(t => (
+                        <Pressable 
+                          key={t.id} 
+                          onPress={() => { setTransacaoVinculadaId(t.id); setMostrarTransacoes(false); }}
+                          className="px-4 py-3 border-b border-zinc-800/50 flex-row justify-between items-center active:bg-zinc-800 rounded-xl"
+                        >
+                          <Text className="text-zinc-300 font-bold text-xs" numberOfLines={1}>{t.descricao || 'Sem descrição'}</Text>
+                          <Text className="text-zinc-500 font-black text-xs ml-2">{toBrl(t.valorSistema)}</Text>
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+                {transacaoVinculadaId && (
+                  <Text className="ml-4 mt-2 text-[10px] text-zinc-500 font-bold uppercase tracking-tighter">
+                    → Ref: {transacoes.find(t => t.id === transacaoVinculadaId)?.descricao || 'Lançamento não encontrado'} ({toBrl(transacoes.find(t => t.id === transacaoVinculadaId)?.valorSistema || 0)})
+                  </Text>
+                )}
+              </View>
+            )}
+
+            <TextInput
+              className="rounded-[24px] border border-zinc-800 bg-ink-800 px-6 py-5 text-white font-bold"
+              placeholder="Detalhes da Operação (Ex: Peguei para dar troco na venda 123...)"
+              placeholderTextColor="#3f3f46"
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+              value={descricao}
+              onChangeText={setDescricao}
+            />
+
+            {erro && <Text className="text-center text-[10px] uppercase tracking-widest text-red-400 font-black bg-red-500/10 py-3 rounded-2xl border border-red-500/20">{erro}</Text>}
+
+            <View className="flex-row gap-2 mt-2">
+              {editingId && <Pressable className="flex-1 rounded-[24px] bg-zinc-800 py-6" onPress={cancelEdit}><Text className="text-center font-black uppercase tracking-widest text-zinc-400">Cancelar</Text></Pressable>}
+              <Pressable className="flex-[2] rounded-[24px] bg-zinc-100 py-6 active:bg-zinc-300" onPress={onSalvar}>
+                <Text className="text-center font-black uppercase tracking-[4px] text-zinc-950">{editingId ? "Salvar Edição" : "Lançar Registro"}</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       )}
@@ -198,6 +343,8 @@ export function FantasmasScreen({
         {fantasmas.map((item) => {
           const op = opcoes.find(o => o.value === item.tipo) || opcoes[3];
           const Icon = op.icon;
+          const refTransacao = item.transacaoVinculadaId ? transacoes.find(t => t.id === item.transacaoVinculadaId) : null;
+
           return (
             <View key={item.id} className={`rounded-[32px] border p-6 ${item.resolvido ? "border-zinc-800 bg-zinc-900/50 opacity-40" : "border-zinc-800 bg-ink-900"}`}>
               <View className="flex-row items-start justify-between mb-6">
@@ -208,13 +355,33 @@ export function FantasmasScreen({
                   <View className="flex-1">
                     <Text className="text-[9px] font-black uppercase tracking-widest text-zinc-600">{item.pessoa || "Lembrete"}</Text>
                     <Text className={`text-xl font-black tracking-tight ${item.resolvido ? "text-zinc-500 line-through" : "text-zinc-100"}`}>{toBrl(item.valorReferencia)}</Text>
-                    {item.descricao ? <Text className="text-[10px] font-bold text-zinc-500 uppercase">{item.descricao}</Text> : null}
+                    
+                    {item.destinoPix && (item.tipo === "pix_recebido_gaveta_saiu" || item.tipo === "destroca_pix_por_nota") && (
+                      <View className="flex-row items-center gap-1 mt-1">
+                        <Wallet size={10} color="#a78bfa" />
+                        <Text className="text-[9px] font-black text-purple-400 uppercase tracking-widest">Destino: {item.destinoPix}</Text>
+                      </View>
+                    )}
+                    
+                    {refTransacao && (
+                      <View className="flex-row items-center gap-1 mt-1">
+                        <Link size={10} color="#60a5fa" />
+                        <Text className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Ref: {refTransacao.descricao || 'Venda'} ({toBrl(refTransacao.valorSistema)})</Text>
+                      </View>
+                    )}
                   </View>
                 </View>
                 {!isFechado && (
-                  <Pressable onPress={() => onExcluir(item.id)} className="h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20"><Trash2 size={16} color="#f87171" /></Pressable>
+                  <View className="flex-row gap-2">
+                    <Pressable onPress={() => startEdit(item)} hitSlop={8} className="h-10 w-10 items-center justify-center rounded-xl bg-zinc-800/50 border border-zinc-700/50"><Edit3 size={16} color="#71717a" /></Pressable>
+                    <Pressable onPress={() => onExcluir(item.id)} hitSlop={8} className="h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20"><Trash2 size={16} color="#f87171" /></Pressable>
+                  </View>
                 )}
               </View>
+              
+              {item.descricao ? (
+                 <Text className="text-[10px] font-bold text-zinc-500 uppercase mb-4 leading-4 bg-ink-950 p-3 rounded-2xl border border-zinc-800/50">{item.descricao}</Text>
+              ) : null}
 
               <View className="flex-row gap-3">
                 <Pressable

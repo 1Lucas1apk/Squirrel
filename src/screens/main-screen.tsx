@@ -5,13 +5,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useCaixaSeguro } from "../hooks/use-caixa-seguro";
 import { ChecklistScreen } from "./checklist-screen";
 import { FantasmasScreen } from "./fantasmas-screen";
-import { DevendoScreen } from "./devendo-screen";
 import { HistoricoScreen } from "./historico-screen";
 import { PainelScreen } from "./painel-screen";
 import { TransacoesScreen } from "./transacoes-screen";
 import { TurnoScreen } from "./turno-screen";
 import { toBrl } from "../utils/currency";
-import { MoneyInput } from "../components/common/money-input";
 
 import { 
   LayoutDashboard, 
@@ -19,7 +17,6 @@ import {
   CheckSquare, 
   Ghost, 
   History,
-  UserMinus,
   Share2,
   Lock,
   Unlock,
@@ -29,21 +26,16 @@ import {
   AlertCircle,
   ShieldAlert,
   MoreHorizontal,
-  Banknote,
   Settings,
   CalendarDays
 } from "lucide-react-native";
 
-import * as Print from 'expo-print';
-import * as Sharing from 'expo-sharing';
-
-type SectionKey = "painel" | "transacoes" | "checklist" | "fantasmas" | "devendo" | "historico";
+type SectionKey = "painel" | "transacoes" | "checklist" | "fantasmas" | "historico";
 
 export function MainScreen() {
   const [section, setSection] = useState<SectionKey>("painel");
   const [modalFechamento, setModalFechamento] = useState(false);
   const [modalMais, setModalMais] = useState(false);
-  const [modalNotas, setModalNotas] = useState(false);
   const [modalConfig, setModalConfig] = useState(false);
   
   const [bateu, setBateu] = useState<boolean | null>(null);
@@ -52,8 +44,6 @@ export function MainScreen() {
   const [caixaId, setCaixaId] = useState("");
   const [operadorId, setOperadorId] = useState("");
 
-  const [cedulas, setCedulas] = useState({ n100: 0, n50: 0, n20: 0, n10: 0, n5: 0, n2: 0, moedas: 0 });
-
   const [customAlert, setCustomAlert] = useState<{
     visible: boolean; title: string; message: string; onConfirm: () => void; destructive?: boolean;
   }>({ visible: false, title: "", message: "", onConfirm: () => {} });
@@ -61,21 +51,23 @@ export function MainScreen() {
   const caixa = useCaixaSeguro();
   const isFechado = caixa.turno?.statusTurno === "fechado";
 
-  const totalEmNotas = useMemo(() => {
-    return (cedulas.n100 * 100) + (cedulas.n50 * 50) + (cedulas.n20 * 20) + 
-           (cedulas.n10 * 10) + (cedulas.n5 * 5) + (cedulas.n2 * 2) + cedulas.moedas;
-  }, [cedulas]);
-
+  // Sistema de Notificação de Pendências ao Abrir
   useEffect(() => {
     if (caixa.turno && !caixa.loading) {
       const pendenciasF = (caixa.fantasmas || []).filter(f => !f.resolvido);
-      const pendenciasD = (caixa.dividas || []).filter(d => !d.resolvido);
-      if (pendenciasF.length > 0 || pendenciasD.length > 0) {
+
+      if (pendenciasF.length > 0) {
         const detalhesF = pendenciasF.map(f => `• ${f.pessoa}: ${toBrl(f.valorReferencia)}`).join('\n');
-        const detalhesD = pendenciasD.map(d => `• ${d.cliente}: ${toBrl(d.valor)} (Troco)`).join('\n');
-        const msg = `⚠️ Existem pendências em aberto:\n\n${detalhesF}${detalhesD ? '\n' + detalhesD : ''}\n\nPor favor, faça a devolução ou cobrança e marque como resolvido!`;
+        
+        const msg = `⚠️ Existem movimentações informais pendentes:\n\n${detalhesF}\n\nPor favor, não esqueça de resolvê-las!`;
+
         setTimeout(() => {
-          setCustomAlert({ visible: true, title: "NOTIFICAÇÃO DE CAIXA", message: msg, onConfirm: () => {} });
+          setCustomAlert({
+            visible: true,
+            title: "NOTIFICAÇÃO DE CAIXA",
+            message: msg,
+            onConfirm: () => {},
+          });
         }, 1500);
       }
     }
@@ -85,7 +77,6 @@ export function MainScreen() {
     if (caixa.turno) {
       setCaixaId(caixa.turno.caixaId || "");
       setOperadorId(caixa.turno.operadorId || "");
-      if (caixa.turno.contagem) setCedulas(caixa.turno.contagem);
     }
   }, [caixa.turno?.id]);
 
@@ -152,7 +143,11 @@ export function MainScreen() {
       if (f.tipo === 'pix_recebido_gaveta_saiu') tipoStr = '(Pix por Notas)';
       if (f.tipo === 'destroca_pix_por_nota') tipoStr = '(Destroca Pix)';
       if (f.tipo === 'dinheiro_emprestado') tipoStr = '(Empréstimo/Destrocar)';
-      return `  ${status} ${f.pessoa}: ${toBrl(f.valorReferencia)} ${tipoStr}`;
+      
+      const refStr = f.transacaoVinculadaId ? ` [Ref]` : '';
+      const destStr = (f.destinoPix && f.destinoPix !== "Meu Pix" && f.destinoPix !== "Operador") ? ` (Dest: ${f.destinoPix})` : '';
+
+      return `  ${status} ${f.pessoa}: ${toBrl(f.valorReferencia)} ${tipoStr}${refStr}${destStr}`;
     }).join('\n');
 
     const msg = `━━━━━━━━━━━━━━━━━━━━\n` +
@@ -208,7 +203,6 @@ export function MainScreen() {
     { key: "painel", label: "Painel", icon: LayoutDashboard },
     { key: "transacoes", label: "Lançar", icon: PlusCircle },
     { key: "checklist", label: "Check", icon: CheckSquare },
-    { key: "devendo", label: "Dívida", icon: UserMinus },
     { key: "fantasmas", label: "Notas", icon: Ghost },
   ];
 
@@ -236,42 +230,12 @@ export function MainScreen() {
             <View className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-8" />
             <Text className="text-xs font-black text-zinc-600 uppercase tracking-[4px] mb-6 text-center">Apoio Técnico</Text>
             <View className="gap-3">
-              <Pressable onPress={() => { setModalMais(false); setModalNotas(true); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
-                <Banknote size={20} color="#a78bfa" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">Contador de Notas</Text>
-              </Pressable>
               <Pressable onPress={() => { setModalMais(false); setModalConfig(true); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
                 <Settings size={20} color="#71717a" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">ID do Caixa/Operador</Text>
               </Pressable>
             </View>
           </View>
         </Pressable>
-      </Modal>
-
-      <Modal visible={modalNotas} transparent animationType="fade">
-        <View className="flex-1 bg-black/95 p-6">
-          <SafeAreaView className="flex-1">
-            <View className="flex-row items-center justify-between mb-8"><Text className="text-2xl font-black text-white uppercase tracking-widest">Contador</Text><X color="#fff" onPress={() => setModalNotas(false)} /></View>
-            <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
-              <View className="gap-4 mb-10">
-                {[100, 50, 20, 10, 5, 2].map(val => (
-                  <View key={val} className="flex-row items-center gap-4 bg-ink-900 p-4 rounded-[24px] border border-zinc-800">
-                    <View className="w-16 h-12 bg-zinc-100 rounded-xl items-center justify-center"><Text className="font-black text-zinc-950">{val}</Text></View>
-                    <TextInput keyboardType="numeric" placeholder="0" placeholderTextColor="#3f3f46" className="flex-1 text-2xl font-black text-white text-right" value={String(cedulas[`n${val}` as keyof typeof cedulas] || "")} onChangeText={(t) => setCedulas(prev => ({ ...prev, [`n${val}`]: parseInt(t) || 0 }))} />
-                  </View>
-                ))}
-                <View className="bg-ink-900 p-6 rounded-[24px] border border-zinc-800">
-                  <Text className="text-[10px] font-black text-zinc-600 uppercase mb-2">Moedas e Quebrados</Text>
-                  <MoneyInput value={cedulas.moedas} onChangeValue={(v) => setCedulas(prev => ({ ...prev, moedas: v }))} className="text-3xl font-black text-white" />
-                </View>
-              </View>
-            </ScrollView>
-            <View className="bg-ink-900 p-8 rounded-[40px] border border-zinc-800 shadow-2xl">
-              <Text className="text-center text-[10px] font-black text-zinc-600 uppercase mb-2">Total Contado</Text>
-              <Text className={`text-center text-4xl font-black mb-6 ${totalEmNotas === caixa.totais.gavetaFisico ? 'text-emerald-400' : 'text-zinc-100'}`}>{toBrl(totalEmNotas)}</Text>
-              <Pressable onPress={async () => { await caixa.salvarContagem(cedulas); setModalNotas(false); }} className="bg-zinc-100 py-6 rounded-[24px] shadow-xl"><Text className="text-center font-black uppercase text-zinc-950">Salvar Contagem</Text></Pressable>
-            </View>
-          </SafeAreaView>
-        </View>
       </Modal>
 
       <Modal visible={modalConfig} transparent animationType="fade">
@@ -334,8 +298,7 @@ export function MainScreen() {
           )}
           {section === "transacoes" && <TransacoesScreen transacoes={caixa.transacoes} onAdicionar={caixa.criarTransacao} onExcluir={(id) => mostrarAlerta("EXCLUIR", "Apagar?", () => caixa.excluirTransacao(id), true)} onEditar={caixa.editarLançamento} isFechado={isFechado} />}
           {section === "checklist" && <ChecklistScreen transacoes={caixa.transacoes} onToggle={caixa.alternarConferencia} isFechado={isFechado} />}
-          {section === "devendo" && <DevendoScreen dividas={caixa.dividas || []} onCriar={caixa.criarDivida} onExcluir={(id) => mostrarAlerta("REMOVER", "Apagar dívida?", () => caixa.excluirDivida(id), true)} onToggle={caixa.alternarDividaStatus} isFechado={isFechado} />}
-          {section === "fantasmas" && <FantasmasScreen fantasmas={caixa.fantasmas || []} onCriar={caixa.criarFantasma} onToggleResolvido={caixa.alternarFantasmaResolvido} onToggleComprovado={caixa.alternarFantasmaComprovado} onExcluir={(id) => mostrarAlerta("EXCLUIR", "Remover?", () => caixa.excluirFantasma(id), true)} isFechado={isFechado} />}
+          {section === "fantasmas" && <FantasmasScreen transacoes={caixa.transacoes} fantasmas={caixa.fantasmas || []} onCriar={caixa.criarFantasma} onEditar={caixa.editarFantasma} onToggleResolvido={caixa.alternarFantasmaResolvido} onToggleComprovado={caixa.alternarFantasmaComprovado} onExcluir={(id) => mostrarAlerta("EXCLUIR", "Remover?", () => caixa.excluirFantasma(id), true)} isFechado={isFechado} />}
           {section === "historico" && <HistoricoScreen turnos={caixa.historicoTurnos} loading={caixa.loading} onRefresh={caixa.carregarHistoricoTurnos} onOpen={(turnoId) => void caixa.abrirTurnoPorId(turnoId)} onExcluirDia={(id) => mostrarAlerta("APAGAR DIA", "Deseja deletar?", () => caixa.excluirTurno(id), true)} />}
         </View>
       </ScrollView>

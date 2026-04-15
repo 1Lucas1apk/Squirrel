@@ -25,14 +25,15 @@ interface PainelScreenProps {
 
 export function PainelScreen({
   totais,
-  fantasmas,
+  fantasmas = [],
   ajusteManualSobra,
   onAjusteSobra,
   isFechado
 }: PainelScreenProps) {
   
   // Filtramos apenas o que justifica os números atuais do painel
-  const pendencias = fantasmas.filter(f => !f.resolvido);
+  const listaFantasmas = Array.isArray(fantasmas) ? fantasmas : [];
+  const pendencias = listaFantasmas.filter(f => !f.resolvido);
   const pixRecebido = pendencias.filter(f => f.tipo === 'pix_recebido_gaveta_saiu');
   const destrocas = pendencias.filter(f => f.tipo === 'destroca_pix_por_nota');
   const emprestimos = pendencias.filter(f => f.tipo === 'dinheiro_emprestado');
@@ -74,9 +75,9 @@ export function PainelScreen({
               Você possui <Text className="text-purple-400 font-bold">{toBrl(totais.pixNoCaixa)}</Text> guardados no seu Pix pessoal. Este valor entrou por trocas informais e <Text className="text-white font-bold underline">NÃO DEVE</Text> ser colocado no saco físico de dinheiro.
             </Text>
             
-            {pixRecebido.length > 0 && (
+            {pixRecebido.filter(f => f.destinoPix === 'Meu Pix' || f.destinoPix === 'Operador' || !f.destinoPix).length > 0 && (
               <View className="mt-4 pt-4 border-t border-zinc-800 gap-2">
-                {pixRecebido.map(f => (
+                {pixRecebido.filter(f => f.destinoPix === 'Meu Pix' || f.destinoPix === 'Operador' || !f.destinoPix).map(f => (
                   <View key={f.id} className="flex-row justify-between items-center">
                     <Text className="text-[10px] font-bold text-zinc-600 uppercase">{f.pessoa}</Text>
                     <Text className="text-[10px] font-black text-purple-400">+{toBrl(f.valorReferencia)}</Text>
@@ -85,6 +86,19 @@ export function PainelScreen({
               </View>
             )}
           </View>
+
+          {/* JUSTIFICATIVA DO PIX DIRETO PARA A LOJA */}
+          {totais.pixDiretoLoja > 0 && (
+            <View className="bg-blue-500/5 rounded-3xl p-5 border border-blue-500/20">
+              <View className="flex-row items-center gap-3 mb-3">
+                <Banknote size={16} color="#60a5fa" />
+                <Text className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Pix Direto p/ Loja</Text>
+              </View>
+              <Text className="text-blue-500/60 text-xs font-bold leading-5">
+                Já foi enviado <Text className="text-blue-400">{toBrl(totais.pixDiretoLoja)}</Text> diretamente para a conta da Loja/Gerente. O sistema já abateu esse valor do seu malote final.
+              </Text>
+            </View>
+          )}
 
           {/* JUSTIFICATIVA DO DINHEIRO FÍSICO (EMPRÉSTIMOS) */}
           <View className="bg-ink-900 rounded-3xl p-5 border border-zinc-800">

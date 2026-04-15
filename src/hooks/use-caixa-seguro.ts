@@ -115,6 +115,7 @@ export function useCaixaSeguro() {
     editarLançamento: (id: string, i: any) => turno && editarTransacao(turno.id, id, i),
     alternarConferencia: (t: Transacao) => turno && atualizarConferenciaTransacao(turno.id, t.id, t.statusConferencia === "pendente" ? "confirmada" : "pendente"),
     criarFantasma: (i: any) => turno && adicionarFantasma(turno.id, i),
+    editarFantasma: (id: string, i: any) => turno && atualizarFantasmaCompleto(turno.id, id, i),
     excluirFantasma: (id: string) => turno && removerFantasma(turno.id, id),
     alternarFantasmaResolvido: (f: LembreteFantasma) => turno && atualizarFantasmaCompleto(turno.id, f.id, { resolvido: !f.resolvido }),
     alternarFantasmaComprovado: (f: LembreteFantasma) => turno && atualizarFantasmaCompleto(turno.id, f.id, { comprovado_pix: !f.comprovadoPix }),
