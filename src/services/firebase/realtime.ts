@@ -1,15 +1,9 @@
-import { getDatabase, ref, setPersistenceEnabled } from "firebase/database";
+import { getDatabase, ref } from "firebase/database";
 
 import { getFirebaseApp } from "./client";
 
 export function getRealtimeDatabase() {
   const db = getDatabase(getFirebaseApp());
-  // Habilita persistência no disco para modo offline robusto
-  try {
-    setPersistenceEnabled(db, true);
-  } catch (e) {
-    console.log("Persistência offline já configurada ou erro ao ativar.");
-  }
   return db;
 }
 

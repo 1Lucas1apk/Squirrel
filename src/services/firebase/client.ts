@@ -1,6 +1,8 @@
 import { FirebaseApp, getApp, getApps, initializeApp } from "firebase/app";
-
+import { getAuth } from "firebase/auth";
 import { firebaseConfig, hasFirebaseConfig } from "../../config/env";
+
+let app: FirebaseApp;
 
 export function getFirebaseApp(): FirebaseApp {
   if (!hasFirebaseConfig()) {
@@ -13,5 +15,7 @@ export function getFirebaseApp(): FirebaseApp {
     return getApp();
   }
 
-  return initializeApp(firebaseConfig);
+  app = initializeApp(firebaseConfig);
+  return app;
 }
+

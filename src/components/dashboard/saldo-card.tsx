@@ -4,7 +4,7 @@ import { Text, View } from "react-native";
 interface SaldoCardProps {
   label: string;
   value: string;
-  tone?: "default" | "purple" | "blue" | "yellow" | "green" | "red";
+  tone?: "default" | "purple" | "blue" | "yellow" | "green" | "red" | "perfect";
   icon?: ReactNode;
 }
 
@@ -15,6 +15,7 @@ const toneClass: Record<NonNullable<SaldoCardProps["tone"]>, string> = {
   yellow: "border-yellow-500/20 bg-yellow-400/5 shadow-yellow-500/10",
   green: "border-emerald-600/20 bg-emerald-500/5 shadow-emerald-500/10",
   red: "border-red-600/20 bg-red-500/5 shadow-red-500/10",
+  perfect: "border-cyan-500/40 bg-cyan-500/10 shadow-cyan-500/20",
 };
 
 const toneTextClass: Record<NonNullable<SaldoCardProps["tone"]>, string> = {
@@ -24,11 +25,12 @@ const toneTextClass: Record<NonNullable<SaldoCardProps["tone"]>, string> = {
   yellow: "text-yellow-200",
   green: "text-emerald-300",
   red: "text-red-300",
+  perfect: "text-cyan-400",
 };
 
 export function SaldoCard({ label, value, tone = "default", icon }: SaldoCardProps) {
   return (
-    <View className={`rounded-[32px] border px-6 py-7 shadow-2xl ${toneClass[tone]}`}>
+    <View className={`rounded-[32px] border px-4 py-7 shadow-2xl ${toneClass[tone]}`}>
       <View className="flex-row items-center gap-2 mb-2 opacity-60">
         {icon}
         <Text className={`text-[10px] font-black uppercase tracking-[2px] ${toneTextClass[tone]}`}>
@@ -36,10 +38,11 @@ export function SaldoCard({ label, value, tone = "default", icon }: SaldoCardPro
         </Text>
       </View>
       <Text 
-        className={`text-[30px] font-black tracking-tighter ${toneTextClass[tone]}`}
+        className={`text-[26px] font-black tracking-tighter ${toneTextClass[tone]}`}
         numberOfLines={1}
         adjustsFontSizeToFit
-        minimumFontScale={0.5}
+        minimumFontScale={0.4}
+        ellipsizeMode="clip"
       >
         {value}
       </Text>

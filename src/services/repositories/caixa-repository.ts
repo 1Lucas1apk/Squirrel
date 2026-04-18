@@ -74,6 +74,8 @@ function mapTurno(id: string, data: Record<string, unknown>): Turno {
       gavetaFisico: Number(totais.gaveta_fisico ?? 0),
       especieEnvelope: Number(totais.especie_envelope ?? 0),
       pixRepasse: Number(totais.pix_repasse ?? 0),
+      pixNoCaixa: Number(totais.pix_no_caixa ?? 0),
+      pixDiretoLoja: Number(totais.pix_direto_loja ?? 0),
     },
     criadoEm: Number(metadados.criado_em ?? Date.now()),
     atualizadoEm: Number(metadados.atualizado_em ?? Date.now()),
@@ -248,7 +250,15 @@ export async function salvarAjusteSobra(turnoId: string, ajuste: number): Promis
 
 export async function salvarTotaisTurno(turnoId: string, totais: TotaisTurno): Promise<void> {
   await update(ref(getRealtimeDatabase(), `users/${getUserId()}/turnos/${turnoId}`), { 
-    totais: { sistema: totais.sistema, sobra: totais.sobra, gaveta_fisico: totais.gavetaFisico, especie_envelope: totais.especieEnvelope, pix_repasse: totais.pixRepasse }, 
+    totais: { 
+      sistema: totais.sistema, 
+      sobra: totais.sobra, 
+      gaveta_fisico: totais.gavetaFisico, 
+      especie_envelope: totais.especieEnvelope, 
+      pix_repasse: totais.pixRepasse,
+      pix_no_caixa: totais.pixNoCaixa,
+      pix_direto_loja: totais.pixDiretoLoja
+    }, 
     "metadados/atualizado_em": Date.now() 
   });
 }

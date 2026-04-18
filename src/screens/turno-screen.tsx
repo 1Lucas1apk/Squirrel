@@ -14,6 +14,7 @@ interface TurnoScreenProps {
   onNovoDia: () => void;
   onContinuar: () => void;
   onVerHistorico: () => void;
+  onAbrirAjustes: () => void;
 }
 
 export function TurnoScreen({
@@ -22,6 +23,7 @@ export function TurnoScreen({
   onNovoDia,
   onContinuar,
   onVerHistorico,
+  onAbrirAjustes,
 }: TurnoScreenProps) {
   return (
     <View className="flex-1 justify-center bg-ink-950 px-8">
@@ -30,7 +32,7 @@ export function TurnoScreen({
           <ShieldCheck size={40} color="#09090b" strokeWidth={2.5} />
         </View>
         <Text className="text-6xl font-black text-zinc-100 tracking-tighter">Squirrel</Text>
-        <Text className="text-xl text-zinc-500 font-bold tracking-tight mt-1 uppercase">Caixa Seguro • v5.0</Text>
+        <Text className="text-xl text-zinc-500 font-bold tracking-tight mt-1 uppercase">CAIXA</Text>
       </View>
 
       <View className="gap-5">
@@ -74,10 +76,10 @@ export function TurnoScreen({
             <Text className="text-[10px] font-black uppercase tracking-[3px] text-zinc-600">Histórico</Text>
           </Pressable>
           <View className="h-1 w-1 rounded-full bg-zinc-800" />
-          <View className="flex-row items-center gap-2 opacity-30">
+          <Pressable onPress={onAbrirAjustes} className="flex-row items-center gap-2">
             <Settings size={16} color="#71717a" />
             <Text className="text-[10px] font-black uppercase tracking-[3px] text-zinc-600">Ajustes</Text>
-          </View>
+          </Pressable>
         </View>
       </View>
 

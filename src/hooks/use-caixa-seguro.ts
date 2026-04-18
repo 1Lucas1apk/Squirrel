@@ -100,22 +100,22 @@ export function useCaixaSeguro() {
   return {
     turno, transacoes, fantasmas, historicoTurnos, totais, loading, error,
     iniciarNovoDia, continuarDiaAnterior, carregarHistoricoTurnos, abrirTurnoPorId,
-    fecharTurno: () => turno && atualizarStatusTurno(turno.id, "fechado"),
-    reabrirTurno: () => turno && atualizarStatusTurno(turno.id, "aberto"),
+    fecharTurno: () => turno ? atualizarStatusTurno(turno.id, "fechado") : Promise.resolve(),
+    reabrirTurno: () => turno ? atualizarStatusTurno(turno.id, "aberto") : Promise.resolve(),
     excluirTurno: async (id: string) => {
       await removerTurnoTotal(id);
       if (turno?.id === id) setTurno(null);
       carregarHistoricoTurnos();
     },
-    definirAjusteSobra: (v: number) => turno && salvarAjusteSobra(turno.id, v),
-    criarTransacao: (i: any) => turno && adicionarTransacao(turno.id, i),
-    excluirTransacao: (id: string) => turno && removerTransacao(turno.id, id),
-    editarLançamento: (id: string, i: any) => turno && editarTransacao(turno.id, id, i),
-    alternarConferencia: (t: Transacao) => turno && atualizarConferenciaTransacao(turno.id, t.id, t.statusConferencia === "pendente" ? "confirmada" : "pendente"),
+    definirAjusteSobra: (v: number) => turno ? salvarAjusteSobra(turno.id, v) : Promise.resolve(),
+    criarTransacao: (i: any) => turno ? adicionarTransacao(turno.id, i) : Promise.resolve(),
+    excluirTransacao: (id: string) => turno ? removerTransacao(turno.id, id) : Promise.resolve(),
+    editarLançamento: (id: string, i: any) => turno ? editarTransacao(turno.id, id, i) : Promise.resolve(),
+    alternarConferencia: (t: Transacao) => turno ? atualizarConferenciaTransacao(turno.id, t.id, t.statusConferencia === "pendente" ? "confirmada" : "pendente") : Promise.resolve(),
     reportarErroTransacao: (id: string, valorReal: number, justificativa: string) => {
-      if (!turno) return;
+      if (!turno) return Promise.resolve();
       const t = transacoes.find(x => x.id === id);
-      if (!t) return;
+      if (!t) return Promise.resolve();
       return editarTransacao(turno.id, id, { 
         ...t,
         valorRecebidoFisico: valorReal,
@@ -124,13 +124,13 @@ export function useCaixaSeguro() {
         justificativaTexto: justificativa
       });
     },
-    criarFantasma: (i: any) => turno && adicionarFantasma(turno.id, i),
-    editarFantasma: (id: string, i: any) => turno && atualizarFantasmaCompleto(turno.id, id, i),
-    excluirFantasma: (id: string) => turno && removerFantasma(turno.id, id),
-    alternarFantasmaResolvido: (f: LembreteFantasma) => turno && atualizarFantasmaCompleto(turno.id, f.id, { resolvido: !f.resolvido }),
-    alternarFantasmaComprovado: (f: LembreteFantasma) => turno && atualizarFantasmaCompleto(turno.id, f.id, { comprovado_pix: !f.comprovadoPix }),
-    salvarContagem: (c: ContagemCedulas) => turno && salvarContagemCedulas(turno.id, c),
-    salvarIDs: (c: string, o: string) => turno && atualizarIdentificacao(turno.id, c, o),
+    criarFantasma: (i: any) => turno ? adicionarFantasma(turno.id, i) : Promise.resolve(),
+    editarFantasma: (id: string, i: any) => turno ? atualizarFantasmaCompleto(turno.id, id, i) : Promise.resolve(),
+    excluirFantasma: (id: string) => turno ? removerFantasma(turno.id, id) : Promise.resolve(),
+    alternarFantasmaResolvido: (f: LembreteFantasma) => turno ? atualizarFantasmaCompleto(turno.id, f.id, { resolvido: !f.resolvido }) : Promise.resolve(),
+    alternarFantasmaComprovado: (f: LembreteFantasma) => turno ? atualizarFantasmaCompleto(turno.id, f.id, { comprovado_pix: !f.comprovadoPix }) : Promise.resolve(),
+    salvarContagem: (c: ContagemCedulas) => turno ? salvarContagemCedulas(turno.id, c) : Promise.resolve(),
+    salvarIDs: (c: string, o: string) => turno ? atualizarIdentificacao(turno.id, c, o) : Promise.resolve(),
     alternarRepasse: async (id: string, repassado: boolean) => {
       await atualizarStatusRepasse(id, repassado);
       carregarHistoricoTurnos(); 

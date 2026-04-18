@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pressable, Text, TextInput, View, Modal, FlatList } from "react-native";
-import { Search, CheckCircle2, Circle, AlertCircle, Trash2, Link as LinkIcon } from "lucide-react-native";
+import { Search, CheckCircle2, Circle, AlertCircle, Trash2, Link as LinkIcon, Filter } from "lucide-react-native";
 import { MoneyInput } from "../components/common/money-input";
 import { LembreteFantasma, Transacao } from "../types/domain";
 import { toBrl } from "../utils/currency";
@@ -16,6 +16,7 @@ interface ChecklistScreenProps {
 
 export function ChecklistScreen({ transacoes, fantasmas, onToggle, onExcluir, onReportarErro, isFechado }: ChecklistScreenProps) {
   const [busca, setBusca] = useState("");
+  const [apenasPendentes, setApenasPendentes] = useState(false);
 
   const [itemEmErro, setItemEmErro] = useState<string | null>(null);
   const [valorRealPago, setValorRealPago] = useState(0);
@@ -35,6 +36,9 @@ export function ChecklistScreen({ transacoes, fantasmas, onToggle, onExcluir, on
   }
 
   const transacoesFiltradas = transacoes.filter((t) => {
+    // Se o filtro estiver ativo, esconde as confirmadas
+    if (apenasPendentes && t.statusConferencia === "confirmada") return false;
+
     if (!busca) return true;
     const valorStr = t.valorSistema.toString().replace(".", ",");
     return valorStr.includes(busca) || t.descricao.toLowerCase().includes(busca.toLowerCase());
@@ -45,6 +49,19 @@ export function ChecklistScreen({ transacoes, fantasmas, onToggle, onExcluir, on
   const renderItem = ({ item }: { item: Transacao }) => {
     const isConfirmada = item.statusConferencia === "confirmada";
     const isCancelamento = item.categoria === "cancelamento";
+    
+    // Mesma paleta de cores para consistência
+    const accentColors: Record<Transacao["categoria"], string> = {
+      dinheiro: "#34d399",
+      entrada_prestacao: "#60a5fa",
+      compra_vista: "#f4f4f5",
+      multiplo: "#fb923c",
+      sangria: "#f87171",
+      cancelamento: "#ef4444",
+      gar: "#a78bfa"
+    };
+
+    const color = accentColors[item.categoria] || "#71717a";
     
     return (
       <View className={`rounded-[32px] border p-6 shadow-sm mb-4 ${
@@ -70,7 +87,7 @@ export function ChecklistScreen({ transacoes, fantasmas, onToggle, onExcluir, on
             delayLongPress={500}
           >
             <View className="flex-row items-center gap-2 mb-2">
-              <Text className={`text-[10px] font-black uppercase tracking-widest ${isConfirmada ? "text-emerald-500" : "text-zinc-500"}`}>
+              <Text style={{ color: isConfirmada ? undefined : color }} className={`text-[10px] font-black uppercase tracking-widest ${isConfirmada ? "text-emerald-500" : ""}`}>
                 {new Date(item.timestamp).toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' })} • {getCategoriaLabel(item.categoria)}
               </Text>
               {isCancelamento && (
@@ -207,9 +224,20 @@ export function ChecklistScreen({ transacoes, fantasmas, onToggle, onExcluir, on
             </View>
 
             <View className="flex-row items-center justify-between px-2">
-              <Text className="text-[11px] font-black uppercase tracking-[3px] text-zinc-500">
-                Conferência
-              </Text>
+              <View className="flex-row items-center gap-3">
+                <Text className="text-[11px] font-black uppercase tracking-[3px] text-zinc-500">
+                  Conferência
+                </Text>
+                <Pressable 
+                  onPress={() => setApenasPendentes(!apenasPendentes)}
+                  className={`flex-row items-center gap-2 px-3 py-1.5 rounded-full border ${apenasPendentes ? 'bg-amber-500/10 border-amber-500/30' : 'bg-zinc-800 border-zinc-700'}`}
+                >
+                  <Filter size={10} color={apenasPendentes ? '#f59e0b' : '#71717a'} />
+                  <Text className={`text-[8px] font-black uppercase ${apenasPendentes ? 'text-amber-500' : 'text-zinc-500'}`}>
+                    {apenasPendentes ? "Pendentes" : "Ver Tudo"}
+                  </Text>
+                </Pressable>
+              </View>
               <View className="rounded-full bg-blue-500/10 px-4 py-1.5 border border-blue-500/20">
                 <Text className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
                   {confirmadas.length} de {transacoes.length} OK

@@ -12,12 +12,14 @@ import {
 } from "lucide-react-native";
 import { MoneyInput } from "../components/common/money-input";
 import { PainelPrincipal } from "../components/dashboard/painel-principal";
-import { TotaisTurno, LembreteFantasma } from "../types/domain";
+import { TotaisTurno, LembreteFantasma, Transacao } from "../types/domain";
 import { toBrl } from "../utils/currency";
+import { useMemo } from "react";
 
 interface PainelScreenProps {
   totais: TotaisTurno;
   fantasmas: LembreteFantasma[];
+  transacoes: Transacao[];
   ajusteManualSobra: number;
   onAjusteSobra: (value: number) => void;
   isFechado?: boolean;
@@ -27,6 +29,7 @@ interface PainelScreenProps {
 export function PainelScreen({
   totais,
   fantasmas = [],
+  transacoes = [],
   ajusteManualSobra,
   onAjusteSobra,
   isFechado,
@@ -39,6 +42,15 @@ export function PainelScreen({
   const pixRecebido = pendencias.filter(f => f.tipo === 'pix_recebido_gaveta_saiu');
   const destrocas = pendencias.filter(f => f.tipo === 'destroca_pix_por_nota');
   const emprestimos = pendencias.filter(f => f.tipo === 'dinheiro_emprestado');
+
+  // Auditoria de erros
+  const transacoesComErro = useMemo(() => {
+    return (transacoes || []).filter(t => t.statusConferencia === "incorreto");
+  }, [transacoes]);
+
+  const totalTerceiros = useMemo(() => {
+    return emprestimos.reduce((acc, i) => acc + i.valorReferencia, 0);
+  }, [emprestimos]);
 
   return (
     <View className="gap-8 pb-32">
@@ -58,7 +70,12 @@ export function PainelScreen({
       )}
 
       {/* 1. RESUMO DOS TOTAIS (MATEMÁTICA ALGORÍTMICA) */}
-      <PainelPrincipal totais={totais} pendenciasFantasma={pendencias.length} isDiscreto={isDiscreto} />
+      <PainelPrincipal 
+        totais={totais} 
+        pendenciasFantasma={pendencias.length} 
+        valorTerceiros={totalTerceiros}
+        isDiscreto={isDiscreto} 
+      />
 
       {/* 2. AJUSTE DE SOBRA */}
       {!isDiscreto && (
@@ -76,15 +93,53 @@ export function PainelScreen({
         </View>
       )}
 
+      {/* NOVO: LISTA DE AUDITORIA (ERROS) - Só aparece se estiver fechado e não for discreto */}
+      {isFechado && !isDiscreto && transacoesComErro.length > 0 && (
+        <View className="rounded-[40px] border border-red-500/20 bg-red-500/5 p-8">
+          <View className="flex-row items-center gap-3 mb-6">
+            <AlertCircle size={18} color="#f87171" />
+            <Text className="text-xl font-black text-white uppercase tracking-widest">Auditoria de Erros</Text>
+          </View>
+          <Text className="text-[10px] font-black text-zinc-500 uppercase mb-4 leading-4">
+            Lançamentos que tiveram diferença de valor neste dia:
+          </Text>
+          <View className="gap-3">
+             {transacoesComErro.map(t => (
+               <View key={t.id} className="bg-ink-900/50 border border-red-900/20 p-4 rounded-2xl">
+                 <View className="flex-row justify-between items-center mb-1">
+                   <Text className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">{t.descricao || 'Sem descrição'}</Text>
+                   <Text className="text-[9px] font-black text-red-400">-{toBrl(Math.abs(t.valorSistema - t.valorRecebidoFisico))}</Text>
+                 </View>
+                 <Text className="text-xs font-black text-zinc-100 uppercase tracking-tighter">Sist: {toBrl(t.valorSistema)} → Real: {toBrl(t.valorRecebidoFisico)}</Text>
+                 {t.justificativaTexto && (
+                   <Text className="text-[9px] text-zinc-600 font-bold uppercase mt-2 italic">"{t.justificativaTexto}"</Text>
+                 )}
+               </View>
+             ))}
+          </View>
+        </View>
+      )}
+
       {/* 3. INFORMATIVO DE MOVIMENTAÇÃO (O "PORQUÊ" DOS NÚMEROS) */}
       {!isDiscreto && (
         <View className="rounded-[40px] border border-zinc-800 bg-ink-950 p-8">
         <View className="flex-row items-center gap-3 mb-8">
           <Info size={18} color="#a78bfa" />
-          <Text className="text-xl font-black text-white uppercase tracking-widest">Justificativa de Saldo</Text>
+          <Text className="text-xl font-black text-white uppercase tracking-widest">Resumo de Movimentação</Text>
         </View>
 
         <View className="gap-6">
+          {/* NOVO: RESUMO DE SAÍDAS DO DIA */}
+          <View className="bg-red-500/5 rounded-3xl p-5 border border-red-500/20">
+            <View className="flex-row items-center gap-3 mb-3">
+              <ArrowUpRight size={16} color="#f87171" />
+              <Text className="text-[10px] font-black text-red-400 uppercase tracking-widest">Saídas da Gaveta</Text>
+            </View>
+            <Text className="text-zinc-500 text-xs leading-5">
+              Hoje já foram retirados <Text className="text-red-400 font-bold">{toBrl(transacoes.filter(t => t.categoria === 'sangria' || t.categoria === 'cancelamento').reduce((acc, t) => acc + t.valorSistema, 0))}</Text> do seu caixa entre pagamentos de contas, vales ou cancelamentos. Esse valor já foi abatido do seu saldo final.
+            </Text>
+          </View>
+
           {/* JUSTIFICATIVA DO PIX NO CELULAR */}
           <View className="bg-ink-900 rounded-3xl p-5 border border-zinc-800">
             <View className="flex-row items-center gap-3 mb-3">

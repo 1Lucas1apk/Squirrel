@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
-import { Pressable, ScrollView, Text, View, Platform, StyleSheet, Share, Modal, TextInput } from "react-native";
+import { Pressable, ScrollView, Text, View, Platform, StyleSheet, Share, Modal, TextInput, Switch } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useCaixaSeguro } from "../hooks/use-caixa-seguro";
@@ -30,23 +30,32 @@ import {
   CalendarDays,
   LogOut,
   Cloud,
-  CloudOff
+  CloudOff,
+  Zap
 } from "lucide-react-native";
 import { getDatabase, ref, onValue } from "firebase/database";
 import { getFirebaseApp } from "../services/firebase/client";
 
 import { useAuth } from "../hooks/use-auth";
+import { useAppSettings, HapticIntensity } from "../hooks/use-app-settings";
+
+import * as Haptics from 'expo-haptics';
+import { scheduleDailyReminders } from "../services/notifications";
 
 type SectionKey = "painel" | "transacoes" | "checklist" | "fantasmas" | "historico";
 
 export function MainScreen() {
   const { logout } = useAuth();
+  const { settings, updateSettings } = useAppSettings();
+  const caixa = useCaixaSeguro();
+
   const [section, setSection] = useState<SectionKey>("painel");
   const [isDiscreto, setIsDiscreto] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
   const [modalFechamento, setModalFechamento] = useState(false);
   const [modalMais, setModalMais] = useState(false);
   const [modalConfig, setModalConfig] = useState(false);
+  const [modalPreferencias, setModalPreferencias] = useState(false);
   
   const [bateu, setBateu] = useState<boolean | null>(null);
   const [obs, setObs] = useState("");
@@ -58,8 +67,40 @@ export function MainScreen() {
     visible: boolean; title: string; message: string; onConfirm: () => void; destructive?: boolean;
   }>({ visible: false, title: "", message: "", onConfirm: () => {} });
   
-  const caixa = useCaixaSeguro();
   const isFechado = caixa.turno?.statusTurno === "fechado";
+
+  const triggerHaptic = (type: "light" | "medium" | "heavy" | "success") => {
+    if (!settings.hapticsEnabled) return;
+
+    if (type === "success") {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      return;
+    }
+
+    const intensityMap = {
+      light: Haptics.ImpactFeedbackStyle.Light,
+      medium: Haptics.ImpactFeedbackStyle.Medium,
+      heavy: Haptics.ImpactFeedbackStyle.Heavy,
+    };
+
+    const style = type === "light" ? intensityMap[settings.hapticIntensity] : (intensityMap[type as keyof typeof intensityMap] || intensityMap.light);
+    void Haptics.impactAsync(style);
+  };
+
+  // Função para salvar e reagendar notificações
+  const saveAndSchedule = async (newSettings: any) => {
+    await updateSettings(newSettings);
+    const updated = { ...settings, ...newSettings };
+    const hasPending = (caixa.fantasmas || []).some(f => !f.resolvido);
+    await scheduleDailyReminders(updated.fechamentoSemana, updated.fechamentoSabado, hasPending);
+  };
+
+  // Monitora as Notas Fantasmas para atualizar as notificações
+  useEffect(() => {
+    if (!settings.fechamentoSemana) return;
+    const hasPending = (caixa.fantasmas || []).some(f => !f.resolvido);
+    void scheduleDailyReminders(settings.fechamentoSemana, settings.fechamentoSabado, hasPending);
+  }, [(caixa.fantasmas || []).length, (caixa.fantasmas || []).filter(f => !f.resolvido).length]);
 
   // Monitor de Conexão Offline
   useEffect(() => {
@@ -119,12 +160,32 @@ export function MainScreen() {
   };
 
   const changeSection = async (next: SectionKey) => {
+    triggerHaptic("light");
     setSection(next);
     if (next === "historico") await caixa.carregarHistoricoTurnos();
   };
 
   const iniciarFechamento = () => {
     if (bateu === null) return;
+    
+    // Verifica se existem notas informais pendentes
+    const pendenciasF = (caixa.fantasmas || []).filter(f => !f.resolvido);
+    const totalPendencia = pendenciasF.reduce((acc, f) => acc + f.valorReferencia, 0);
+
+    if (totalPendencia > 0) {
+      mostrarAlerta(
+        "NOTAS PENDENTES", 
+        `Você ainda tem ${toBrl(totalPendencia)} em movimentações não resolvidas. Deseja fechar assim mesmo?`, 
+        async () => {
+          setModalFechamento(false);
+          await caixa.fecharTurno();
+          setBateu(null);
+          setObs("");
+        }
+      );
+      return;
+    }
+
     setModalFechamento(false);
     setTimeout(() => {
       mostrarAlerta("ENCERRAR DIA", "Deseja realmente fechar o caixa agora? As edições serão travadas.", async () => {
@@ -221,26 +282,9 @@ export function MainScreen() {
     }
   }
 
-  if (!caixa.turno) {
-    return (
-      <SafeAreaView style={styles.container}>
-        {section === "historico" ? (
-          <View className="mx-auto flex-1 w-full max-w-[460px] px-5 pb-8 pt-5">
-            <View className="mb-6 flex-row items-center justify-between">
-              <Text className="text-xl font-black text-zinc-100 uppercase tracking-widest">Histórico</Text>
-              <Pressable className="rounded-2xl border border-zinc-700 px-4 py-2 bg-ink-900" onPress={() => setSection("painel")}><Text className="text-xs font-bold text-zinc-300 uppercase">Voltar</Text></Pressable>
-            </View>
-            <HistoricoScreen turnos={caixa.historicoTurnos} loading={caixa.loading} onRefresh={caixa.carregarHistoricoTurnos} onOpen={(turnoId) => void caixa.abrirTurnoPorId(turnoId)} onExcluirDia={(id) => mostrarAlerta("APAGAR DIA", "Deseja deletar?", () => caixa.excluirTurno(id), true)} />
-          </View>
-        ) : (
-          <TurnoScreen loading={caixa.loading} error={caixa.error} onNovoDia={caixa.iniciarNovoDia} onContinuar={caixa.continuarDiaAnterior} onVerHistorico={() => changeSection("historico")} />
-        )}
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
+      {/* MODAIS GLOBAIS - Disponíveis em todo o app */}
       <Modal visible={customAlert.visible} transparent animationType="fade">
         <View className="flex-1 bg-black/90 items-center justify-center p-6">
           <View className="w-full max-w-[380px] rounded-[40px] border border-zinc-800 bg-ink-900 p-8 items-center shadow-2xl">
@@ -266,12 +310,111 @@ export function MainScreen() {
               <Pressable onPress={() => { setModalMais(false); setModalConfig(true); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
                 <Settings size={20} color="#71717a" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">ID do Caixa/Operador</Text>
               </Pressable>
+              <Pressable onPress={() => { setModalMais(false); setModalPreferencias(true); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
+                <Zap size={20} color="#a78bfa" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">Configurações do App</Text>
+              </Pressable>
               <Pressable onPress={() => { setModalMais(false); logout(); }} className="flex-row items-center gap-4 bg-red-500/10 p-6 rounded-[24px] border border-red-500/20">
                 <LogOut size={20} color="#f87171" /><Text className="text-red-400 font-black uppercase tracking-widest text-xs">Sair da Conta</Text>
               </Pressable>
             </View>
           </View>
         </Pressable>
+      </Modal>
+
+      <Modal visible={modalPreferencias} transparent animationType="fade">
+        <View className="flex-1 bg-black/90 items-center justify-center p-6">
+          <View className="w-full max-w-[380px] bg-ink-900 border border-zinc-800 rounded-[40px] p-8 shadow-2xl">
+            <View className="flex-row items-center justify-between mb-8">
+              <Text className="text-xl font-black text-white uppercase">Ajustes</Text>
+              <X size={20} color="#71717a" onPress={() => setModalPreferencias(false)} />
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} overScrollMode="never">
+              <View className="gap-8">
+                {/* HORÁRIOS */}
+                <View className="gap-4">
+                  <Text className="text-[10px] font-black text-zinc-600 uppercase ml-1">Lembretes de Fechamento</Text>
+                  
+                  <View className="flex-row gap-3">
+                    <View className="flex-1 gap-2">
+                      <Text className="text-[8px] font-black text-zinc-500 uppercase ml-1">Seg a Sex</Text>
+                      <TextInput 
+                        value={settings.fechamentoSemana}
+                        onChangeText={(v) => saveAndSchedule({ fechamentoSemana: v })}
+                        placeholder="17:00"
+                        placeholderTextColor="#3f3f46"
+                        className="bg-ink-800 p-4 rounded-2xl text-white font-black border border-zinc-800 text-center"
+                      />
+                    </View>
+                    <View className="flex-1 gap-2">
+                      <Text className="text-[8px] font-black text-zinc-500 uppercase ml-1">Sábado</Text>
+                      <TextInput 
+                        value={settings.fechamentoSabado}
+                        onChangeText={(v) => saveAndSchedule({ fechamentoSabado: v })}
+                        placeholder="12:00"
+                        placeholderTextColor="#3f3f46"
+                        className="bg-ink-800 p-4 rounded-2xl text-white font-black border border-zinc-800 text-center"
+                      />
+                    </View>
+                  </View>
+                </View>
+
+                {/* VIBRAÇÃO */}
+                <View>
+                  <View className="flex-row items-center justify-between mb-4">
+                    <View className="flex-row items-center gap-3">
+                      <Zap size={18} color="#a78bfa" />
+                      <Text className="text-xs font-black text-zinc-100 uppercase">Vibrações (Haptic)</Text>
+                    </View>
+                    <Switch 
+                      value={settings.hapticsEnabled}
+                      onValueChange={(val) => updateSettings({ hapticsEnabled: val })}
+                      trackColor={{ false: "#27272a", true: "#a78bfa" }}
+                      thumbColor={"#f4f4f5"}
+                    />
+                  </View>
+                  <Text className="text-[10px] font-bold text-zinc-500 uppercase leading-4">
+                    Feedback físico ao tocar em botões e confirmar lançamentos.
+                  </Text>
+                </View>
+
+                {settings.hapticsEnabled && (
+                  <View>
+                    <Text className="text-[10px] font-black text-zinc-600 uppercase mb-4 ml-1">Intensidade do Toque</Text>
+                    <View className="flex-row gap-2">
+                      {(['light', 'medium', 'heavy'] as HapticIntensity[]).map((level) => {
+                        const active = settings.hapticIntensity === level;
+                        return (
+                          <Pressable 
+                            key={level} 
+                            onPress={() => {
+                              updateSettings({ hapticIntensity: level });
+                              const intensityMap = {
+                                light: Haptics.ImpactFeedbackStyle.Light,
+                                medium: Haptics.ImpactFeedbackStyle.Medium,
+                                heavy: Haptics.ImpactFeedbackStyle.Heavy,
+                              };
+                              void Haptics.impactAsync(intensityMap[level]);
+                            }}
+                            className={`flex-1 py-4 rounded-2xl border-2 items-center ${active ? 'bg-purple-500/10 border-purple-500' : 'bg-ink-800 border-zinc-800'}`}
+                          >
+                            <Text className={`text-[10px] font-black uppercase ${active ? 'text-purple-400' : 'text-zinc-500'}`}>
+                              {level === 'light' ? 'Leve' : level === 'medium' ? 'Médio' : 'Forte'}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                )}
+              </View>
+            </ScrollView>
+
+            <Pressable onPress={() => setModalPreferencias(false)} className="bg-zinc-100 py-5 rounded-2xl shadow-xl mt-8">
+              <Text className="text-center font-black uppercase text-zinc-950">Fechar</Text>
+            </Pressable>
+          </View>
+        </View>
       </Modal>
 
       <Modal visible={modalConfig} transparent animationType="fade">
@@ -287,97 +430,136 @@ export function MainScreen() {
         </View>
       </Modal>
 
-      <Modal visible={modalFechamento} transparent animationType="slide">
-        <View className="flex-1 bg-black/90 items-center justify-center p-6">
-          <View className="w-full max-w-[400px] rounded-[40px] border border-zinc-800 bg-ink-900 p-8 shadow-2xl">
-            <View className="flex-row items-center justify-between mb-6"><Text className="text-xl font-black text-white uppercase tracking-widest">Auditoria Final</Text><X size={20} color="#71717a" onPress={() => setModalFechamento(false)} /></View>
-            <Text className="text-[10px] font-black text-zinc-500 uppercase tracking-[2px] mb-4 text-center">O Caixa bateu com o Físico?</Text>
-            <View className="flex-row gap-4 mb-8">
-              <Pressable onPress={() => setBateu(true)} className={`flex-1 flex-row items-center justify-center gap-2 py-5 rounded-[24px] border-2 ${bateu === true ? 'bg-emerald-500 border-emerald-500' : 'bg-ink-800 border-zinc-800'}`}><CheckCircle2 size={18} color={bateu === true ? "#064e3b" : "#71717a"} /><Text className={`font-black uppercase text-[10px] ${bateu === true ? 'text-emerald-950' : 'text-zinc-500'}`}>Sim</Text></Pressable>
-              <Pressable onPress={() => setBateu(false)} className={`flex-1 flex-row items-center justify-center gap-2 py-5 rounded-[24px] border-2 ${bateu === false ? 'bg-red-500 border-red-500' : 'bg-ink-800 border-zinc-800'}`}><AlertTriangle size={18} color={bateu === false ? "#450a0a" : "#71717a"} /><Text className={`font-black uppercase text-[10px] ${bateu === false ? 'text-red-950' : 'text-zinc-500'}`}>Não</Text></Pressable>
+      {/* CONTEÚDO DINÂMICO */}
+      {!caixa.turno ? (
+        <View className="flex-1">
+          {section === "historico" ? (
+            <View className="flex-1">
+              <View className="mx-auto flex-1 w-full max-w-[460px]">
+                <HistoricoScreen 
+                  turnos={caixa.historicoTurnos} 
+                  loading={caixa.loading} 
+                  onRefresh={caixa.carregarHistoricoTurnos} 
+                  onOpen={(turnoId) => void caixa.abrirTurnoPorId(turnoId)} 
+                  onExcluirDia={(id) => mostrarAlerta("APAGAR DIA", "Deseja deletar?", () => caixa.excluirTurno(id), true)} 
+                  onVoltar={() => setSection("painel")}
+                />
+              </View>
             </View>
-            {bateu === false && <TextInput multiline value={obs} onChangeText={setObs} className="rounded-[24px] border border-zinc-800 bg-ink-800 p-6 text-zinc-200 font-bold mb-8" placeholder="O que deu erro?" placeholderTextColor="#3f3f46" />}
-            <Pressable disabled={bateu === null} onPress={iniciarFechamento} className={`rounded-[24px] py-6 shadow-2xl ${bateu !== null ? 'bg-zinc-100' : 'bg-zinc-800 opacity-50'}`}><Text className="text-center font-black uppercase tracking-[4px] text-zinc-950">Confirmar</Text></Pressable>
-          </View>
-        </View>
-      </Modal>
-
-      <View className="border-b border-zinc-900 bg-ink-950 px-4 pb-4 pt-2">
-        <View className="mx-auto flex w-full max-w-[460px] flex-row items-center justify-between">
-          <View className="flex-row items-center gap-3">
-            <Pressable onPress={() => setIsDiscreto(!isDiscreto)}>
-              <Text className={`text-lg font-black uppercase tracking-tighter ${isDiscreto ? 'text-zinc-700' : 'text-zinc-100'}`}>CAIXA</Text>
-              <Text className="text-[10px] font-black uppercase tracking-[2px] text-zinc-600">{caixa.turno.dataReferencia} • {caixaId || 'S/C'}</Text>
-            </Pressable>
-            <View className={`h-6 w-6 items-center justify-center rounded-full ${isOnline ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
-              {isOnline ? <Cloud size={12} color="#34d399" /> : <CloudOff size={12} color="#f87171" />}
-            </View>
-          </View>
-          <View className="flex-row gap-2">
-            <Pressable className="h-10 w-10 items-center justify-center rounded-2xl border border-zinc-800 bg-ink-900 active:bg-zinc-800" onPress={gerarRelatorio}><Share2 size={18} color="#a78bfa" /></Pressable>
-            <Pressable className="h-10 w-10 items-center justify-center rounded-2xl border border-zinc-800 bg-ink-900 active:bg-zinc-800" onPress={() => changeSection("historico")}><CalendarDays size={18} color="#71717a" /></Pressable>
-            {isFechado ? (
-              <Pressable onLongPress={() => handleReabrir()} delayLongPress={2000} className="h-10 w-10 items-center justify-center rounded-2xl border border-red-500/30 bg-red-500/10"><Lock size={18} color="#f87171" /></Pressable>
-            ) : (
-              <Pressable onPress={() => setModalFechamento(true)} className="h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10"><Unlock size={18} color="#34d399" /></Pressable>
-            )}
-            <Pressable className="h-10 w-10 items-center justify-center rounded-2xl border border-zinc-800 bg-ink-900 active:bg-zinc-800" onPress={() => setModalMais(true)}><MoreHorizontal size={18} color="#71717a" /></Pressable>
-          </View>
-        </View>
-      </View>
-
-      {section === "painel" ? (
-        <ScrollView className="flex-1" contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          <View className="mx-auto w-full max-w-[460px]">
-            <PainelScreen 
-              totais={caixa.totais} 
-              fantasmas={caixa.fantasmas || []} 
-              ajusteManualSobra={caixa.turno.ajusteManualSobra} 
-              onAjusteSobra={caixa.definirAjusteSobra}
-              isFechado={isFechado} 
-              isDiscreto={isDiscreto}
+          ) : (
+            <TurnoScreen 
+              loading={caixa.loading} 
+              error={caixa.error} 
+              onNovoDia={caixa.iniciarNovoDia} 
+              onContinuar={caixa.continuarDiaAnterior} 
+              onVerHistorico={() => changeSection("historico")} 
+              onAbrirAjustes={() => setModalPreferencias(true)}
             />
-          </View>
-        </ScrollView>
+          )}
+        </View>
       ) : (
-        <View className="flex-1 px-4 pt-6">
-          <View className="mx-auto w-full max-w-[460px] flex-1">
-            {section === "transacoes" && <TransacoesScreen transacoes={caixa.transacoes} onAdicionar={caixa.criarTransacao} onExcluir={(id) => mostrarAlerta("EXCLUIR", "Apagar?", () => caixa.excluirTransacao(id), true)} onEditar={caixa.editarLançamento} isFechado={isFechado} />}
-            {section === "checklist" && (
-              <ChecklistScreen 
-                transacoes={caixa.transacoes} 
-                fantasmas={caixa.fantasmas || []}
-                onToggle={caixa.alternarConferencia} 
-                onExcluir={(id) => mostrarAlerta("EXCLUIR", "Apagar?", () => caixa.excluirTransacao(id), true)} 
-                onReportarErro={caixa.reportarErroTransacao}
-                isFechado={isFechado} 
-              />
-            )}
-            {section === "fantasmas" && <FantasmasScreen transacoes={caixa.transacoes} fantasmas={caixa.fantasmas || []} onCriar={caixa.criarFantasma} onEditar={caixa.editarFantasma} onToggleResolvido={caixa.alternarFantasmaResolvido} onToggleComprovado={caixa.alternarFantasmaComprovado} onExcluir={(id) => mostrarAlerta("EXCLUIR", "Remover?", () => caixa.excluirFantasma(id), true)} isFechado={isFechado} />}
-            {section === "historico" && <HistoricoScreen turnos={caixa.historicoTurnos} loading={caixa.loading} onRefresh={caixa.carregarHistoricoTurnos} onOpen={(turnoId) => void caixa.abrirTurnoPorId(turnoId)} onExcluirDia={(id) => mostrarAlerta("APAGAR DIA", "Deseja deletar?", () => caixa.excluirTurno(id), true)} onToggleRepasse={(id, state) => caixa.alternarRepasse(id, state)} />}
-          </View>
-        </View>
-      )}
+        <>
+          <Modal visible={modalFechamento} transparent animationType="slide">
+            <View className="flex-1 bg-black/90 items-center justify-center p-6">
+              <View className="w-full max-w-[400px] rounded-[40px] border border-zinc-800 bg-ink-900 p-8 shadow-2xl">
+                <View className="flex-row items-center justify-between mb-6"><Text className="text-xl font-black text-white uppercase tracking-widest">Auditoria Final</Text><X size={20} color="#71717a" onPress={() => setModalFechamento(false)} /></View>
+                <Text className="text-[10px] font-black text-zinc-500 uppercase tracking-[2px] mb-4 text-center">O Caixa bateu com o Físico?</Text>
+                <View className="flex-row gap-4 mb-8">
+                  <Pressable onPress={() => setBateu(true)} className={`flex-1 flex-row items-center justify-center gap-2 py-5 rounded-[24px] border-2 ${bateu === true ? 'bg-emerald-500 border-emerald-500' : 'bg-ink-800 border-zinc-800'}`}><CheckCircle2 size={18} color={bateu === true ? "#064e3b" : "#71717a"} /><Text className={`font-black uppercase text-[10px] ${bateu === true ? 'text-emerald-950' : 'text-zinc-500'}`}>Sim</Text></Pressable>
+                  <Pressable onPress={() => setBateu(false)} className={`flex-1 flex-row items-center justify-center gap-2 py-5 rounded-[24px] border-2 ${bateu === false ? 'bg-red-500 border-red-500' : 'bg-ink-800 border-zinc-800'}`}><AlertTriangle size={18} color={bateu === false ? "#450a0a" : "#71717a"} /><Text className={`font-black uppercase text-[10px] ${bateu === false ? 'text-red-950' : 'text-zinc-500'}`}>Não</Text></Pressable>
+                </View>
+                {bateu === false && <TextInput multiline value={obs} onChangeText={setObs} className="rounded-[24px] border border-zinc-800 bg-ink-800 p-6 text-zinc-200 font-bold mb-8" placeholder="O que deu erro?" placeholderTextColor="#3f3f46" />}
+                <Pressable disabled={bateu === null} onPress={iniciarFechamento} className={`rounded-[24px] py-6 shadow-2xl ${bateu !== null ? 'bg-zinc-100' : 'bg-zinc-800 opacity-50'}`}><Text className="text-center font-black uppercase tracking-[4px] text-zinc-950">Confirmar</Text></Pressable>
+              </View>
+            </View>
+          </Modal>
 
-      <View style={styles.navContainer} pointerEvents="box-none">
-        <View style={styles.navInner}>
-          {mainSections.map((s) => {
-            const active = section === s.key;
-            const Icon = s.icon;
-            return (
-              <Pressable 
-                key={s.key} 
-                style={[styles.navButton, active && styles.navButtonActive]} 
-                onPress={() => setSection(s.key)}
-                hitSlop={10}
-              >
-                <Icon size={18} color={active ? "#09090b" : "#71717a"} strokeWidth={active ? 3 : 2} />
-                {active && <Text style={styles.navLabel}>{s.label}</Text>}
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
+          <View className="border-b border-zinc-900 bg-ink-950 px-4 pb-4 pt-2">
+            <View className="mx-auto flex w-full max-w-[460px] flex-row items-center justify-between">
+              <View className="flex-row items-center gap-3">
+                <Pressable onPress={() => setIsDiscreto(!isDiscreto)}>
+                  <Text className={`text-lg font-black uppercase tracking-tighter ${isDiscreto ? 'text-zinc-700' : 'text-zinc-100'}`}>CAIXA</Text>
+                  <Text className="text-[10px] font-black uppercase tracking-[2px] text-zinc-600">{caixa.turno.dataReferencia} • {caixaId || 'S/C'}</Text>
+                </Pressable>
+                <View className={`h-6 w-6 items-center justify-center rounded-full ${isOnline ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+                  {isOnline ? <Cloud size={12} color="#34d399" /> : <CloudOff size={12} color="#f87171" />}
+                </View>
+              </View>
+              <View className="flex-row gap-2">
+                <Pressable className="h-10 w-10 items-center justify-center rounded-2xl border border-zinc-800 bg-ink-900 active:bg-zinc-800" onPress={gerarRelatorio}><Share2 size={18} color="#a78bfa" /></Pressable>
+                <Pressable className="h-10 w-10 items-center justify-center rounded-2xl border border-zinc-800 bg-ink-900 active:bg-zinc-800" onPress={() => changeSection("historico")}><CalendarDays size={18} color="#71717a" /></Pressable>
+                {isFechado ? (
+                  <Pressable onLongPress={() => handleReabrir()} delayLongPress={2000} className="h-10 w-10 items-center justify-center rounded-2xl border border-red-500/30 bg-red-500/10"><Lock size={18} color="#f87171" /></Pressable>
+                ) : (
+                  <Pressable onPress={() => setModalFechamento(true)} className="h-10 w-10 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10"><Unlock size={18} color="#34d399" /></Pressable>
+                )}
+                <Pressable className="h-10 w-10 items-center justify-center rounded-2xl border border-zinc-800 bg-ink-900 active:bg-zinc-800" onPress={() => setModalMais(true)}><MoreHorizontal size={18} color="#71717a" /></Pressable>
+              </View>
+            </View>
+          </View>
+
+          {section === "painel" ? (
+            <ScrollView className="flex-1" contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <View className="mx-auto w-full max-w-[460px]">
+                <PainelScreen 
+                  totais={caixa.totais} 
+                  fantasmas={caixa.fantasmas || []} 
+                  transacoes={caixa.transacoes}
+                  ajusteManualSobra={caixa.turno.ajusteManualSobra} 
+                  onAjusteSobra={caixa.definirAjusteSobra}
+                  isFechado={isFechado} 
+                  isDiscreto={isDiscreto}
+                />
+              </View>
+            </ScrollView>
+          ) : (
+            <View className="flex-1 px-4 pt-6">
+              <View className="mx-auto w-full max-w-[460px] flex-1">
+                {section === "transacoes" && <TransacoesScreen transacoes={caixa.transacoes} onAdicionar={caixa.criarTransacao} onExcluir={(id) => mostrarAlerta("EXCLUIR", "Apagar?", () => caixa.excluirTransacao(id), true)} onEditar={caixa.editarLançamento} isFechado={isFechado} />}
+                {section === "checklist" && (
+                  <ChecklistScreen 
+                    transacoes={caixa.transacoes} 
+                    fantasmas={caixa.fantasmas || []}
+                    onToggle={caixa.alternarConferencia} 
+                    onExcluir={(id) => mostrarAlerta("EXCLUIR", "Apagar?", () => caixa.excluirTransacao(id), true)} 
+                    onReportarErro={caixa.reportarErroTransacao}
+                    isFechado={isFechado} 
+                  />
+                )}
+                {section === "fantasmas" && <FantasmasScreen transacoes={caixa.transacoes} fantasmas={caixa.fantasmas || []} onCriar={caixa.criarFantasma} onEditar={caixa.editarFantasma} onToggleResolvido={caixa.alternarFantasmaResolvido} onToggleComprovado={caixa.alternarFantasmaComprovado} onExcluir={(id) => mostrarAlerta("EXCLUIR", "Remover?", () => caixa.excluirFantasma(id), true)} isFechado={isFechado} />}
+                {section === "historico" && <HistoricoScreen turnos={caixa.historicoTurnos} loading={caixa.loading} onRefresh={caixa.carregarHistoricoTurnos} onOpen={(turnoId) => void caixa.abrirTurnoPorId(turnoId)} onExcluirDia={(id) => mostrarAlerta("APAGAR DIA", "Deseja deletar?", () => caixa.excluirTurno(id), true)} onToggleRepasse={(id, state) => caixa.alternarRepasse(id, state)} />}
+              </View>
+            </View>
+          )}
+
+          <View style={[styles.navContainer, { pointerEvents: 'box-none' }]}>
+            <View style={styles.navInner}>
+              {mainSections.map((s) => {
+                const active = section === s.key;
+                const Icon = s.icon;
+                return (
+                  <Pressable 
+                    key={s.key} 
+                    style={[styles.navButton, active && styles.navButtonActive]} 
+                    onPress={() => {
+                      triggerHaptic("light");
+                      setSection(s.key);
+                    }}
+                    hitSlop={10}
+                  >
+                    <View>
+                      <Icon size={18} color={active ? "#09090b" : "#71717a"} strokeWidth={active ? 3 : 2} />
+                      {s.key === "fantasmas" && (caixa.fantasmas || []).some(f => !f.resolvido) && (
+                        <View className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-amber-500 border-2 border-ink-900" />
+                      )}
+                    </View>
+                    {active && <Text style={styles.navLabel}>{s.label}</Text>}
+                  </Pressable>
+                );              })}
+            </View>
+          </View>
+        </>
+      )}
     </SafeAreaView>
   );
 }

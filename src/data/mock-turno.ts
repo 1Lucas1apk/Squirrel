@@ -40,7 +40,7 @@ export const mockLembretes: LembreteFantasma[] = [
   {
     id: "f1",
     timestamp: Date.now() - 5000,
-    tipo: "gerente_troca",
+    tipo: "pix_recebido_gaveta_saiu",
     descricao: "Gerente levou 10 fisico e vai enviar pix",
     valorReferencia: 10,
     impactaPixRepasse: true,
@@ -50,7 +50,7 @@ export const mockLembretes: LembreteFantasma[] = [
   {
     id: "f2",
     timestamp: Date.now() - 3000,
-    tipo: "ricardo",
+    tipo: "lembrete_geral",
     descricao: "Ricardo vai lancar amanha",
     valorReferencia: 45,
     impactaPixRepasse: false,
