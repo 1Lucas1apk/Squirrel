@@ -8,7 +8,6 @@ import {
   set,
   update,
 } from "firebase/database";
-import { getAuth } from "firebase/auth";
 
 import {
   DividaCliente,
@@ -18,13 +17,14 @@ import {
   TotaisTurno,
   Transacao,
   Turno,
-  ContagemCedulas
+  ContagemCedulas,
+  LogAlteracao
 } from "../../types/domain";
 import { getRealtimeDatabase } from "../firebase/realtime";
-import { getFirebaseApp } from "../firebase/client";
+import { getFirebaseApp, getFirebaseAuth } from "../firebase/client";
 
 function getUserId(): string {
-  const auth = getAuth(getFirebaseApp());
+  const auth = getFirebaseAuth();
   return auth.currentUser?.uid || "unauthenticated";
 }
 
@@ -363,11 +363,32 @@ export async function removerDivida(turnoId: string, id: string): Promise<void> 
   await set(ref(getRealtimeDatabase(), `users/${getUserId()}/dividas_clientes/${turnoId}/${id}`), null);
 }
 
-export async function atualizarStatusTurno(turnoId: string, status: "aberto" | "fechado"): Promise<void> {
-  await update(ref(getRealtimeDatabase(), `users/${getUserId()}/turnos/${turnoId}`), {
+export async function registrarLogAlteracao(turnoId: string, transacaoId: string, log: Omit<LogAlteracao, "id" | "timestamp" | "transacaoId">): Promise<void> {
+  const db = getRealtimeDatabase();
+  const root = ref(db, `users/${getUserId()}/logs_auditoria/${turnoId}/${transacaoId}`);
+  const created = push(root);
+  await set(created, {
+    ...log,
+    timestamp: Date.now(),
+  });
+}
+
+export async function atualizarStatusTurno(
+  turnoId: string, 
+  status: "aberto" | "fechado", 
+  extra?: { bateuFisico?: boolean; observacoes?: string }
+): Promise<void> {
+  const payload: Record<string, any> = {
     status_turno: status,
     "metadados/atualizado_em": Date.now(),
-  });
+  };
+
+  if (extra) {
+    if (extra.bateuFisico !== undefined) payload.bateu_fisico = extra.bateuFisico;
+    if (extra.observacoes !== undefined) payload.observacoes_fechamento = extra.observacoes;
+  }
+
+  await update(ref(getRealtimeDatabase(), `users/${getUserId()}/turnos/${turnoId}`), payload);
 }
 
 export async function atualizarStatusRepasse(turnoId: string, repassado: boolean): Promise<void> {

@@ -9,6 +9,8 @@ import { HistoricoScreen } from "./historico-screen";
 import { PainelScreen } from "./painel-screen";
 import { TransacoesScreen } from "./transacoes-screen";
 import { TurnoScreen } from "./turno-screen";
+import { CreditsScreen } from "./credits-screen";
+import { RetrospectiveScreen } from "./retrospective-screen";
 import { toBrl } from "../utils/currency";
 
 import { 
@@ -31,7 +33,10 @@ import {
   LogOut,
   Cloud,
   CloudOff,
-  Zap
+  Zap,
+  Sparkles,
+  Info,
+  ShieldCheck
 } from "lucide-react-native";
 import { getDatabase, ref, onValue } from "firebase/database";
 import { getFirebaseApp } from "../services/firebase/client";
@@ -42,11 +47,14 @@ import { useAppSettings, HapticIntensity } from "../hooks/use-app-settings";
 import * as Haptics from 'expo-haptics';
 import { scheduleDailyReminders } from "../services/notifications";
 
+import { Skeleton } from "../components/common/skeleton";
+import { registrarLogAlteracao, atualizarStatusTurno } from "../services/repositories/caixa-repository";
+
 type SectionKey = "painel" | "transacoes" | "checklist" | "fantasmas" | "historico";
 
 export function MainScreen() {
   const { logout } = useAuth();
-  const { settings, updateSettings } = useAppSettings();
+  const { settings, updateSettings, loading: settingsLoading } = useAppSettings();
   const caixa = useCaixaSeguro();
 
   const [section, setSection] = useState<SectionKey>("painel");
@@ -56,6 +64,8 @@ export function MainScreen() {
   const [modalMais, setModalMais] = useState(false);
   const [modalConfig, setModalConfig] = useState(false);
   const [modalPreferencias, setModalPreferencias] = useState(false);
+  const [modalCreditos, setModalCreditos] = useState(false);
+  const [modalRetrospectiva, setModalRetrospectiva] = useState(false);
   
   const [bateu, setBateu] = useState<boolean | null>(null);
   const [obs, setObs] = useState("");
@@ -85,6 +95,19 @@ export function MainScreen() {
 
     const style = type === "light" ? intensityMap[settings.hapticIntensity] : (intensityMap[type as keyof typeof intensityMap] || intensityMap.light);
     void Haptics.impactAsync(style);
+  };
+
+  const handleEditComLog = async (id: string, input: any) => {
+    const original = caixa.transacoes.find(t => t.id === id);
+    if (original && original.valorSistema !== input.valorSistema) {
+      await registrarLogAlteracao(caixa.turno!.id, id, {
+        valorAntigo: original.valorSistema,
+        valorNovo: input.valorSistema,
+        campoAlterado: "valorSistema",
+        motivo: "Edição manual pelo operador"
+      });
+    }
+    await caixa.editarLançamento(id, input);
   };
 
   // Função para salvar e reagendar notificações
@@ -179,6 +202,10 @@ export function MainScreen() {
         async () => {
           setModalFechamento(false);
           await caixa.fecharTurno();
+          await atualizarStatusTurno(caixa.turno!.id, "fechado", { 
+            bateuFisico: bateu === true, 
+            observacoes: obs.trim() 
+          });
           setBateu(null);
           setObs("");
         }
@@ -190,6 +217,15 @@ export function MainScreen() {
     setTimeout(() => {
       mostrarAlerta("ENCERRAR DIA", "Deseja realmente fechar o caixa agora? As edições serão travadas.", async () => {
         await caixa.fecharTurno();
+        await atualizarStatusTurno(caixa.turno!.id, "fechado", { 
+          bateuFisico: bateu === true, 
+          observacoes: obs.trim() 
+        });
+
+        if (caixa.totais.sobra === 0) {
+          triggerHaptic("success");
+        }
+
         setBateu(null);
         setObs("");
       });
@@ -307,11 +343,17 @@ export function MainScreen() {
             <View className="w-12 h-1.5 bg-zinc-800 rounded-full mx-auto mb-8" />
             <Text className="text-xs font-black text-zinc-600 uppercase tracking-[4px] mb-6 text-center">Apoio Técnico</Text>
             <View className="gap-3">
+              <Pressable onPress={() => { setModalMais(false); setModalRetrospectiva(true); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
+                <Sparkles size={20} color="#facc15" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">Você Sabia? (Retrospectiva)</Text>
+              </Pressable>
               <Pressable onPress={() => { setModalMais(false); setModalConfig(true); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
                 <Settings size={20} color="#71717a" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">ID do Caixa/Operador</Text>
               </Pressable>
               <Pressable onPress={() => { setModalMais(false); setModalPreferencias(true); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
                 <Zap size={20} color="#a78bfa" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">Configurações do App</Text>
+              </Pressable>
+              <Pressable onPress={() => { setModalMais(false); setModalCreditos(true); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
+                <Info size={20} color="#60a5fa" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">Créditos</Text>
               </Pressable>
               <Pressable onPress={() => { setModalMais(false); logout(); }} className="flex-row items-center gap-4 bg-red-500/10 p-6 rounded-[24px] border border-red-500/20">
                 <LogOut size={20} color="#f87171" /><Text className="text-red-400 font-black uppercase tracking-widest text-xs">Sair da Conta</Text>
@@ -320,6 +362,14 @@ export function MainScreen() {
           </View>
         </Pressable>
       </Modal>
+
+      {modalCreditos && <CreditsScreen onClose={() => setModalCreditos(false)} />}
+      {modalRetrospectiva && (
+        <RetrospectiveScreen 
+          turnos={caixa.historicoTurnos} 
+          onClose={() => setModalRetrospectiva(false)} 
+        />
+      )}
 
       <Modal visible={modalPreferencias} transparent animationType="fade">
         <View className="flex-1 bg-black/90 items-center justify-center p-6">
@@ -357,6 +407,25 @@ export function MainScreen() {
                       />
                     </View>
                   </View>
+                </View>
+
+                {/* BIOMETRIA */}
+                <View>
+                  <View className="flex-row items-center justify-between mb-4">
+                    <View className="flex-row items-center gap-3">
+                      <ShieldCheck size={18} color="#34d399" />
+                      <Text className="text-xs font-black text-zinc-100 uppercase">Segurança Biométrica</Text>
+                    </View>
+                    <Switch 
+                      value={settings.biometricsEnabled}
+                      onValueChange={(val) => updateSettings({ biometricsEnabled: val })}
+                      trackColor={{ false: "#27272a", true: "#059669" }}
+                      thumbColor={"#f4f4f5"}
+                    />
+                  </View>
+                  <Text className="text-[10px] font-bold text-zinc-500 uppercase leading-4">
+                    Pede digital ou FaceID ao abrir o app para proteger seus dados.
+                  </Text>
                 </View>
 
                 {/* VIBRAÇÃO */}
@@ -501,21 +570,32 @@ export function MainScreen() {
           {section === "painel" ? (
             <ScrollView className="flex-1" contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <View className="mx-auto w-full max-w-[460px]">
-                <PainelScreen 
-                  totais={caixa.totais} 
-                  fantasmas={caixa.fantasmas || []} 
-                  transacoes={caixa.transacoes}
-                  ajusteManualSobra={caixa.turno.ajusteManualSobra} 
-                  onAjusteSobra={caixa.definirAjusteSobra}
-                  isFechado={isFechado} 
-                  isDiscreto={isDiscreto}
-                />
+                {caixa.loading ? (
+                   <View className="gap-6">
+                     <Skeleton height={140} width="100%" />
+                     <View className="flex-row gap-4">
+                       <Skeleton height={100} width="100%" className="flex-1" />
+                       <Skeleton height={100} width="100%" className="flex-1" />
+                     </View>
+                     <Skeleton height={200} width="100%" />
+                   </View>
+                ) : (
+                  <PainelScreen 
+                    totais={caixa.totais} 
+                    fantasmas={caixa.fantasmas || []} 
+                    transacoes={caixa.transacoes}
+                    ajusteManualSobra={caixa.turno.ajusteManualSobra} 
+                    onAjusteSobra={caixa.definirAjusteSobra}
+                    isFechado={isFechado} 
+                    isDiscreto={isDiscreto}
+                  />
+                )}
               </View>
             </ScrollView>
           ) : (
             <View className="flex-1 px-4 pt-6">
               <View className="mx-auto w-full max-w-[460px] flex-1">
-                {section === "transacoes" && <TransacoesScreen transacoes={caixa.transacoes} onAdicionar={caixa.criarTransacao} onExcluir={(id) => mostrarAlerta("EXCLUIR", "Apagar?", () => caixa.excluirTransacao(id), true)} onEditar={caixa.editarLançamento} isFechado={isFechado} />}
+                {section === "transacoes" && <TransacoesScreen transacoes={caixa.transacoes} onAdicionar={caixa.criarTransacao} onExcluir={(id) => mostrarAlerta("EXCLUIR", "Apagar?", () => caixa.excluirTransacao(id), true)} onEditar={handleEditComLog} isFechado={isFechado} />}
                 {section === "checklist" && (
                   <ChecklistScreen 
                     transacoes={caixa.transacoes} 

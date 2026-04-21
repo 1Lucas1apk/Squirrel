@@ -8,6 +8,7 @@ interface AppSettings {
   hapticIntensity: HapticIntensity;
   fechamentoSemana: string; // Ex: "17:00"
   fechamentoSabado: string; // Ex: "12:00"
+  biometricsEnabled: boolean;
 }
 
 const SETTINGS_KEY = '@squirrel_app_settings';
@@ -18,6 +19,7 @@ export function useAppSettings() {
     hapticIntensity: 'light',
     fechamentoSemana: '17:00',
     fechamentoSabado: '12:00',
+    biometricsEnabled: false,
   });
 
   const [loading, setLoading] = useState(true);

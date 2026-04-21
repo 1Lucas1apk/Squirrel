@@ -75,6 +75,16 @@ export interface TotaisTurno {
   pixDiretoLoja: number;
 }
 
+export interface LogAlteracao {
+  id: string;
+  transacaoId: string;
+  timestamp: number;
+  valorAntigo: number;
+  valorNovo: number;
+  campoAlterado: string;
+  motivo?: string;
+}
+
 export interface Turno {
   id: string;
   caixaId?: string;
@@ -87,4 +97,6 @@ export interface Turno {
   criadoEm: number;
   atualizadoEm: number;
   repassado?: boolean;
+  bateuFisico?: boolean;
+  observacoesFechamento?: string;
 }

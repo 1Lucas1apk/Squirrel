@@ -4,6 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ShieldCheck, Mail, Lock } from "lucide-react-native";
 import { useAuth } from "../hooks/use-auth";
 import { migrarDadosAntigos } from "../services/repositories/caixa-repository";
+import { saveCredentials } from "../services/auth-storage";
 
 export function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -35,23 +36,26 @@ export function LoginScreen() {
         await signUp(emailLimpo, senhaLimpa);
       }
       
+      // Salva para auto-login futuro (Persistência Manual)
+      await saveCredentials(emailLimpo, senhaLimpa);
+      
       // Assim que logar/registrar com sucesso, roda o script de migração (se houver dados)
       await migrarDadosAntigos();
 
     } catch (e: any) {
-      console.log(e.code); // Log interno
+      console.error("ERRO COMPLETO AUTH:", e);
       let msgErro = "Erro na autenticação. Verifique os dados.";
       
       if (e.code === "auth/configuration-not-found" || e.code === "auth/api-key-not-valid-for-user-project") {
-        msgErro = "Firebase não configurado. Ative 'E-mail/Senha' no painel Authentication do Firebase.";
+        msgErro = "Firebase não configurado corretamente no .env";
       } else if (e.code === "auth/email-already-in-use") {
-        msgErro = "Esta conta já existe. Tente acessar o sistema.";
+        msgErro = "Esta conta já existe.";
       } else if (e.code === "auth/invalid-email") {
         msgErro = "E-mail inválido.";
       } else if (e.code === "auth/invalid-credential" || e.code === "auth/wrong-password" || e.code === "auth/user-not-found") {
         msgErro = "E-mail ou senha incorretos.";
-      } else if (e.code === "auth/weak-password") {
-        msgErro = "A senha é muito fraca (use no mínimo 6 caracteres).";
+      } else if (e.message) {
+        msgErro = e.message;
       }
 
       setErro(msgErro);

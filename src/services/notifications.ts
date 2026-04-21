@@ -1,17 +1,21 @@
 import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 
 // Configura como a notificação aparece com o app aberto
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+if (Platform.OS !== 'web') {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+}
 
 export async function requestNotificationPermissions() {
+  if (Platform.OS === 'web') return false;
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
   
@@ -24,6 +28,8 @@ export async function requestNotificationPermissions() {
 }
 
 export async function scheduleDailyReminders(semanaTime: string, sabadoTime: string, hasPendingNotes: boolean) {
+  if (Platform.OS === 'web') return;
+
   // Limpa agendamentos antigos para não duplicar
   await Notifications.cancelAllScheduledNotificationsAsync();
 
