@@ -137,9 +137,14 @@ export function PainelPrincipal({
         {!isDiscreto && (
           <View className="mt-4 px-2 flex-row gap-3">
             <Smartphone size={14} color="#71717a" />
-            <Text className="text-[9px] font-bold text-zinc-600 uppercase flex-1 leading-4 tracking-tighter">
-              Saldo de trocas no seu celular: <Text className="text-purple-400">{toBrl(totais.pixNoCaixa)}</Text>. O valor de transferência acima já inclui as trocas e os centavos do sistema.
-            </Text>
+            <View className="flex-1">
+              <Text className="text-[9px] font-bold text-zinc-600 uppercase leading-4 tracking-tighter">
+                Saldo de trocas no seu celular:
+              </Text>
+              <Text className="text-[9px] font-bold uppercase leading-4 tracking-tighter text-zinc-600">
+                <Text className="text-purple-400">{toBrl(totais.pixNoCaixa)}</Text> — o valor de transferência acima já inclui as trocas e os centavos do sistema.
+              </Text>
+            </View>
           </View>
         )}
       </View>

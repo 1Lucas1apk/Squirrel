@@ -13,15 +13,18 @@ import {
   ArrowUpCircle,
   XCircle,
   Trash2,
-  Edit3
+  Edit3,
+  Cloud,
+  History
 } from "lucide-react-native";
 import * as Haptics from 'expo-haptics';
 import { MoneyInput } from "../components/common/money-input";
-import { CategoriaTransacao, NaturezaOperacao, TotaisTurno, Transacao } from "../types/domain";
+import { CategoriaTransacao, LogAlteracao, NaturezaOperacao, TotaisTurno, Transacao } from "../types/domain";
 import { toBrl } from "../utils/currency";
 
 interface TransacoesScreenProps {
   transacoes: Transacao[];
+  logs?: LogAlteracao[];
   onAdicionar: (input: {
     naturezaOperacao: NaturezaOperacao;
     categoria: CategoriaTransacao;
@@ -35,6 +38,7 @@ interface TransacoesScreenProps {
   }) => Promise<void>;
   onExcluir: (id: string) => void;
   onEditar: (id: string, input: any) => Promise<void>;
+  onConfirmar: (title: string, message: string, onConfirm: () => void) => void;
   isFechado?: boolean;
 }
 
@@ -51,7 +55,7 @@ function naturezaPorCategoria(categoria: CategoriaTransacao): NaturezaOperacao {
   return categoria === "entrada_prestacao" ? "entrada" : "pagamento";
 }
 
-export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar, isFechado }: TransacoesScreenProps) {
+export function TransacoesScreen({ transacoes, logs, onAdicionar, onExcluir, onEditar, onConfirmar, isFechado }: TransacoesScreenProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [categoria, setCategoria] = useState<CategoriaTransacao>("dinheiro");
   const [subTipoEntrada, setSubTipoEntrada] = useState<string | null>(null);
@@ -103,6 +107,20 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar,
 
   async function onSalvar() {
     if (totalSistemaAtual > 100000) { setErro("Limite de 100 mil."); return; }
+
+    // Alerta de Valor Atípico (> R$ 2.000,00) - Usando o modal do app
+    if (!preConfirmado && totalSistemaAtual > 2000) {
+      onConfirmar(
+        "VALOR ALTO DETECTADO",
+        `Você está lançando ${toBrl(totalSistemaAtual)}. Tem certeza que este valor está correto?`,
+        () => {
+          setPreConfirmado(true);
+          // Chamamos onSalvar novamente após o estado atualizar
+          setTimeout(() => onSalvar(), 200);
+        }
+      );
+      return;
+    }
 
     // Trava de Sobra/Falta Alta (> R$ 1,00)
     if (!preConfirmado && !isSaida && Math.abs(trocoSobra) >= 1) {
@@ -157,7 +175,11 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar,
   const renderItem = ({ item }: { item: Transacao }) => {
     const cat = categorias.find(c => c.value === item.categoria) || categorias[0];
     const Icon = cat.icon;
-    const refT = item.transacaoVinculadaId ? transacoes.find(t => t.id === item.transacaoVinculadaId) : null;
+    const refT = item.transacaoVinculadaId
+      ? transacoes.find(
+          (t) => t.id === item.transacaoVinculadaId || t.clientLocalId === item.transacaoVinculadaId
+        )
+      : null;
     
     // Cores vibrantes baseadas na categoria
     const accentColors: Record<CategoriaTransacao, string> = {
@@ -171,58 +193,89 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar,
     };
 
     const color = accentColors[item.categoria] || "#71717a";
+    const itemLogs = (logs || []).filter((l: LogAlteracao) => l.transacaoId === item.id);
 
     return (
-      <View className="rounded-[32px] bg-ink-900 p-6 border border-zinc-800 mb-4 flex-row items-center justify-between">
-        <View className="flex-1 flex-row items-center gap-4 min-w-0">
-          <View style={{ borderColor: `${color}33` }} className="h-12 w-12 items-center justify-center rounded-2xl bg-ink-800 border flex-shrink-0">
-            <Icon size={20} color={color} />
-          </View>
-          <View className="flex-1 min-w-0">
-            <View className="flex-row items-center gap-2 mb-1">
-              <Text style={{ color }} className="text-[10px] font-black uppercase tracking-widest flex-shrink-0">{cat.label}</Text>
-              {item.codigoContrato && (
-                <View className="bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700 flex-shrink">
-                  <Text className="text-[8px] font-black text-zinc-400" numberOfLines={1} ellipsizeMode="tail">{item.codigoContrato}</Text>
-                </View>
-              )}
+      <View className="rounded-[32px] bg-ink-900 p-6 border border-zinc-800 mb-4 overflow-hidden">
+        <View className="flex-row items-center justify-between">
+          <View className="flex-1 flex-row items-center gap-4 min-w-0">
+            <View style={{ borderColor: `${color}33` }} className="h-12 w-12 items-center justify-center rounded-2xl bg-ink-800 border flex-shrink-0">
+              <Icon size={20} color={color} />
             </View>
-            <Text 
-              className="text-xl font-black text-zinc-100 tracking-tighter"
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.4}
-              ellipsizeMode="clip"
-            >
-              {toBrl(item.valorSistema)}
-            </Text>
-            {refT && (
-              <View className="flex-row items-center gap-1 mt-1">
-                <LinkIcon size={10} color="#60a5fa" /><Text className="text-[9px] font-black text-blue-400 uppercase" numberOfLines={1}>Ref: {refT.descricao || 'Lançamento'}</Text>
+            <View className="flex-1 min-w-0">
+              <View className="flex-row items-center gap-2 mb-1 flex-wrap">
+                <Text style={{ color }} className="text-[10px] font-black uppercase tracking-widest flex-shrink-0">
+                  {new Date(item.timestamp).toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit', second: '2-digit' })} • {cat.label}
+                </Text>
+                {item.codigoContrato && (
+                  <View className="bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700 flex-shrink">
+                    <Text className="text-[8px] font-black text-zinc-400" numberOfLines={1} ellipsizeMode="tail">{item.codigoContrato}</Text>
+                  </View>
+                )}
+                {item.pendingSync && (
+                  <View className="bg-amber-500/10 px-1.5 py-0.5 rounded flex-row items-center gap-1">
+                     <Cloud size={8} color="#f59e0b" />
+                     <Text className="text-[7px] font-black text-amber-500 uppercase">Aguardando Nuvem</Text>
+                  </View>
+                )}
+                {itemLogs.length > 0 && (
+                  <View className="bg-blue-500/10 px-1.5 py-0.5 rounded flex-row items-center gap-1">
+                     <History size={8} color="#60a5fa" />
+                     <Text className="text-[7px] font-black text-blue-400 uppercase">Editado</Text>
+                  </View>
+                )}
               </View>
-            )}
-            <View className="flex-row items-center gap-2 mt-1">
-              {item.trocoSobra !== 0 && (
-                <View className={`px-1.5 py-0.5 rounded border flex-shrink-0 ${item.trocoSobra > 0 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
-                  <Text className={`text-[8px] font-black uppercase ${item.trocoSobra > 0 ? 'text-emerald-500' : 'text-red-500'}`}>{item.trocoSobra > 0 ? `+ ${toBrl(item.trocoSobra)}` : toBrl(item.trocoSobra)}</Text>
+              <Text 
+                className="text-xl font-black text-zinc-100 tracking-tighter"
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.4}
+                ellipsizeMode="clip"
+              >
+                {toBrl(item.valorSistema)}
+              </Text>
+              {refT && (
+                <View className="flex-row items-center gap-1 mt-1">
+                  <LinkIcon size={10} color="#60a5fa" /><Text className="text-[9px] font-black text-blue-400 uppercase" numberOfLines={1}>Ref: {refT.descricao || 'Lançamento'}</Text>
                 </View>
               )}
-              {item.descricao ? <Text className="text-[10px] font-bold text-zinc-500 uppercase flex-1" numberOfLines={1} ellipsizeMode="tail">{item.descricao}</Text> : null}
+              <View className="flex-row items-center gap-2 mt-1">
+                {item.trocoSobra !== 0 && (
+                  <View className={`px-1.5 py-0.5 rounded border flex-shrink-0 ${item.trocoSobra > 0 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
+                    <Text className={`text-[8px] font-black uppercase ${item.trocoSobra > 0 ? 'text-emerald-500' : 'text-red-500'}`}>{item.trocoSobra > 0 ? `+ ${toBrl(item.trocoSobra)}` : toBrl(item.trocoSobra)}</Text>
+                  </View>
+                )}
+                {item.descricao ? <Text className="text-[10px] font-bold text-zinc-500 uppercase flex-1" numberOfLines={1} ellipsizeMode="tail">{item.descricao}</Text> : null}
+              </View>
             </View>
           </View>
+          {!isFechado && (
+            <View className="flex-row gap-2 ml-4 flex-shrink-0">
+              <Pressable onPress={() => {
+                setEditingId(item.id);
+                setCategoria(item.categoria);
+                setValorSistema(item.valorSistema);
+                setDescricao(item.descricao);
+                setCodigoContrato(item.codigoContrato || "");
+                setTransacaoVinculadaId(item.transacaoVinculadaId || "");
+                setValorEntregueSimples(item.valorRecebidoFisico);
+              }} className="h-10 w-10 items-center justify-center rounded-xl bg-zinc-800/50 border border-zinc-700/50"><Edit3 size={16} color="#71717a" /></Pressable>
+              <Pressable onPress={() => onExcluir(item.id)} className="h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20"><Trash2 size={16} color="#f87171" /></Pressable>
+            </View>
+          )}
         </View>
-        {!isFechado && (
-          <View className="flex-row gap-2 ml-4 flex-shrink-0">
-            <Pressable onPress={() => {
-              setEditingId(item.id);
-              setCategoria(item.categoria);
-              setValorSistema(item.valorSistema);
-              setDescricao(item.descricao);
-              setCodigoContrato(item.codigoContrato || "");
-              setTransacaoVinculadaId(item.transacaoVinculadaId || "");
-              setValorEntregueSimples(item.valorRecebidoFisico);
-            }} className="h-10 w-10 items-center justify-center rounded-xl bg-zinc-800/50 border border-zinc-700/50"><Edit3 size={16} color="#71717a" /></Pressable>
-            <Pressable onPress={() => onExcluir(item.id)} className="h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20"><Trash2 size={16} color="#f87171" /></Pressable>
+
+        {itemLogs.length > 0 && (
+          <View className="mt-4 pt-4 border-t border-zinc-800/50">
+            <Text className="text-[8px] font-black text-zinc-600 uppercase mb-2">Histórico de Alterações</Text>
+            {itemLogs.map((log: LogAlteracao) => (
+              <View key={log.id} className="flex-row items-center gap-2 mb-1">
+                <View className="h-1 w-1 rounded-full bg-blue-500" />
+                <Text className="text-[9px] text-zinc-400 font-bold uppercase">
+                  Alterado de <Text className="text-zinc-500">{toBrl(log.valorAntigo)}</Text> para <Text className="text-blue-400">{toBrl(log.valorNovo)}</Text>
+                </Text>
+              </View>
+            ))}
           </View>
         )}
       </View>
@@ -372,9 +425,13 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar,
                       <View key={pag.id} className="p-5 rounded-[32px] border border-zinc-800/60 bg-ink-800/20 gap-4">
                         <View className="flex-row justify-between items-center"><Text className="text-[9px] font-black uppercase text-zinc-500">Valor #{idx+1}</Text>{pagamentos.length > 1 && <Pressable onPress={() => setPagamentos(pagamentos.filter(p => p.id !== pag.id))}><Trash2 size={12} color="#f87171" /></Pressable>}</View>
                         <MoneyInput placeholder="0,00" className="rounded-2xl border border-zinc-700 bg-ink-800 px-5 py-4 text-xl font-black text-zinc-100" value={pag.valor} onChangeValue={(v) => { setPagamentos(pagamentos.map(p => p.id === pag.id ? {...p, valor: v} : p)); setPreConfirmado(false); }} />
-                        <View className="flex-row gap-2">
-                          <TextInput className="flex-[2] rounded-xl border border-zinc-800 bg-ink-800 px-4 py-3 text-zinc-200 font-bold text-xs" placeholder="Desc." placeholderTextColor="#3f3f46" value={pag.descricao} onChangeText={(t) => { setPagamentos(pagamentos.map(p => p.id === pag.id ? {...p, descricao: t} : p)); setPreConfirmado(false); }} />
-                          <TextInput className="flex-1 rounded-xl border border-zinc-800 bg-ink-800 px-3 py-3 text-zinc-400 font-black text-[10px] text-center" placeholder="Contr." placeholderTextColor="#3f3f46" value={pag.contrato} onChangeText={(t) => { setPagamentos(pagamentos.map(p => p.id === pag.id ? {...p, contrato: t} : p)); setPreConfirmado(false); }} />
+                        <View className="flex-row gap-2 w-full">
+                          <View className="flex-[2] min-w-0">
+                            <TextInput className="w-full rounded-xl border border-zinc-800 bg-ink-800 px-4 py-3 text-zinc-200 font-bold text-xs" placeholder="Desc." placeholderTextColor="#3f3f46" value={pag.descricao} onChangeText={(t) => { setPagamentos(pagamentos.map(p => p.id === pag.id ? {...p, descricao: t} : p)); setPreConfirmado(false); }} />
+                          </View>
+                          <View className="flex-1 min-w-0">
+                            <TextInput className="w-full rounded-xl border border-zinc-800 bg-ink-800 px-3 py-3 text-zinc-400 font-black text-[10px] text-center" placeholder="Contr." placeholderTextColor="#3f3f46" value={pag.contrato} onChangeText={(t) => { setPagamentos(pagamentos.map(p => p.id === pag.id ? {...p, contrato: t} : p)); setPreConfirmado(false); }} />
+                          </View>
                         </View>
                       </View>
                     ))}
@@ -386,8 +443,8 @@ export function TransacoesScreen({ transacoes, onAdicionar, onExcluir, onEditar,
                     <Text className="text-[9px] font-black uppercase text-zinc-500 text-center">Acerto de Contas</Text>
                     {isCalculadora ? (
                       <View className="flex-row gap-3">
-                        <View className="flex-1"><Text className="mb-2 ml-2 text-[9px] font-black uppercase text-zinc-700">Recebido</Text><MoneyInput placeholder="0,00" className="rounded-2xl border border-zinc-700 bg-ink-800 px-4 py-4 text-lg font-black text-zinc-100" value={valorCliente} onChangeValue={(v) => { setValorCliente(v); setPreConfirmado(false); }} /></View>
-                        <View className="flex-1"><Text className="mb-2 ml-2 text-[9px] font-black uppercase text-zinc-700">Troco Dado</Text><MoneyInput placeholder="0,00" className="rounded-2xl border border-zinc-700 bg-ink-800 px-4 py-4 text-lg font-black text-zinc-100" value={valorTrocoEntregue} onChangeValue={(v) => { setValorTrocoEntregue(v); setPreConfirmado(false); }} /></View>
+                        <View className="flex-1 min-w-0"><Text className="mb-2 ml-2 text-[9px] font-black uppercase text-zinc-700">Recebido</Text><MoneyInput placeholder="0,00" className="w-full rounded-2xl border border-zinc-700 bg-ink-800 px-4 py-4 text-lg font-black text-zinc-100" value={valorCliente} onChangeValue={(v) => { setValorCliente(v); setPreConfirmado(false); }} /></View>
+                        <View className="flex-1 min-w-0"><Text className="mb-2 ml-2 text-[9px] font-black uppercase text-zinc-700">Troco Dado</Text><MoneyInput placeholder="0,00" className="w-full rounded-2xl border border-zinc-700 bg-ink-800 px-4 py-4 text-lg font-black text-zinc-100" value={valorTrocoEntregue} onChangeValue={(v) => { setValorTrocoEntregue(v); setPreConfirmado(false); }} /></View>
                       </View>
                     ) : (
                       <View><Text className="mb-2 ml-2 text-[9px] font-black uppercase text-zinc-700">Ficou na Gaveta</Text><MoneyInput placeholder="0,00" className="rounded-2xl border border-zinc-700 bg-ink-800 px-5 py-4 text-xl font-black text-zinc-100 text-center" value={valorEntregueSimples} onChangeValue={(v) => { setValorEntregueSimples(v); setPreConfirmado(false); }} /></View>

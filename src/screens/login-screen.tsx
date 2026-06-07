@@ -48,6 +48,8 @@ export function LoginScreen() {
       
       if (e.code === "auth/configuration-not-found" || e.code === "auth/api-key-not-valid-for-user-project") {
         msgErro = "Firebase não configurado corretamente no .env";
+      } else if (e.code === "auth/network-request-failed" || e.message?.includes("auth/network-request-timeout")) {
+        msgErro = "Sem resposta da rede agora. O app vai continuar local e sincronizar quando estabilizar.";
       } else if (e.code === "auth/email-already-in-use") {
         msgErro = "Esta conta já existe.";
       } else if (e.code === "auth/invalid-email") {

@@ -19,6 +19,7 @@ export type TipoFantasma =
 
 export interface Transacao {
   id: string;
+  clientLocalId?: string;
   timestamp: number;
   naturezaOperacao: NaturezaOperacao;
   categoria: CategoriaTransacao;
@@ -30,10 +31,12 @@ export interface Transacao {
   statusConferencia: StatusConferencia;
   justificativaTexto?: string | null;
   transacaoVinculadaId?: string;
+  pendingSync?: boolean;
 }
 
 export interface LembreteFantasma {
   id: string;
+  clientLocalId?: string;
   tipo: TipoFantasma;
   pessoa?: string;
   descricao: string;
@@ -44,6 +47,7 @@ export interface LembreteFantasma {
   resolvido: boolean;
   comprovadoPix: boolean;
   timestamp: number;
+  pendingSync?: boolean;
 }
 
 export interface DividaCliente {
@@ -99,4 +103,5 @@ export interface Turno {
   repassado?: boolean;
   bateuFisico?: boolean;
   observacoesFechamento?: string;
+  notaDia?: string;
 }

@@ -1,8 +1,8 @@
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 
-const KEY_EMAIL = '@squirrel_auth_email';
-const KEY_PASS = '@squirrel_auth_pass';
+const KEY_EMAIL = 'squirrel_auth_email';
+const KEY_PASS = 'squirrel_auth_pass';
 
 export async function saveCredentials(email: string, pass: string) {
   if (Platform.OS === 'web') {

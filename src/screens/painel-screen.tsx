@@ -8,18 +8,28 @@ import {
   Smartphone,
   Info,
   AlertCircle,
-  ArrowRight
+  ArrowRight,
+  Gavel,
+  CheckCircle2,
+  TrendingDown,
+  Pin,
+  Edit3,
+  X
 } from "lucide-react-native";
 import { MoneyInput } from "../components/common/money-input";
 import { PainelPrincipal } from "../components/dashboard/painel-principal";
-import { TotaisTurno, LembreteFantasma, Transacao } from "../types/domain";
+import { TotaisTurno, LembreteFantasma, Transacao, LogAlteracao } from "../types/domain";
 import { toBrl } from "../utils/currency";
 import { useMemo } from "react";
+import { Pressable, TextInput, Modal } from "react-native";
 
 interface PainelScreenProps {
   totais: TotaisTurno;
   fantasmas: LembreteFantasma[];
   transacoes: Transacao[];
+  logs?: LogAlteracao[];
+  notaDia?: string;
+  onSaveNota?: (texto: string) => void;
   ajusteManualSobra: number;
   onAjusteSobra: (value: number) => void;
   isFechado?: boolean;
@@ -30,11 +40,16 @@ export function PainelScreen({
   totais,
   fantasmas = [],
   transacoes = [],
+  logs = [],
+  notaDia = "",
+  onSaveNota,
   ajusteManualSobra,
   onAjusteSobra,
   isFechado,
   isDiscreto
 }: PainelScreenProps) {
+  const [modalNota, setModalNota] = useState(false);
+  const [textoNota, setTextoNota] = useState(notaDia);
   
   // Filtramos apenas o que justifica os números atuais do painel
   const listaFantasmas = Array.isArray(fantasmas) ? fantasmas : [];
@@ -43,7 +58,7 @@ export function PainelScreen({
   const destrocas = pendencias.filter(f => f.tipo === 'destroca_pix_por_nota');
   const emprestimos = pendencias.filter(f => f.tipo === 'dinheiro_emprestado');
 
-  // Auditoria de erros
+  // Auditoria de erros e edições
   const transacoesComErro = useMemo(() => {
     return (transacoes || []).filter(t => t.statusConferencia === "incorreto");
   }, [transacoes]);
@@ -54,6 +69,36 @@ export function PainelScreen({
 
   return (
     <View className="gap-8 pb-32">
+      {/* MODAL DE EDIÇÃO DA NOTA */}
+      <Modal visible={modalNota} transparent animationType="fade">
+        <View className="flex-1 bg-black/90 items-center justify-center p-6">
+          <View className="w-full max-w-[380px] bg-ink-900 border border-zinc-800 rounded-[40px] p-8 shadow-2xl">
+            <View className="flex-row items-center justify-between mb-6">
+              <Text className="text-lg font-black text-white uppercase">Aviso do Dia</Text>
+              <Pressable onPress={() => setModalNota(false)}><X size={20} color="#71717a" /></Pressable>
+            </View>
+            <TextInput
+              multiline
+              numberOfLines={4}
+              value={textoNota}
+              onChangeText={setTextoNota}
+              placeholder="Ex: Fulano vem buscar o troco às 16h..."
+              placeholderTextColor="#3f3f46"
+              className="bg-ink-800 p-6 rounded-3xl text-zinc-100 font-bold mb-8 border border-zinc-800 text-left align-top"
+            />
+            <Pressable 
+              onPress={() => {
+                onSaveNota?.(textoNota.trim());
+                setModalNota(false);
+              }} 
+              className="bg-zinc-100 py-5 rounded-2xl shadow-xl"
+            >
+              <Text className="text-center font-black uppercase text-zinc-950">Fixar no Painel</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
       {/* ALERTA DE EXCESSO DE ESPÉCIE */}
       {totais.gavetaFisico > 10000 && (
         <View className="bg-orange-500/10 border border-orange-500/20 p-5 rounded-3xl flex-row gap-3 items-center">
@@ -76,6 +121,25 @@ export function PainelScreen({
         valorTerceiros={totalTerceiros}
         isDiscreto={isDiscreto} 
       />
+
+      {/* AVISO DO DIA FIXADO */}
+      {!isDiscreto && (
+        <Pressable 
+          onPress={() => !isFechado && setModalNota(true)}
+          className={`rounded-[32px] border p-6 flex-row items-center gap-4 ${notaDia ? 'bg-amber-500/10 border-amber-500/20' : 'bg-ink-900 border-zinc-800 border-dashed opacity-60'}`}
+        >
+          <View className={`h-12 w-12 items-center justify-center rounded-2xl ${notaDia ? 'bg-amber-500' : 'bg-zinc-800'}`}>
+            <Pin size={20} color={notaDia ? "#451a03" : "#71717a"} strokeWidth={3} />
+          </View>
+          <View className="flex-1">
+            <Text className={`text-[9px] font-black uppercase tracking-widest ${notaDia ? 'text-amber-500' : 'text-zinc-600'}`}>Lembrete do Expediente</Text>
+            <Text className={`text-xs font-bold leading-5 ${notaDia ? 'text-zinc-100' : 'text-zinc-500'}`} numberOfLines={2}>
+              {notaDia || "Toque para adicionar um aviso importante para hoje..."}
+            </Text>
+          </View>
+          {notaDia && !isFechado && <Edit3 size={14} color="#71717a" />}
+        </Pressable>
+      )}
 
       {/* 2. AJUSTE DE SOBRA */}
       {!isDiscreto && (
@@ -120,7 +184,7 @@ export function PainelScreen({
         </View>
       )}
 
-      {/* 3. INFORMATIVO DE MOVIMENTAÇÃO (O "PORQUÊ" DOS NÚMEROS) */}
+      {/* 4. INFORMATIVO DE MOVIMENTAÇÃO (O "PORQUÊ" DOS NÚMEROS) */}
       {!isDiscreto && (
         <View className="rounded-[40px] border border-zinc-800 bg-ink-950 p-8">
         <View className="flex-row items-center gap-3 mb-8">

@@ -4,7 +4,10 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
-    "android": "expo run:android",
+    "android": "expo run:android --variant release",
+    "android:dev": "expo run:android",
+    "apk:build": "cd android && gradlew.bat assembleRelease",
+    "apk:install": "adb install -r android\\app\\build\\outputs\\apk\\release\\app-release.apk",
     "ios": "expo run:ios",
     "web": "expo start --web"
   },
@@ -27,11 +30,13 @@
     "react-native": "0.81.5",
     "react-native-css-interop": "^0.2.3",
     "react-native-gesture-handler": "~2.28.0",
+    "react-native-mmkv": "^4.3.1",
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-wagmi-charts": "^2.9.1",
     "react-native-web": "^0.21.0",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",

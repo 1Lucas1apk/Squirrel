@@ -16,42 +16,47 @@ function RootNavigator() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [biometricsEnabled, setBiometricsEnabled] = useState(false);
   const [checkingBiometrics, setCheckingBiometrics] = useState(true);
+  const [hasUnlockedOnce, setHasUnlockedOnce] = useState(false);
 
   useEffect(() => {
     // 1. Permissões básicas
     if (Platform.OS !== 'web') {
       void requestNotificationPermissions();
     }
-    
+  }, []);
+
+  useEffect(() => {
     // 2. Lógica de desbloqueio
+    if (authLoading) return;
+
     void (async () => {
       try {
         const saved = await AsyncStorage.getItem('@squirrel_app_settings');
-        if (saved) {
-          const settings = JSON.parse(saved);
-          const bioEnabled = !!settings.biometricsEnabled && Platform.OS !== 'web';
-          setBiometricsEnabled(bioEnabled);
-          
-          if (bioEnabled && user) {
-            // Se houver usuário logado, tentamos biometria
-            await handleBiometricAuth();
-          } else {
-            setIsAuthenticated(true);
-          }
-        } else {
+        const settings = saved ? JSON.parse(saved) : {};
+        const bioEnabled = !!settings.biometricsEnabled && Platform.OS !== 'web';
+        setBiometricsEnabled(bioEnabled);
+        
+        // Se já desbloqueamos nesta sessão do app, ou biometria está desligada, ou não tem usuário
+        if (hasUnlockedOnce || !bioEnabled || !user) {
           setIsAuthenticated(true);
+          setCheckingBiometrics(false);
+          return;
         }
+
+        // Caso contrário, tenta biometria
+        await handleBiometricAuth();
       } catch (e) {
         setIsAuthenticated(true);
       } finally {
         setCheckingBiometrics(false);
       }
     })();
-  }, [user?.uid]);
+  }, [user?.uid, authLoading]);
 
   const handleBiometricAuth = async () => {
     if (Platform.OS === 'web') {
       setIsAuthenticated(true);
+      setHasUnlockedOnce(true);
       return;
     }
 
@@ -68,15 +73,18 @@ function RootNavigator() {
 
         if (result.success) {
           setIsAuthenticated(true);
+          setHasUnlockedOnce(true);
         } else {
           setIsAuthenticated(false);
         }
       } else {
         setIsAuthenticated(true);
+        setHasUnlockedOnce(true);
       }
     } catch (e) {
       console.error(e);
       setIsAuthenticated(true);
+      setHasUnlockedOnce(true);
     }
   };
 
@@ -115,11 +123,15 @@ function RootNavigator() {
   return user ? <MainScreen /> : <LoginScreen />;
 }
 
+import { ErrorBoundary } from "./src/components/common/error-boundary";
+
 export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <RootNavigator />
+      <ErrorBoundary>
+        <RootNavigator />
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }

@@ -1,8 +1,14 @@
-import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 
-// Configura como a notificação aparece com o app aberto
-if (Platform.OS !== 'web') {
+let notificationHandlerConfigured = false;
+
+async function getNotificationsModule() {
+  return import('expo-notifications');
+}
+
+async function ensureNotificationHandler() {
+  if (Platform.OS === 'web' || notificationHandlerConfigured) return;
+  const Notifications = await getNotificationsModule();
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
@@ -12,10 +18,13 @@ if (Platform.OS !== 'web') {
       shouldShowList: true,
     }),
   });
+  notificationHandlerConfigured = true;
 }
 
 export async function requestNotificationPermissions() {
   if (Platform.OS === 'web') return false;
+  const Notifications = await getNotificationsModule();
+  await ensureNotificationHandler();
   const { status: existingStatus } = await Notifications.getPermissionsAsync();
   let finalStatus = existingStatus;
   
@@ -27,8 +36,41 @@ export async function requestNotificationPermissions() {
   return finalStatus === 'granted';
 }
 
+export async function scheduleInactivityAlert() {
+  if (Platform.OS === 'web') return;
+  const Notifications = await getNotificationsModule();
+  await ensureNotificationHandler();
+
+  // Cancela apenas o alerta de inatividade específico (usando um ID fixo se possível, ou limpando todos se não houver conflito)
+  // Como as notificações diárias são agendadas em massa, vamos apenas identificar este como um alerta de inatividade
+  
+  // No Expo, o mais seguro para evitar duplicidade de um alerta futuro é cancelar e reagendar.
+  // Vamos usar um identificador conceitual. 
+  
+  // Primeiro, vamos garantir que não estamos limpando as notificações fixas de fechamento.
+  // Infelizmente o Expo Notifications não permite filtrar por categoria ao cancelar facilmente sem guardar o ID.
+  // Por simplicidade e segurança, vamos apenas agendar para daqui a 3 horas.
+  
+  await Notifications.scheduleNotificationAsync({
+    identifier: "inactivity_watchdog",
+    content: {
+      title: "📭 Caixa parado?",
+      body: "Faz 3 horas que você não registra nada. Não deixe acumular recibos!",
+      sound: true,
+      priority: Notifications.AndroidNotificationPriority.HIGH,
+    },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: 3 * 60 * 60, // 3 horas
+      repeats: false,
+    },
+  });
+}
+
 export async function scheduleDailyReminders(semanaTime: string, sabadoTime: string, hasPendingNotes: boolean) {
   if (Platform.OS === 'web') return;
+  const Notifications = await getNotificationsModule();
+  await ensureNotificationHandler();
 
   // Limpa agendamentos antigos para não duplicar
   await Notifications.cancelAllScheduledNotificationsAsync();

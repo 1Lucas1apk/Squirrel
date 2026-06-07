@@ -8,6 +8,7 @@ import {
   set,
   update,
 } from "firebase/database";
+import { onAuthStateChanged } from "firebase/auth";
 
 import {
   DividaCliente,
@@ -21,14 +22,53 @@ import {
   LogAlteracao
 } from "../../types/domain";
 import { getRealtimeDatabase } from "../firebase/realtime";
-import { getFirebaseApp, getFirebaseAuth } from "../firebase/client";
+import { getFirebaseAuth } from "../firebase/client";
 
-function getUserId(): string {
+async function getUserIdAsync(): Promise<string> {
   const auth = getFirebaseAuth();
-  return auth.currentUser?.uid || "unauthenticated";
+  if (auth.currentUser) return auth.currentUser.uid;
+
+  return new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      unsub();
+      reject(new Error("Timeout esperando autenticação"));
+    }, 8000);
+
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        clearTimeout(timeout);
+        unsub();
+        resolve(user.uid);
+      }
+    });
+  });
+}
+
+function ouvirComAuth(pathBuilder: (uid: string) => string, onData: (snapshot: DataSnapshot) => void): Unsubscribe {
+  const auth = getFirebaseAuth();
+  let unsubDb: Unsubscribe | null = null;
+  let isUnsubscribed = false;
+
+  const unsubAuth = onAuthStateChanged(auth, (user) => {
+    if (isUnsubscribed) return;
+    if (unsubDb) {
+      unsubDb();
+      unsubDb = null;
+    }
+    if (user) {
+      unsubDb = onValue(ref(getRealtimeDatabase(), pathBuilder(user.uid)), onData);
+    }
+  });
+
+  return () => {
+    isUnsubscribed = true;
+    unsubAuth();
+    if (unsubDb) unsubDb();
+  };
 }
 
 interface AddTransacaoInput {
+  clientLocalId?: string;
   naturezaOperacao: Transacao["naturezaOperacao"];
   categoria: Transacao["categoria"];
   descricao: string;
@@ -80,6 +120,7 @@ function mapTurno(id: string, data: Record<string, unknown>): Turno {
     criadoEm: Number(metadados.criado_em ?? Date.now()),
     atualizadoEm: Number(metadados.atualizado_em ?? Date.now()),
     repassado: Boolean(data.repassado),
+    notaDia: data.nota_dia ? String(data.nota_dia) : undefined,
   };
 }
 
@@ -88,6 +129,7 @@ function mapTransacoes(snapshot: DataSnapshot): Transacao[] {
   return Object.entries(raw)
     .map(([id, item]) => ({
       id,
+      clientLocalId: item.client_local_id ? String(item.client_local_id) : undefined,
       timestamp: Number(item.timestamp ?? 0),
       naturezaOperacao: (item.natureza_operacao as Transacao["naturezaOperacao"]) ?? "pagamento",
       categoria: (item.categoria as Transacao["categoria"]) ?? "dinheiro",
@@ -122,6 +164,7 @@ function mapFantasmas(snapshot: DataSnapshot): LembreteFantasma[] {
   return Object.entries(raw)
     .map(([id, item]) => ({
       id,
+      clientLocalId: item.client_local_id ? String(item.client_local_id) : undefined,
       timestamp: Number(item.timestamp ?? 0),
       tipo: (item.tipo as TipoFantasma) ?? "outro",
       pessoa: item.pessoa ? String(item.pessoa) : undefined,
@@ -136,16 +179,44 @@ function mapFantasmas(snapshot: DataSnapshot): LembreteFantasma[] {
     .sort((a, b) => b.timestamp - a.timestamp);
 }
 
-// ---------------------------------------------------------
-// NOVO: MIGRAÇÃO DE DADOS LEGADOS
-// ---------------------------------------------------------
+function mapLogs(snapshot: DataSnapshot): LogAlteracao[] {
+  const val = snapshot.val() as Record<string, Record<string, Record<string, unknown>>> | null;
+  if (!val) return [];
+  
+  const allLogs: LogAlteracao[] = [];
+  
+  Object.entries(val).forEach(([transacaoId, logsObj]) => {
+    Object.entries(logsObj).forEach(([id, item]) => {
+      allLogs.push({
+        id,
+        transacaoId,
+        timestamp: Number(item.timestamp ?? 0),
+        valorAntigo: toMoney(item.valorAntigo),
+        valorNovo: toMoney(item.valorNovo),
+        campoAlterado: String(item.campoAlterado ?? ""),
+        motivo: item.motivo ? String(item.motivo) : undefined,
+      });
+    });
+  });
+
+  return allLogs.sort((a, b) => b.timestamp - a.timestamp);
+}
+
+export function ouvirLogsAuditoria(turnoId: string, onData: (logs: LogAlteracao[]) => void): Unsubscribe {
+  return ouvirComAuth((uid) => `users/${uid}/logs_auditoria/${turnoId}`, (snapshot) => onData(mapLogs(snapshot)));
+}
+
 export async function migrarDadosAntigos(): Promise<void> {
-  const uid = getUserId();
-  if (uid === "unauthenticated") return;
+  let uid: string;
+  try {
+    uid = await getUserIdAsync();
+  } catch(e) {
+    return;
+  }
   const db = getRealtimeDatabase();
 
   const turnosLegacy = await get(ref(db, "turnos"));
-  if (!turnosLegacy.exists()) return; // Não há dados legados para migrar
+  if (!turnosLegacy.exists()) return;
 
   console.log("Iniciando migração de dados...");
   const updates: Record<string, any> = {};
@@ -179,7 +250,6 @@ export async function migrarDadosAntigos(): Promise<void> {
     }
   }
 
-  // Deleta do root para não duplicar e marca como migrado
   updates["turnos"] = null;
   updates["transacoes"] = null;
   updates["fantasmas_lembretes"] = null;
@@ -190,8 +260,9 @@ export async function migrarDadosAntigos(): Promise<void> {
 }
 
 export async function criarNovoTurno(dataReferencia: string): Promise<Turno> {
+  const uid = await getUserIdAsync();
   const db = getRealtimeDatabase();
-  const root = ref(db, `users/${getUserId()}/turnos`);
+  const root = ref(db, `users/${uid}/turnos`);
   const created = push(root);
   const timestamp = Date.now();
   await set(created, {
@@ -204,15 +275,17 @@ export async function criarNovoTurno(dataReferencia: string): Promise<Turno> {
 }
 
 export async function buscarUltimoTurnoAberto(): Promise<Turno | null> {
+  const uid = await getUserIdAsync();
   const db = getRealtimeDatabase();
-  const snapshot = await get(ref(db, `users/${getUserId()}/turnos`));
+  const snapshot = await get(ref(db, `users/${uid}/turnos`));
   const raw = (snapshot.val() as Record<string, Record<string, unknown>> | null) ?? {};
   const abertos = Object.entries(raw).map(([id, data]) => mapTurno(id, data)).filter((item) => item.statusTurno === "aberto").sort((a, b) => b.criadoEm - a.criadoEm);
   return abertos[0] ?? null;
 }
 
 export async function listarTurnosRecentes(): Promise<Turno[]> {
-  const snapshot = await get(ref(getRealtimeDatabase(), `users/${getUserId()}/turnos`));
+  const uid = await getUserIdAsync();
+  const snapshot = await get(ref(getRealtimeDatabase(), `users/${uid}/turnos`));
   const raw = (snapshot.val() as Record<string, Record<string, unknown>> | null) ?? {};
   return Object.entries(raw)
     .map(([id, data]) => mapTurno(id, data))
@@ -220,36 +293,47 @@ export async function listarTurnosRecentes(): Promise<Turno[]> {
 }
 
 export async function buscarTurnoPorId(turnoId: string): Promise<Turno | null> {
-  const snapshot = await get(ref(getRealtimeDatabase(), `users/${getUserId()}/turnos/${turnoId}`));
+  const uid = await getUserIdAsync();
+  const snapshot = await get(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`));
   const raw = snapshot.val() as Record<string, unknown> | null;
   return raw ? mapTurno(turnoId, raw) : null;
 }
 
 export function ouvirTurno(turnoId: string, onData: (turno: Turno) => void): Unsubscribe {
-  return onValue(ref(getRealtimeDatabase(), `users/${getUserId()}/turnos/${turnoId}`), (snapshot) => {
+  return ouvirComAuth((uid) => `users/${uid}/turnos/${turnoId}`, (snapshot) => {
     const raw = snapshot.val() as Record<string, unknown> | null;
     if (raw) onData(mapTurno(turnoId, raw));
   });
 }
 
 export function ouvirTransacoes(turnoId: string, onData: (transacoes: Transacao[]) => void): Unsubscribe {
-  return onValue(ref(getRealtimeDatabase(), `users/${getUserId()}/transacoes/${turnoId}`), (snapshot) => onData(mapTransacoes(snapshot)));
+  return ouvirComAuth((uid) => `users/${uid}/transacoes/${turnoId}`, (snapshot) => onData(mapTransacoes(snapshot)));
 }
 
 export function ouvirFantasmas(turnoId: string, onData: (fantasmas: LembreteFantasma[]) => void): Unsubscribe {
-  return onValue(ref(getRealtimeDatabase(), `users/${getUserId()}/fantasmas_lembretes/${turnoId}`), (snapshot) => onData(mapFantasmas(snapshot)));
+  return ouvirComAuth((uid) => `users/${uid}/fantasmas_lembretes/${turnoId}`, (snapshot) => onData(mapFantasmas(snapshot)));
 }
 
 export function ouvirDividas(turnoId: string, onData: (dividas: DividaCliente[]) => void): Unsubscribe {
-  return onValue(ref(getRealtimeDatabase(), `users/${getUserId()}/dividas_clientes/${turnoId}`), (snapshot) => onData(mapDividas(snapshot)));
+  return ouvirComAuth((uid) => `users/${uid}/dividas_clientes/${turnoId}`, (snapshot) => onData(mapDividas(snapshot)));
 }
 
 export async function salvarAjusteSobra(turnoId: string, ajuste: number): Promise<void> {
-  await update(ref(getRealtimeDatabase(), `users/${getUserId()}/turnos/${turnoId}`), { ajuste_manual_sobra: ajuste, "metadados/atualizado_em": Date.now() });
+  const uid = await getUserIdAsync();
+  await update(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), { ajuste_manual_sobra: ajuste, "metadados/atualizado_em": Date.now() });
+}
+
+export async function salvarNotaDia(turnoId: string, texto: string): Promise<void> {
+  const uid = await getUserIdAsync();
+  await update(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), { 
+    nota_dia: texto,
+    "metadados/atualizado_em": Date.now() 
+  });
 }
 
 export async function salvarTotaisTurno(turnoId: string, totais: TotaisTurno): Promise<void> {
-  await update(ref(getRealtimeDatabase(), `users/${getUserId()}/turnos/${turnoId}`), { 
+  const uid = await getUserIdAsync();
+  await update(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), { 
     totais: { 
       sistema: totais.sistema, 
       sobra: totais.sobra, 
@@ -263,26 +347,28 @@ export async function salvarTotaisTurno(turnoId: string, totais: TotaisTurno): P
   });
 }
 
-// NOVO: Salvar contagem de notas
 export async function salvarContagemCedulas(turnoId: string, contagem: ContagemCedulas): Promise<void> {
-  await update(ref(getRealtimeDatabase(), `users/${getUserId()}/turnos/${turnoId}`), { 
+  const uid = await getUserIdAsync();
+  await update(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), { 
     contagem_cedulas: contagem,
     "metadados/atualizado_em": Date.now() 
   });
 }
 
-// NOVO: Atualizar Identificação
 export async function atualizarIdentificacao(turnoId: string, caixaId: string, operadorId: string): Promise<void> {
-  await update(ref(getRealtimeDatabase(), `users/${getUserId()}/turnos/${turnoId}`), { 
+  const uid = await getUserIdAsync();
+  await update(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), { 
     caixa_id: caixaId,
     operador_id: operadorId,
     "metadados/atualizado_em": Date.now() 
   });
 }
 
-export async function adicionarTransacao(turnoId: string, input: AddTransacaoInput): Promise<void> {
-  const created = push(ref(getRealtimeDatabase(), `users/${getUserId()}/transacoes/${turnoId}`));
+export async function adicionarTransacao(turnoId: string, input: AddTransacaoInput): Promise<string> {
+  const uid = await getUserIdAsync();
+  const created = push(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}`));
   await set(created, {
+    client_local_id: input.clientLocalId || null,
     timestamp: Date.now(),
     natureza_operacao: input.naturezaOperacao,
     categoria: input.categoria,
@@ -294,9 +380,11 @@ export async function adicionarTransacao(turnoId: string, input: AddTransacaoInp
     status_conferencia: "pendente",
     justificativa_texto: input.justificativaTexto ?? null,
   });
+  return created.key as string;
 }
 
 export async function editarTransacao(turnoId: string, id: string, input: any): Promise<void> {
+  const uid = await getUserIdAsync();
   const payload: Record<string, any> = {
     natureza_operacao: input.naturezaOperacao,
     categoria: input.categoria,
@@ -308,16 +396,23 @@ export async function editarTransacao(turnoId: string, id: string, input: any): 
     justificativa_texto: input.justificativaTexto || null,
     transacao_vinculada_id: input.transacaoVinculadaId || null,
   };
-  await update(ref(getRealtimeDatabase(), `users/${getUserId()}/transacoes/${turnoId}/${id}`), payload);
+  await update(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}/${id}`), payload);
 }
 
 export async function removerTransacao(turnoId: string, id: string): Promise<void> {
-  await set(ref(getRealtimeDatabase(), `users/${getUserId()}/transacoes/${turnoId}/${id}`), null);
+  const uid = await getUserIdAsync();
+  const db = getRealtimeDatabase();
+  await Promise.all([
+    set(ref(db, `users/${uid}/transacoes/${turnoId}/${id}`), null),
+    set(ref(db, `users/${uid}/logs_auditoria/${turnoId}/${id}`), null)
+  ]);
 }
 
-export async function adicionarFantasma(turnoId: string, input: any): Promise<void> {
-  const created = push(ref(getRealtimeDatabase(), `users/${getUserId()}/fantasmas_lembretes/${turnoId}`));
+export async function adicionarFantasma(turnoId: string, input: any): Promise<string> {
+  const uid = await getUserIdAsync();
+  const created = push(ref(getRealtimeDatabase(), `users/${uid}/fantasmas_lembretes/${turnoId}`));
   await set(created, {
+    client_local_id: input.clientLocalId || null,
     tipo: input.tipo,
     pessoa: input.pessoa || null,
     descricao: input.descricao || null,
@@ -329,9 +424,11 @@ export async function adicionarFantasma(turnoId: string, input: any): Promise<vo
     resolvido: false,
     comprovado_pix: false
   });
+  return created.key as string;
 }
 
 export async function atualizarFantasmaCompleto(turnoId: string, id: string, changes: any): Promise<void> {
+  const uid = await getUserIdAsync();
   const payload: Record<string, any> = {};
   if (changes.tipo) payload.tipo = changes.tipo;
   if (changes.pessoa !== undefined) payload.pessoa = changes.pessoa;
@@ -343,29 +440,34 @@ export async function atualizarFantasmaCompleto(turnoId: string, id: string, cha
   if (changes.resolvido !== undefined) payload.resolvido = changes.resolvido;
   if (changes.comprovado_pix !== undefined) payload.comprovado_pix = changes.comprovado_pix;
 
-  await update(ref(getRealtimeDatabase(), `users/${getUserId()}/fantasmas_lembretes/${turnoId}/${id}`), payload);
+  await update(ref(getRealtimeDatabase(), `users/${uid}/fantasmas_lembretes/${turnoId}/${id}`), payload);
 }
 
 export async function removerFantasma(turnoId: string, id: string): Promise<void> {
-  await set(ref(getRealtimeDatabase(), `users/${getUserId()}/fantasmas_lembretes/${turnoId}/${id}`), null);
+  const uid = await getUserIdAsync();
+  await set(ref(getRealtimeDatabase(), `users/${uid}/fantasmas_lembretes/${turnoId}/${id}`), null);
 }
 
 export async function adicionarDivida(turnoId: string, input: any): Promise<void> {
-  const created = push(ref(getRealtimeDatabase(), `users/${getUserId()}/dividas_clientes/${turnoId}`));
+  const uid = await getUserIdAsync();
+  const created = push(ref(getRealtimeDatabase(), `users/${uid}/dividas_clientes/${turnoId}`));
   await set(created, { ...input, timestamp: Date.now(), resolvido: false });
 }
 
 export async function alternarDivida(turnoId: string, id: string, resolvido: boolean): Promise<void> {
-  await update(ref(getRealtimeDatabase(), `users/${getUserId()}/dividas_clientes/${turnoId}/${id}`), { resolvido });
+  const uid = await getUserIdAsync();
+  await update(ref(getRealtimeDatabase(), `users/${uid}/dividas_clientes/${turnoId}/${id}`), { resolvido });
 }
 
 export async function removerDivida(turnoId: string, id: string): Promise<void> {
-  await set(ref(getRealtimeDatabase(), `users/${getUserId()}/dividas_clientes/${turnoId}/${id}`), null);
+  const uid = await getUserIdAsync();
+  await set(ref(getRealtimeDatabase(), `users/${uid}/dividas_clientes/${turnoId}/${id}`), null);
 }
 
 export async function registrarLogAlteracao(turnoId: string, transacaoId: string, log: Omit<LogAlteracao, "id" | "timestamp" | "transacaoId">): Promise<void> {
+  const uid = await getUserIdAsync();
   const db = getRealtimeDatabase();
-  const root = ref(db, `users/${getUserId()}/logs_auditoria/${turnoId}/${transacaoId}`);
+  const root = ref(db, `users/${uid}/logs_auditoria/${turnoId}/${transacaoId}`);
   const created = push(root);
   await set(created, {
     ...log,
@@ -378,6 +480,7 @@ export async function atualizarStatusTurno(
   status: "aberto" | "fechado", 
   extra?: { bateuFisico?: boolean; observacoes?: string }
 ): Promise<void> {
+  const uid = await getUserIdAsync();
   const payload: Record<string, any> = {
     status_turno: status,
     "metadados/atualizado_em": Date.now(),
@@ -388,26 +491,29 @@ export async function atualizarStatusTurno(
     if (extra.observacoes !== undefined) payload.observacoes_fechamento = extra.observacoes;
   }
 
-  await update(ref(getRealtimeDatabase(), `users/${getUserId()}/turnos/${turnoId}`), payload);
+  await update(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), payload);
 }
 
 export async function atualizarStatusRepasse(turnoId: string, repassado: boolean): Promise<void> {
-  await update(ref(getRealtimeDatabase(), `users/${getUserId()}/turnos/${turnoId}`), {
+  const uid = await getUserIdAsync();
+  await update(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), {
     repassado,
     "metadados/atualizado_em": Date.now(),
   });
 }
 
 export async function removerTurnoTotal(turnoId: string): Promise<void> {
+  const uid = await getUserIdAsync();
   const db = getRealtimeDatabase();
   await Promise.all([
-    set(ref(db, `users/${getUserId()}/turnos/${turnoId}`), null),
-    set(ref(db, `users/${getUserId()}/transacoes/${turnoId}`), null),
-    set(ref(db, `users/${getUserId()}/fantasmas_lembretes/${turnoId}`), null),
-    set(ref(db, `users/${getUserId()}/dividas_clientes/${turnoId}`), null),
+    set(ref(db, `users/${uid}/turnos/${turnoId}`), null),
+    set(ref(db, `users/${uid}/transacoes/${turnoId}`), null),
+    set(ref(db, `users/${uid}/fantasmas_lembretes/${turnoId}`), null),
+    set(ref(db, `users/${uid}/dividas_clientes/${turnoId}`), null),
   ]);
 }
 
 export async function atualizarConferenciaTransacao(turnoId: string, id: string, status: string): Promise<void> {
-  await update(ref(getRealtimeDatabase(), `users/${getUserId()}/transacoes/${turnoId}/${id}`), { status_conferencia: status });
+  const uid = await getUserIdAsync();
+  await update(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}/${id}`), { status_conferencia: status });
 }
