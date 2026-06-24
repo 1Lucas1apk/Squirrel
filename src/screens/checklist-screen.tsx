@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { Pressable, Text, TextInput, View, Modal, FlatList } from "react-native";
+import { useState, useRef } from "react";
+import { Pressable, Text, TextInput, View, Modal, FlatList, ScrollView } from "react-native";
 import { Search, CheckCircle2, Circle, AlertCircle, Trash2, Link as LinkIcon, Filter, Target, Cloud, History, Clock, X } from "lucide-react-native";
+import Swipeable from "react-native-gesture-handler/Swipeable";
 import { MoneyInput } from "../components/common/money-input";
 import { TabSwitcher } from "../components/common/tab-switcher";
 import { LembreteFantasma, LogAlteracao, Transacao } from "../types/domain";
@@ -16,123 +17,91 @@ interface ChecklistScreenProps {
   isFechado?: boolean;
 }
 
-export function ChecklistScreen({ transacoes, fantasmas, logs, onToggle, onExcluir, onReportarErro, isFechado }: ChecklistScreenProps) {
-  const [busca, setBusca] = useState("");
-  const [apenasPendentes, setApenasPendentes] = useState(false);
-  const [abaAtiva, setAbaAtiva] = useState("todas");
+function getCategoriaLabel(categoria: Transacao["categoria"]) {
+  const map: Record<Transacao["categoria"], string> = {
+    dinheiro: "Dinheiro",
+    entrada_prestacao: "Entrada",
+    compra_vista: "À Vista",
+    gar: "GAR",
+    multiplo: "Múltiplo",
+    sangria: "Sangria",
+    cancelamento: "Cancelamento",
+  };
+  return map[categoria];
+}
+
+function ChecklistItem({ item, logs, fantasmas, isFechado, onToggle, onExcluir, onAbrirErro }: any) {
+  const swipeableRef = useRef<Swipeable>(null);
+  const isConfirmada = item.statusConferencia === "confirmada";
+  const isCancelamento = item.categoria === "cancelamento";
   
-  const [horaInicio, setHoraInicio] = useState<number | null>(null);
-  const [horaFim, setHoraFim] = useState<number | null>(null);
-  const [showTimeFilter, setShowTimeFilter] = useState(false);
-
-  const [itemEmErro, setItemEmErro] = useState<string | null>(null);
-  const [valorSistemaNovo, setValorSistemaNovo] = useState(0);
-  const [valorRealPago, setValorRealPago] = useState(0);
-  const [notaErro, setNotaErro] = useState("");
-
-  function getCategoriaLabel(categoria: Transacao["categoria"]) {
-    const map: Record<Transacao["categoria"], string> = {
-      dinheiro: "Dinheiro",
-      entrada_prestacao: "Entrada",
-      compra_vista: "À Vista",
-      gar: "GAR",
-      multiplo: "Múltiplo",
-      sangria: "Sangria",
-      cancelamento: "Cancelamento",
-    };
-    return map[categoria];
-  }
-
-  const transacoesPorAba = transacoes.filter((t) => {
-    if (abaAtiva === "dinheiro") return t.categoria === "dinheiro" || t.categoria === "multiplo" || t.categoria === "gar";
-    if (abaAtiva === "entradas") return t.categoria === "entrada_prestacao";
-    if (abaAtiva === "avista") return t.categoria === "compra_vista";
-    if (abaAtiva === "saidas") return t.categoria === "sangria" || t.categoria === "cancelamento";
-    return true;
-  });
-
-  const transacoesFiltradas = transacoesPorAba.filter((t) => {
-    // Se o filtro estiver ativo, esconde as confirmadas
-    if (apenasPendentes && t.statusConferencia === "confirmada") return false;
-
-    // Filtro por Horário
-    if (horaInicio !== null || horaFim !== null) {
-      const itemHour = new Date(t.timestamp).getHours();
-      if (horaInicio !== null && itemHour < horaInicio) return false;
-      if (horaFim !== null && itemHour > horaFim) return false;
-    }
-
-    if (!busca) return true;
-    const valorStr = t.valorSistema.toString().replace(".", ",");
-    return valorStr.includes(busca) || t.descricao.toLowerCase().includes(busca.toLowerCase());
-  });
-
-  const calcNetTotal = (list: Transacao[]) => {
-    return list.reduce((acc, t) => {
-      const isSaida = t.categoria === "sangria" || t.categoria === "cancelamento";
-      return isSaida ? acc - t.valorSistema : acc + t.valorSistema;
-    }, 0);
+  const accentColors: Record<Transacao["categoria"], string> = {
+    dinheiro: "#34d399",
+    entrada_prestacao: "#60a5fa",
+    compra_vista: "#f4f4f5",
+    multiplo: "#fb923c",
+    sangria: "#f87171",
+    cancelamento: "#ef4444",
+    gar: "#a78bfa"
   };
 
-  const totalEsperado = calcNetTotal(transacoesPorAba);
-  const totalConfirmado = calcNetTotal(transacoesPorAba.filter(t => t.statusConferencia === "confirmada"));
+  const color = accentColors[item.categoria as Transacao["categoria"]] || "#71717a";
+  const itemLogs = (logs || []).filter((l: LogAlteracao) => l.transacaoId === item.id);
 
-  // Para o progresso visual, usamos a contagem de itens pois a soma financeira pode ser zero ou negativa
-  const totalItens = transacoesPorAba.length;
-  const itensConfirmados = transacoesPorAba.filter(t => t.statusConferencia === "confirmada").length;
-  const progresso = totalItens > 0 ? (itensConfirmados / totalItens) * 100 : 0;
-
-  const confirmadas = transacoes.filter(t => t.statusConferencia === "confirmada");
-
-  const renderItem = ({ item }: { item: Transacao }) => {
-    const isConfirmada = item.statusConferencia === "confirmada";
-    const isCancelamento = item.categoria === "cancelamento";
-    
-    // Mesma paleta de cores para consistência
-    const accentColors: Record<Transacao["categoria"], string> = {
-      dinheiro: "#34d399",
-      entrada_prestacao: "#60a5fa",
-      compra_vista: "#f4f4f5",
-      multiplo: "#fb923c",
-      sangria: "#f87171",
-      cancelamento: "#ef4444",
-      gar: "#a78bfa"
-    };
-
-    const color = accentColors[item.categoria] || "#71717a";
-    const itemLogs = (logs || []).filter((l: LogAlteracao) => l.transacaoId === item.id);
-    
+  const renderLeftActions = () => {
     return (
-      <View className={`rounded-[32px] border p-6 shadow-sm mb-4 ${
-        isConfirmada 
-          ? "border-emerald-500/20 bg-emerald-500/5 opacity-40" 
-          : item.statusConferencia === "incorreto"
-            ? "border-red-500/40 bg-red-500/10"
-            : isCancelamento
+      <View className="bg-emerald-500 justify-center items-start pl-8 pr-12 rounded-[32px] flex-1">
+        <CheckCircle2 size={32} color="#fff" />
+      </View>
+    );
+  };
+
+  const renderRightActions = () => {
+    return (
+      <View className="bg-red-500 justify-center items-end pr-8 pl-12 rounded-[32px] flex-1">
+        <AlertCircle size={32} color="#fff" />
+      </View>
+    );
+  };
+
+  return (
+    <View className="mb-4">
+      <Swipeable
+        ref={swipeableRef}
+        enabled={!isFechado}
+        renderLeftActions={renderLeftActions}
+        renderRightActions={renderRightActions}
+        overshootFriction={8}
+        onSwipeableOpen={(direction) => {
+          swipeableRef.current?.close();
+          if (direction === "left") {
+            onToggle(item);
+          } else if (direction === "right") {
+            onAbrirErro(item);
+          }
+        }}
+      >
+        <View className={`rounded-[32px] border p-6 shadow-sm bg-ink-900 ${
+          isConfirmada 
+            ? "border-emerald-500/20 bg-emerald-500/5 opacity-40" 
+            : item.statusConferencia === "incorreto"
               ? "border-red-500/40 bg-red-500/10"
-              : "border-zinc-800 bg-ink-900"
-      }`}>
+              : isCancelamento
+                ? "border-red-500/40 bg-red-500/10"
+                : "border-zinc-800"
+        }`}>
         <View className="flex-row items-center justify-between">
           <Pressable
             className="flex-1"
             disabled={isFechado}
-            onPress={() => !isFechado && onToggle(item)}
-            onLongPress={() => {
-              if (!isFechado) {
-                setValorSistemaNovo(item.valorSistema);
-                setValorRealPago(item.valorRecebidoFisico);
-                setItemEmErro(item.id);
-              }
-            }}
+            onLongPress={() => !isFechado && onAbrirErro(item)}
             delayLongPress={500}
           >
             <View className="flex-row items-center gap-2 mb-2 flex-wrap">
               <Text style={{ color: isConfirmada ? undefined : color }} className={`text-[10px] font-black uppercase tracking-widest ${isConfirmada ? "text-emerald-500" : ""}`}>
                 {new Date(item.timestamp).toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit', second: '2-digit' })} • {getCategoriaLabel(item.categoria)}
               </Text>
-              {isCancelamento && (
-                <AlertCircle size={12} color="#f87171" />
-              )}
+              {isCancelamento && <AlertCircle size={12} color="#f87171" />}
               {item.pendingSync && (
                 <View className="bg-amber-500/10 px-1.5 py-0.5 rounded flex-row items-center gap-1">
                    <Cloud size={8} color="#f59e0b" />
@@ -147,7 +116,7 @@ export function ChecklistScreen({ transacoes, fantasmas, logs, onToggle, onExclu
             <Text className={`text-2xl font-black tracking-tighter ${isConfirmada ? "text-zinc-600" : "text-zinc-100"}`}>
               {toBrl(item.valorSistema)}
             </Text>
-            {fantasmas.some(f => f.transacaoVinculadaId === item.id) && (
+            {fantasmas.some((f: any) => f.transacaoVinculadaId === item.id) && (
               <View className="flex-row items-center gap-1.5 mt-1 bg-blue-500/10 border border-blue-500/20 self-start px-2 py-0.5 rounded-md">
                 <LinkIcon size={10} color="#60a5fa" />
                 <Text className="text-[8px] font-black text-blue-400 uppercase">Pix Vinculado</Text>
@@ -206,12 +175,99 @@ export function ChecklistScreen({ transacoes, fantasmas, logs, onToggle, onExclu
           </View>
         </View>
       </View>
+    </Swipeable>
+    </View>
+  );
+}
+
+export function ChecklistScreen({ transacoes, fantasmas, logs, onToggle, onExcluir, onReportarErro, isFechado }: ChecklistScreenProps) {
+  const [busca, setBusca] = useState("");
+  const [apenasPendentes, setApenasPendentes] = useState(false);
+  const [abaAtiva, setAbaAtiva] = useState("todas");
+  const [subAbaDinheiro, setSubAbaDinheiro] = useState<"todas" | "especie" | "multiplo" | "gar">("todas");
+  
+  const [horaInicio, setHoraInicio] = useState<number | null>(null);
+  const [horaFim, setHoraFim] = useState<number | null>(null);
+  const [showTimeFilter, setShowTimeFilter] = useState(false);
+
+  const [itemEmErro, setItemEmErro] = useState<string | null>(null);
+  const [valorSistemaNovo, setValorSistemaNovo] = useState(0);
+  const [valorRealPago, setValorRealPago] = useState(0);
+  const [notaErro, setNotaErro] = useState("");
+
+  function getCategoriaLabel(categoria: Transacao["categoria"]) {
+    const map: Record<Transacao["categoria"], string> = {
+      dinheiro: "Dinheiro",
+      entrada_prestacao: "Entrada",
+      compra_vista: "À Vista",
+      gar: "GAR",
+      multiplo: "Múltiplo",
+      sangria: "Sangria",
+      cancelamento: "Cancelamento",
+    };
+    return map[categoria];
+  }
+
+  const transacoesPorAba = transacoes.filter((t) => {
+    if (abaAtiva === "dinheiro") {
+      if (subAbaDinheiro === "especie") return t.categoria === "dinheiro";
+      if (subAbaDinheiro === "multiplo") return t.categoria === "multiplo";
+      if (subAbaDinheiro === "gar") return t.categoria === "gar";
+      return t.categoria === "dinheiro" || t.categoria === "multiplo" || t.categoria === "gar";
+    }
+    if (abaAtiva === "entradas") return t.categoria === "entrada_prestacao";
+    if (abaAtiva === "avista") return t.categoria === "compra_vista";
+    if (abaAtiva === "saidas") return t.categoria === "sangria" || t.categoria === "cancelamento";
+    return true;
+  });
+
+  const transacoesFiltradas = transacoesPorAba.filter((t) => {
+    if (apenasPendentes && t.statusConferencia === "confirmada") return false;
+    if (horaInicio !== null || horaFim !== null) {
+      const itemHour = new Date(t.timestamp).getHours();
+      if (horaInicio !== null && itemHour < horaInicio) return false;
+      if (horaFim !== null && itemHour > horaFim) return false;
+    }
+    if (!busca) return true;
+    const valorStr = t.valorSistema.toString().replace(".", ",");
+    return valorStr.includes(busca) || t.descricao.toLowerCase().includes(busca.toLowerCase());
+  });
+
+  const calcNetTotal = (list: Transacao[]) => {
+    return list.reduce((acc, t) => {
+      const isSaida = t.categoria === "sangria" || t.categoria === "cancelamento";
+      return isSaida ? acc - t.valorSistema : acc + t.valorSistema;
+    }, 0);
+  };
+
+  const totalEsperado = calcNetTotal(transacoesPorAba);
+  const totalConfirmado = calcNetTotal(transacoesPorAba.filter(t => t.statusConferencia === "confirmada"));
+
+  const totalItens = transacoesPorAba.length;
+  const itensConfirmados = transacoesPorAba.filter(t => t.statusConferencia === "confirmada").length;
+  const progresso = totalItens > 0 ? (itensConfirmados / totalItens) * 100 : 0;
+
+  const renderItem = ({ item }: { item: Transacao }) => {
+    return (
+      <ChecklistItem 
+        key={item.id}
+        item={item} 
+        logs={logs} 
+        fantasmas={fantasmas} 
+        isFechado={isFechado} 
+        onToggle={onToggle} 
+        onExcluir={onExcluir} 
+        onAbrirErro={(t) => {
+          setValorSistemaNovo(t.valorSistema);
+          setValorRealPago(t.valorRecebidoFisico);
+          setItemEmErro(t.id);
+        }}
+      />
     );
   };
 
   return (
     <View className="flex-1">
-      {/* Modal de Erro Rápido - Fixo na Tela */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -280,25 +336,27 @@ export function ChecklistScreen({ transacoes, fantasmas, logs, onToggle, onExclu
         showsVerticalScrollIndicator={false}
         overScrollMode="never"
         ListHeaderComponent={
-          <View className="gap-6 mb-4">
-            {/* NOVO: Badge de Progresso em Tempo Real */}
-            <View className="rounded-[40px] border border-blue-500/20 bg-blue-500/5 p-6 shadow-2xl">
-              <View className="flex-row items-center justify-between mb-4">
-                <View className="flex-row items-center gap-2 opacity-60">
-                  <Target size={12} color="#60a5fa" />
-                  <Text className="text-[10px] font-black uppercase tracking-[2px] text-blue-300">
-                    Progresso da Conferência
-                  </Text>
+          <View className="gap-5 mb-4">
+            <View className="rounded-[40px] border border-blue-500/20 bg-blue-500/5 p-6 shadow-2xl relative overflow-hidden">
+              <View className="flex-row items-start justify-between mb-6">
+                <View className="flex-1 pr-4">
+                  <View className="flex-row items-center gap-2 opacity-60 mb-1.5">
+                    <Target size={12} color="#60a5fa" />
+                    <Text className="text-[10px] font-black uppercase tracking-[2px] text-blue-300">
+                      Progresso da Conferência
+                    </Text>
+                  </View>
+                  <Text className="text-[10px] font-black text-blue-400/80 uppercase tracking-widest">{itensConfirmados} de {totalItens} Lançamentos OK</Text>
                 </View>
-                <View className="bg-blue-500/20 px-2 py-0.5 rounded-lg">
-                  <Text className="text-[10px] font-black text-blue-400">{Math.round(progresso)}%</Text>
+                <View className="bg-blue-500/10 border border-blue-500/30 px-3 py-1.5 rounded-2xl">
+                  <Text className="text-xs font-black text-blue-400 uppercase tracking-widest">{Math.round(progresso)}%</Text>
                 </View>
               </View>
 
               <View className="flex-row items-end justify-between gap-4">
                 <View className="flex-1">
                   <Text className="text-[9px] font-black text-zinc-500 uppercase mb-1">Confirmado</Text>
-                  <Text className="text-2xl font-black text-blue-400 tracking-tighter" numberOfLines={1} adjustsFontSizeToFit>{toBrl(totalConfirmado)}</Text>
+                  <Text className="text-3xl font-black text-blue-400 tracking-tighter" numberOfLines={1} adjustsFontSizeToFit>{toBrl(totalConfirmado)}</Text>
                 </View>
                 <View className="items-end flex-1">
                   <Text className="text-[9px] font-black text-zinc-500 uppercase mb-1">Total a Bater</Text>
@@ -306,8 +364,7 @@ export function ChecklistScreen({ transacoes, fantasmas, logs, onToggle, onExclu
                 </View>
               </View>
 
-              {/* Barra de Progresso Visual */}
-              <View className="h-1.5 w-full bg-zinc-800 rounded-full mt-4 overflow-hidden">
+              <View className="h-1.5 w-full bg-blue-950/40 rounded-full mt-6 overflow-hidden">
                 <View 
                   className="h-full bg-blue-500" 
                   style={{ width: `${progresso}%` }}
@@ -324,8 +381,32 @@ export function ChecklistScreen({ transacoes, fantasmas, logs, onToggle, onExclu
                 { key: "saidas", label: "Saídas" },
               ]}
               activeKey={abaAtiva}
-              onChange={setAbaAtiva}
+              onChange={(key) => {
+                setAbaAtiva(key);
+                setSubAbaDinheiro("todas");
+              }}
             />
+
+            {abaAtiva === "dinheiro" && (
+              <View className="-mt-3 mb-2 px-1">
+                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+                   {[
+                     { key: "todas", label: "Geral" },
+                     { key: "especie", label: "Apenas Espécie" },
+                     { key: "multiplo", label: "Apenas Múltiplo" },
+                     { key: "gar", label: "Apenas GAR" },
+                   ].map(sub => (
+                     <Pressable 
+                       key={sub.key}
+                       onPress={() => setSubAbaDinheiro(sub.key as any)}
+                       className={`px-4 py-2 rounded-xl border ${subAbaDinheiro === sub.key ? 'bg-zinc-800 border-zinc-700' : 'bg-transparent border-transparent'}`}
+                     >
+                       <Text className={`text-[10px] font-black uppercase tracking-wider ${subAbaDinheiro === sub.key ? 'text-zinc-300' : 'text-zinc-600'}`}>{sub.label}</Text>
+                     </Pressable>
+                   ))}
+                 </ScrollView>
+              </View>
+            )}
 
             <View className="rounded-[32px] border border-zinc-800 bg-ink-900 p-6 shadow-2xl">
               <View className="flex-row items-center gap-3 mb-4 ml-1">
@@ -344,39 +425,31 @@ export function ChecklistScreen({ transacoes, fantasmas, logs, onToggle, onExclu
               />
             </View>
 
-            <View className="flex-row items-center justify-between px-2">
-              <View className="flex-row items-center gap-3">
-                <Text className="text-[11px] font-black uppercase tracking-[3px] text-zinc-500">
-                  Conferência
+            <View className="flex-row items-center gap-3 px-2 mt-2">
+              <Text className="text-[11px] font-black uppercase tracking-[3px] text-zinc-500 mr-2">
+                Filtros
+              </Text>
+              <Pressable 
+                onPress={() => setApenasPendentes(!apenasPendentes)}
+                className={`flex-row items-center gap-2 px-4 py-2.5 rounded-2xl border ${apenasPendentes ? 'bg-amber-500/10 border-amber-500/30' : 'bg-zinc-800 border-zinc-700'}`}
+              >
+                <Filter size={12} color={apenasPendentes ? '#f59e0b' : '#71717a'} />
+                <Text className={`text-[9px] font-black uppercase tracking-widest ${apenasPendentes ? 'text-amber-500' : 'text-zinc-400'}`}>
+                  {apenasPendentes ? "Ocultar OK" : "Tudo"}
                 </Text>
-                <Pressable 
-                  onPress={() => setApenasPendentes(!apenasPendentes)}
-                  className={`flex-row items-center gap-2 px-3 py-1.5 rounded-full border ${apenasPendentes ? 'bg-amber-500/10 border-amber-500/30' : 'bg-zinc-800 border-zinc-700'}`}
-                >
-                  <Filter size={10} color={apenasPendentes ? '#f59e0b' : '#71717a'} />
-                  <Text className={`text-[8px] font-black uppercase ${apenasPendentes ? 'text-amber-500' : 'text-zinc-500'}`}>
-                    {apenasPendentes ? "Pendentes" : "Ver Tudo"}
-                  </Text>
-                </Pressable>
+              </Pressable>
 
-                <Pressable 
-                  onPress={() => setShowTimeFilter(!showTimeFilter)}
-                  className={`flex-row items-center gap-2 px-3 py-1.5 rounded-full border ${horaInicio !== null || horaFim !== null ? 'bg-blue-500/10 border-blue-500/30' : 'bg-zinc-800 border-zinc-700'}`}
-                >
-                  <Clock size={10} color={horaInicio !== null || horaFim !== null ? '#60a5fa' : '#71717a'} />
-                  <Text className={`text-[8px] font-black uppercase ${horaInicio !== null || horaFim !== null ? 'text-blue-400' : 'text-zinc-500'}`}>
-                    {horaInicio !== null || horaFim !== null ? `${horaInicio}h-${horaFim}h` : "Horário"}
-                  </Text>
-                </Pressable>
-              </View>
-              <View className="rounded-full bg-blue-500/10 px-4 py-1.5 border border-blue-500/20">
-                <Text className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
-                  {confirmadas.length} de {transacoes.length} OK
+              <Pressable 
+                onPress={() => setShowTimeFilter(!showTimeFilter)}
+                className={`flex-row items-center gap-2 px-4 py-2.5 rounded-2xl border ${horaInicio !== null || horaFim !== null ? 'bg-blue-500/10 border-blue-500/30' : 'bg-zinc-800 border-zinc-700'}`}
+              >
+                <Clock size={12} color={horaInicio !== null || horaFim !== null ? '#60a5fa' : '#71717a'} />
+                <Text className={`text-[9px] font-black uppercase tracking-widest ${horaInicio !== null || horaFim !== null ? 'text-blue-400' : 'text-zinc-400'}`}>
+                  {horaInicio !== null || horaFim !== null ? `${horaInicio}h - ${horaFim}h` : "Horário"}
                 </Text>
-              </View>
+              </Pressable>
             </View>
 
-            {/* SELETOR DE HORÁRIO EXPANSÍVEL */}
             {showTimeFilter && (
               <View className="bg-ink-900 border border-zinc-800 rounded-[32px] p-6 mt-2">
                  <View className="flex-row items-center justify-between mb-4">

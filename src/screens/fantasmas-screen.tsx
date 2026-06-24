@@ -209,7 +209,14 @@ export function FantasmasScreen({ transacoes, fantasmas, onCriar, onEditar, onTo
                 )}
                 {tipo !== "lembrete_geral" && (
                   <View className="mt-2">
-                    <Pressable onPress={() => setMostrarTransacoes(!mostrarTransacoes)} className={`flex-row items-center justify-between px-6 py-5 rounded-[24px] border ${transacaoVinculadaId ? 'bg-blue-500/10 border-blue-500/30' : 'bg-ink-800 border-zinc-800'}`}>
+                    <Pressable onPress={() => {
+                      if (transacaoVinculadaId) {
+                        setTransacaoVinculadaId("");
+                        setMostrarTransacoes(false);
+                      } else {
+                        setMostrarTransacoes(!mostrarTransacoes);
+                      }
+                    }} className={`flex-row items-center justify-between px-6 py-5 rounded-[24px] border ${transacaoVinculadaId ? 'bg-blue-500/10 border-blue-500/30' : 'bg-ink-800 border-zinc-800'}`}>
                       <View className="flex-row items-center gap-3">
                         <LinkIcon size={16} color={transacaoVinculadaId ? "#60a5fa" : "#71717a"} />
                         <Text className={`font-black text-xs uppercase ${transacaoVinculadaId ? 'text-blue-400' : 'text-zinc-500'}`}>{transacaoVinculadaId ? "Vinculado" : "Vincular Venda"}</Text>

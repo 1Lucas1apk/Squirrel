@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from "react-native";
+import { ScrollView, Pressable, Text, View } from "react-native";
 
 export interface TabItem {
   key: string;
@@ -13,25 +13,31 @@ interface TabSwitcherProps {
 
 export function TabSwitcher({ tabs, activeKey, onChange }: TabSwitcherProps) {
   return (
-    <View className="mb-4 flex-row rounded-xl border border-zinc-800 bg-ink-900 p-1">
-      {tabs.map((tab) => {
-        const active = tab.key === activeKey;
-        return (
-          <Pressable
-            key={tab.key}
-            className={`flex-1 rounded-lg px-2 py-2 ${active ? "bg-zinc-100" : "bg-transparent"}`}
-            onPress={() => onChange(tab.key)}
-          >
-            <Text
-              className={`text-center text-xs font-semibold uppercase tracking-wide ${
-                active ? "text-zinc-900" : "text-zinc-300"
-              }`}
+    <View className="mb-4">
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 8, paddingHorizontal: 4 }}
+      >
+        {tabs.map((tab) => {
+          const active = tab.key === activeKey;
+          return (
+            <Pressable
+              key={tab.key}
+              className={`rounded-[20px] px-6 py-3.5 border-2 ${active ? "bg-zinc-100 border-zinc-100 shadow-xl" : "bg-ink-900 border-zinc-800"}`}
+              onPress={() => onChange(tab.key)}
             >
-              {tab.label}
-            </Text>
-          </Pressable>
-        );
-      })}
+              <Text
+                className={`text-center text-[11px] font-black uppercase tracking-[2px] ${
+                  active ? "text-zinc-950" : "text-zinc-500"
+                }`}
+              >
+                {tab.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
     </View>
   );
 }

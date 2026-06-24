@@ -620,6 +620,30 @@ export function MainScreen() {
                   </Text>
                 </View>
 
+                {/* MODO DE DIGITAÇÃO DE MOEDA */}
+                <View>
+                  <Text className="text-[10px] font-black text-zinc-600 uppercase mb-4 ml-1">Estilo de Digitação de Valores</Text>
+                  <View className="flex-row gap-2">
+                    {(['rtl', 'manual'] as const).map((mode) => {
+                      const active = settings.moneyInputMode === mode;
+                      return (
+                        <Pressable 
+                          key={mode} 
+                          onPress={() => updateSettings({ moneyInputMode: mode })}
+                          className={`flex-1 p-4 rounded-2xl border-2 items-center justify-center ${active ? 'bg-emerald-500/10 border-emerald-500' : 'bg-ink-800 border-zinc-800'}`}
+                        >
+                          <Text className={`text-[10px] font-black uppercase text-center ${active ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                            {mode === 'rtl' ? 'Nubank (Automático)' : 'Digitação Livre'}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                  <Text className="text-[10px] font-bold text-zinc-500 uppercase leading-4 mt-3 ml-1">
+                    Automático preenche da direita pra esquerda. Livre permite colocar a vírgula onde quiser.
+                  </Text>
+                </View>
+
                 {settings.hapticsEnabled && (
                   <View>
                     <Text className="text-[10px] font-black text-zinc-600 uppercase mb-4 ml-1">Intensidade do Toque</Text>
