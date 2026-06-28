@@ -45,7 +45,7 @@ export function TurnoScreen({
         <Pressable
           className="rounded-[32px] bg-zinc-100 px-8 py-7 active:opacity-80 flex-row items-center justify-between shadow-2xl shadow-zinc-100/10"
           disabled={loading}
-          onPress={onNovoDia}
+          onPress={() => onNovoDia()}
         >
           <View className="flex-row items-center gap-4">
             <Zap size={24} color="#09090b" strokeWidth={3} />

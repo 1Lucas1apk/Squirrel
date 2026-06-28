@@ -29,8 +29,7 @@ import { scheduleDailyReminders } from "../services/notifications";
 
 import { Skeleton } from "../components/common/skeleton";
 import { registrarLogAlteracao, atualizarStatusTurno } from "../services/repositories/caixa-repository";
-import { syncManager } from "../services/sync-manager";
-import { getOfflineQueue, loadCurrentShiftCache } from "../services/local-storage";
+import { loadCurrentShiftCache } from "../services/local-storage";
 
 type SectionKey = "painel" | "transacoes" | "checklist" | "fantasmas" | "historico";
 
@@ -42,44 +41,6 @@ export function MainScreen() {
   const [section, setSection] = useState<SectionKey>("painel");
   const [isDiscreto, setIsDiscreto] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
-  const [syncPendingCount, setSyncPendingCount] = useState(0);
-  const [syncError, setSyncError] = useState<string | null>(null);
-  const spinValue = useRef(new Animated.Value(0)).current;
-
-  // Monitor de Estado de Sincronização
-  useEffect(() => {
-    const unsub = syncManager.subscribe(setIsSyncing);
-    return () => unsub();
-  }, []);
-
-  useEffect(() => {
-    const unsub = syncManager.subscribeStatus((status) => {
-      setSyncPendingCount(status.pendingCount);
-      setSyncError(status.lastError);
-    });
-    return () => unsub();
-  }, []);
-
-  useEffect(() => {
-    if (isSyncing) {
-      Animated.loop(
-        Animated.timing(spinValue, {
-          toValue: 1,
-          duration: 1000,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        })
-      ).start();
-    } else {
-      spinValue.setValue(0);
-    }
-  }, [isSyncing]);
-
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
 
   const [modalFechamento, setModalFechamento] = useState(false);
   const [modalMais, setModalMais] = useState(false);
@@ -88,8 +49,6 @@ export function MainScreen() {
   const [modalCreditos, setModalCreditos] = useState(false);
   const [modalRetrospectiva, setModalRetrospectiva] = useState(false);
   const [modalAnalytics, setModalAnalytics] = useState(false);
-  const [modalConflitos, setModalConflitos] = useState(false);
-  
   const [bateu, setBateu] = useState<boolean | null>(null);
   const [obs, setObs] = useState("");
 
@@ -169,8 +128,7 @@ export function MainScreen() {
       const connected = !!snap.val();
       setIsOnline(connected);
       if (connected) {
-        // Quando volta a conectar, tenta sincronizar o que ficou pendente
-        void syncManager.processQueue();
+        // Agora o Firestore nativo cuida da sincronização offline
       }
     });
     return () => unsub();
@@ -362,14 +320,12 @@ export function MainScreen() {
   async function exportarBackupLocal() {
     try {
       const cache = await loadCurrentShiftCache();
-      const queue = await getOfflineQueue();
       const payload = {
         exportedAt: new Date().toISOString(),
         turno: cache.turno,
         transacoes: cache.transacoes,
         fantasmas: cache.fantasmas,
         logs: cache.logs,
-        queue,
       };
       const fileUri = `${FileSystem.cacheDirectory}squirrel-backup-${Date.now()}.json`;
       await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(payload, null, 2), {
@@ -389,18 +345,12 @@ export function MainScreen() {
   }
 
   async function compartilharDiagnostico() {
-    const queue = await getOfflineQueue();
     const diagnostico = [
       `Timestamp: ${new Date().toISOString()}`,
       `Online: ${isOnline}`,
-      `Sincronizando: ${isSyncing}`,
-      `Pendências de Sync: ${syncPendingCount}`,
-      `Erro Sync: ${syncError ?? "nenhum"}`,
-      `Conflitos: ${caixa.syncConflicts.length}`,
       `Turno atual: ${caixa.turno?.id ?? "nenhum"}`,
       `Transações locais: ${caixa.transacoes.length}`,
       `Fantasmas locais: ${caixa.fantasmas.length}`,
-      `Fila offline: ${queue.length}`,
     ].join("\n");
     await Share.share({ message: diagnostico });
   }
@@ -438,20 +388,14 @@ export function MainScreen() {
               <Pressable onPress={() => { setModalMais(false); setModalAnalytics(true); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
                 <Activity size={20} color="#60a5fa" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">Mapa de Movimentação</Text>
               </Pressable>
-              <Pressable onPress={() => { setModalMais(false); void syncManager.processQueue(); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
-                <RefreshCw size={20} color="#60a5fa" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">Forçar Sincronização</Text>
-              </Pressable>
+
               <Pressable onPress={() => { setModalMais(false); void exportarBackupLocal(); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
                 <Share2 size={20} color="#34d399" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">Exportar Backup Local</Text>
               </Pressable>
               <Pressable onPress={() => { setModalMais(false); void compartilharDiagnostico(); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
                 <Info size={20} color="#60a5fa" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">Compartilhar Diagnóstico</Text>
               </Pressable>
-              {caixa.syncConflicts.length > 0 && (
-                <Pressable onPress={() => { setModalMais(false); setModalConflitos(true); }} className="flex-row items-center gap-4 bg-amber-500/10 p-6 rounded-[24px] border border-amber-500/30">
-                  <AlertTriangle size={20} color="#facc15" /><Text className="text-amber-300 font-black uppercase tracking-widest text-xs">Resolver Conflitos ({caixa.syncConflicts.length})</Text>
-                </Pressable>
-              )}
+
               <Pressable onPress={() => { setModalMais(false); mostrarAlerta("SAIR DO DIA", "Deseja voltar para a tela inicial? O dia continuará aberto para edições depois.", () => caixa.sairDoDia()); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
                 <LogOut size={20} color="#f87171" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">Sair deste Dia</Text>
               </Pressable>
@@ -489,58 +433,6 @@ export function MainScreen() {
           onClose={() => setModalRetrospectiva(false)} 
         />
       )}
-      <Modal visible={modalConflitos} transparent animationType="fade">
-        <View className="flex-1 bg-black/90 items-center justify-center p-6">
-          <View className="w-full max-w-[420px] bg-ink-900 border border-zinc-800 rounded-[32px] p-6">
-            <Text className="text-sm font-black text-white uppercase tracking-widest mb-4">Conflitos de sincronização</Text>
-            <ScrollView className="max-h-[360px]" showsVerticalScrollIndicator={false}>
-              <View className="gap-3">
-                {caixa.syncConflicts.map((conflict) => (
-                  <View key={conflict.actionId} className="rounded-2xl border border-zinc-800 bg-ink-800 p-4">
-                    <Text className="text-[10px] font-black text-zinc-200 uppercase tracking-wider mb-2">
-                      {conflict.entityType} • {conflict.entityId}
-                    </Text>
-                    <Text className="text-[10px] font-bold text-zinc-500 uppercase mb-3">{conflict.reason}</Text>
-                    {conflict.remoteData && conflict.localData && (
-                      <View className="mb-4 bg-ink-950 p-4 rounded-2xl border border-zinc-800">
-                        <View className="flex-row justify-between mb-3 pb-3 border-b border-zinc-800/50">
-                          <Text className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Nuvem diz:</Text>
-                          <Text className="text-xs font-bold text-zinc-300">
-                            {toBrl(conflict.remoteData.valorSistema ?? conflict.remoteData.valorReferencia ?? 0)}
-                          </Text>
-                        </View>
-                        <View className="flex-row justify-between">
-                          <Text className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Seu app diz:</Text>
-                          <Text className="text-xs font-bold text-emerald-300">
-                            {toBrl(conflict.localData.valorSistema ?? conflict.localData.valorReferencia ?? 0)}
-                          </Text>
-                        </View>
-                      </View>
-                    )}
-                    <View className="flex-row gap-2">
-                      <Pressable
-                        onPress={() => void caixa.resolverConflito(conflict.actionId, "keep-remote")}
-                        className="flex-1 rounded-xl border border-zinc-700 bg-zinc-900 py-3"
-                      >
-                        <Text className="text-center text-[10px] font-black uppercase text-zinc-300">Manter remoto</Text>
-                      </Pressable>
-                      <Pressable
-                        onPress={() => void caixa.resolverConflito(conflict.actionId, "keep-local")}
-                        className="flex-1 rounded-xl border border-emerald-500/40 bg-emerald-500/10 py-3"
-                      >
-                        <Text className="text-center text-[10px] font-black uppercase text-emerald-300">Aplicar local</Text>
-                      </Pressable>
-                    </View>
-                  </View>
-                ))}
-              </View>
-            </ScrollView>
-            <Pressable onPress={() => setModalConflitos(false)} className="mt-4 rounded-2xl bg-zinc-100 py-4">
-              <Text className="text-center font-black uppercase text-zinc-950">Fechar</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
 
       <Modal visible={modalPreferencias} transparent animationType="fade">
         <View className="flex-1 bg-black/90 items-center justify-center p-6">
@@ -711,7 +603,10 @@ export function MainScreen() {
                   turnos={caixa.historicoTurnos} 
                   loading={caixa.loading} 
                   onRefresh={caixa.carregarHistoricoTurnos} 
-                  onOpen={(turnoId) => void caixa.abrirTurnoPorId(turnoId)} 
+                  onOpen={(turnoId) => {
+                    caixa.carregarTurnoExistente(turnoId);
+                    setSection("painel");
+                  }} 
                   onExcluirDia={(id) => mostrarAlerta("APAGAR DIA", "Deseja deletar?", () => caixa.excluirTurno(id), true)} 
                   onVoltar={() => setSection("painel")}
                 />
@@ -721,8 +616,8 @@ export function MainScreen() {
             <TurnoScreen 
               loading={caixa.loading} 
               error={caixa.error} 
-              onNovoDia={caixa.iniciarNovoDia} 
-              onContinuar={caixa.continuarDiaAnterior} 
+              onNovoDia={caixa.abrirNovoCaixa} 
+              onContinuar={() => caixa.carregarTurnoExistente(caixa.historicoTurnos[0]?.id)} 
               onVerHistorico={() => changeSection("historico")} 
               onAbrirAjustes={() => setModalPreferencias(true)}
             />
@@ -760,28 +655,8 @@ export function MainScreen() {
                 <View className={`h-6 min-w-6 px-1 items-center justify-center rounded-full ${isOnline ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
                   {isOnline ? <Cloud size={12} color="#34d399" /> : <CloudOff size={12} color="#f87171" />}
                 </View>
-                {syncPendingCount > 0 && (
-                  <View className="h-6 min-w-6 px-2 items-center justify-center rounded-full bg-amber-500/10 border border-amber-500/30">
-                    <Text className="text-[9px] font-black text-amber-300">{syncPendingCount}</Text>
-                  </View>
-                )}
-                {!!syncError && (
-                  <Pressable onPress={caixa.limparErroSync} className="h-6 px-2 items-center justify-center rounded-full bg-red-500/10 border border-red-500/30">
-                    <Text className="text-[9px] font-black text-red-300 uppercase">erro</Text>
-                  </Pressable>
-                )}
-                {caixa.syncConflicts.length > 0 && (
-                  <Pressable onPress={() => setModalConflitos(true)} className="h-6 px-2 items-center justify-center rounded-full bg-amber-500/10 border border-amber-500/30">
-                    <Text className="text-[9px] font-black text-amber-300 uppercase">conflito</Text>
-                  </Pressable>
-                )}
               </View>
               <View className="flex-row gap-2 flex-shrink-0">
-                {isSyncing && (
-                  <Animated.View style={{ transform: [{ rotate: spin }] }} className="h-10 w-10 items-center justify-center">
-                    <RefreshCw size={16} color="#60a5fa" />
-                  </Animated.View>
-                )}
                 <Pressable className="h-10 w-10 items-center justify-center rounded-2xl border border-zinc-800 bg-ink-900 active:bg-zinc-800" onPress={gerarRelatorio}><Share2 size={18} color="#a78bfa" /></Pressable>
                 <Pressable className="h-10 w-10 items-center justify-center rounded-2xl border border-zinc-800 bg-ink-900 active:bg-zinc-800" onPress={() => changeSection("historico")}><CalendarDays size={18} color="#71717a" /></Pressable>
                 {isFechado ? (
@@ -853,7 +728,10 @@ export function MainScreen() {
                     turnos={caixa.historicoTurnos} 
                     loading={caixa.loading} 
                     onRefresh={caixa.carregarHistoricoTurnos} 
-                    onOpen={(turnoId) => void caixa.abrirTurnoPorId(turnoId)} 
+                    onOpen={(turnoId) => {
+                      caixa.carregarTurnoExistente(turnoId);
+                      setSection("painel");
+                    }} 
                     onExcluirDia={(id) => mostrarAlerta("APAGAR DIA", "Deseja deletar?", () => caixa.excluirTurno(id), true)} 
                     onToggleRepasse={(id, state) => caixa.alternarRepasse(id, state)} 
                     onVoltar={() => setSection("painel")}

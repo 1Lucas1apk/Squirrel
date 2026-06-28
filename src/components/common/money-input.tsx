@@ -63,11 +63,14 @@ export function MoneyInput({ value, onChangeValue, ...props }: MoneyInputProps) 
     } else {
       // Modo Manual
       let normalizedText = text;
-      if (/\.\d{0,2}$/.test(normalizedText) && !normalizedText.includes(",")) {
-        normalizedText = normalizedText.replace(/\./g, ",");
-      } else {
-        normalizedText = normalizedText.replace(/\./g, "");
+
+      // Se o usuário digitou um ponto no final (ex: teclado numérico no PC) e não há vírgula, assume que é vírgula decimal
+      if (normalizedText.endsWith(".") && !normalizedText.includes(",")) {
+        normalizedText = normalizedText.slice(0, -1) + ",";
       }
+
+      // Removemos todos os pontos (separadores de milhar) para recalcular
+      normalizedText = normalizedText.replace(/\./g, "");
 
       let cleanText = normalizedText.replace(/[^\d,]/g, "");
 

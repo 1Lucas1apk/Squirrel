@@ -122,25 +122,6 @@ export function PainelScreen({
         isDiscreto={isDiscreto} 
       />
 
-      {/* AVISO DO DIA FIXADO */}
-      {!isDiscreto && (
-        <Pressable 
-          onPress={() => !isFechado && setModalNota(true)}
-          className={`rounded-[32px] border p-6 flex-row items-center gap-4 ${notaDia ? 'bg-amber-500/10 border-amber-500/20' : 'bg-ink-900 border-zinc-800 border-dashed opacity-60'}`}
-        >
-          <View className={`h-12 w-12 items-center justify-center rounded-2xl ${notaDia ? 'bg-amber-500' : 'bg-zinc-800'}`}>
-            <Pin size={20} color={notaDia ? "#451a03" : "#71717a"} strokeWidth={3} />
-          </View>
-          <View className="flex-1">
-            <Text className={`text-[9px] font-black uppercase tracking-widest ${notaDia ? 'text-amber-500' : 'text-zinc-600'}`}>Lembrete do Expediente</Text>
-            <Text className={`text-xs font-bold leading-5 ${notaDia ? 'text-zinc-100' : 'text-zinc-500'}`} numberOfLines={2}>
-              {notaDia || "Toque para adicionar um aviso importante para hoje..."}
-            </Text>
-          </View>
-          {notaDia && !isFechado && <Edit3 size={14} color="#71717a" />}
-        </Pressable>
-      )}
-
       {/* 2. AJUSTE DE SOBRA */}
       {!isDiscreto && (
         <View className={`rounded-[40px] border p-6 shadow-2xl ${isFechado ? 'border-zinc-900 bg-zinc-900/30' : 'border-zinc-800 bg-ink-900'}`}>
@@ -271,12 +252,33 @@ export function PainelScreen({
           )}
         </View>
 
-        <View className="mt-8 pt-6 border-t border-zinc-900 items-center">
+        <View className="mt-8 pt-6 border-t border-zinc-900 items-center mb-6">
           <Text className="text-[9px] font-black text-zinc-700 uppercase tracking-[2px] text-center">
-            Para adicionar novas trocas ou empréstimos, use a aba "Notas" no menu inferior.
+            Resumo detalhado gerado pelo sistema de auditoria.
           </Text>
         </View>
       </View>
+      )}
+
+      {/* MURAL DE RECADOS GLOBAL (AVISO DO DIA) */}
+      {!isDiscreto && (
+        <View className="mt-2 mb-8">
+          <Pressable 
+            onPress={() => !isFechado && setModalNota(true)}
+            className={`rounded-[32px] border p-6 flex-row items-center gap-4 shadow-2xl ${notaDia ? 'bg-amber-500/10 border-amber-500/20' : 'bg-ink-900 border-zinc-800 border-dashed opacity-70'}`}
+          >
+            <View className={`h-12 w-12 items-center justify-center rounded-2xl ${notaDia ? 'bg-amber-500' : 'bg-zinc-800'}`}>
+              <Pin size={20} color={notaDia ? "#451a03" : "#71717a"} strokeWidth={3} />
+            </View>
+            <View className="flex-1">
+              <Text className={`text-[9px] font-black uppercase tracking-widest ${notaDia ? 'text-amber-500' : 'text-zinc-600'}`}>Mural Global do Turno</Text>
+              <Text className={`text-xs font-bold leading-5 mt-1 ${notaDia ? 'text-zinc-100' : 'text-zinc-500'}`} numberOfLines={3}>
+                {notaDia || "Nenhum recado. Toque para adicionar uma mensagem para todos."}
+              </Text>
+            </View>
+            {!isFechado && <Edit3 size={16} color={notaDia ? "#fbbf24" : "#71717a"} />}
+          </Pressable>
+        </View>
       )}
     </View>
   );

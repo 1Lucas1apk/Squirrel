@@ -257,7 +257,7 @@ export function ChecklistScreen({ transacoes, fantasmas, logs, onToggle, onExclu
         isFechado={isFechado} 
         onToggle={onToggle} 
         onExcluir={onExcluir} 
-        onAbrirErro={(t) => {
+        onAbrirErro={(t: Transacao) => {
           setValorSistemaNovo(t.valorSistema);
           setValorRealPago(t.valorRecebidoFisico);
           setItemEmErro(t.id);

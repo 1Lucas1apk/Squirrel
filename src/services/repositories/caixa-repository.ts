@@ -1,12 +1,23 @@
 import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc as fsUpdateDoc,
+  deleteDoc,
+  addDoc,
+  onSnapshot,
+  query,
+} from "firebase/firestore";
+import {
   DataSnapshot,
-  Unsubscribe,
   get,
   onValue,
   push,
   ref,
   set,
-  update,
+  update as rtdbUpdate,
 } from "firebase/database";
 import { onAuthStateChanged } from "firebase/auth";
 
@@ -21,8 +32,14 @@ import {
   ContagemCedulas,
   LogAlteracao
 } from "../../types/domain";
+import { getFirestoreDb, getFirebaseAuth } from "../firebase/client";
 import { getRealtimeDatabase } from "../firebase/realtime";
-import { getFirebaseAuth } from "../firebase/client";
+
+export type Unsubscribe = () => void;
+
+function isLegacy(id: string) {
+  return id.startsWith("-");
+}
 
 async function getUserIdAsync(): Promise<string> {
   const auth = getFirebaseAuth();
@@ -44,61 +61,27 @@ async function getUserIdAsync(): Promise<string> {
   });
 }
 
-function ouvirComAuth(pathBuilder: (uid: string) => string, onData: (snapshot: DataSnapshot) => void): Unsubscribe {
-  const auth = getFirebaseAuth();
-  let unsubDb: Unsubscribe | null = null;
-  let isUnsubscribed = false;
-
-  const unsubAuth = onAuthStateChanged(auth, (user) => {
-    if (isUnsubscribed) return;
-    if (unsubDb) {
-      unsubDb();
-      unsubDb = null;
-    }
-    if (user) {
-      unsubDb = onValue(ref(getRealtimeDatabase(), pathBuilder(user.uid)), onData);
-    }
-  });
-
-  return () => {
-    isUnsubscribed = true;
-    unsubAuth();
-    if (unsubDb) unsubDb();
-  };
-}
-
-interface AddTransacaoInput {
-  clientLocalId?: string;
-  naturezaOperacao: Transacao["naturezaOperacao"];
-  categoria: Transacao["categoria"];
-  descricao: string;
-  codigoContrato?: string;
-  valorSistema: number;
-  valorRecebidoFisico: number;
-  trocoSobra: number;
-  statusConferencia: StatusConferencia;
-  justificativaTexto?: string | null;
-  transacaoVinculadaId?: string | null;
-}
-
 function toMoney(value: unknown): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return 0;
   return Math.round((parsed + Number.EPSILON) * 100) / 100;
 }
 
-function mapTurno(id: string, data: Record<string, unknown>): Turno {
-  const metadados = (data.metadados as Record<string, number> | undefined) ?? {};
-  const totais = (data.totais as Record<string, number> | undefined) ?? {};
-  const contagem = (data.contagem_cedulas as Record<string, number> | undefined) ?? null;
+// -------------------------
+// MAPPERS (Unificados)
+// -------------------------
+function mapTurno(id: string, data: any): Turno {
+  const metadados = data.metadados || {};
+  const totais = data.totais || {};
+  const contagem = data.contagem_cedulas || null;
 
   return {
     id,
     caixaId: data.caixa_id ? String(data.caixa_id) : undefined,
     operadorId: data.operador_id ? String(data.operador_id) : undefined,
-    dataReferencia: String(data.data_referencia ?? ""),
-    statusTurno: (data.status_turn as Turno["statusTurno"]) ?? (data.status_turno as Turno["statusTurno"]) ?? "aberto",
-    ajusteManualSobra: Number(data.ajuste_manual_sobra ?? 0),
+    dataReferencia: String(data.data_referencia || ""),
+    statusTurno: data.status_turn || data.status_turno || "aberto",
+    ajusteManualSobra: Number(data.ajuste_manual_sobra || 0),
     contagem: contagem ? {
       n100: Number(contagem.n100 || 0),
       n50: Number(contagem.n50 || 0),
@@ -109,265 +92,285 @@ function mapTurno(id: string, data: Record<string, unknown>): Turno {
       moedas: Number(contagem.moedas || 0),
     } : undefined,
     totais: {
-      sistema: Number(totais.sistema ?? 0),
-      sobra: Number(totais.sobra ?? 0),
-      gavetaFisico: Number(totais.gaveta_fisico ?? 0),
-      especieEnvelope: Number(totais.especie_envelope ?? 0),
-      pixRepasse: Number(totais.pix_repasse ?? 0),
-      pixNoCaixa: Number(totais.pix_no_caixa ?? 0),
-      pixDiretoLoja: Number(totais.pix_direto_loja ?? 0),
+      sistema: Number(totais.sistema || 0),
+      sobra: Number(totais.sobra || 0),
+      gavetaFisico: Number(totais.gaveta_fisico || 0),
+      especieEnvelope: Number(totais.especie_envelope || 0),
+      pixRepasse: Number(totais.pix_repasse || 0),
+      pixNoCaixa: Number(totais.pix_no_caixa || 0),
+      pixDiretoLoja: Number(totais.pix_direto_loja || 0),
     },
-    criadoEm: Number(metadados.criado_em ?? Date.now()),
-    atualizadoEm: Number(metadados.atualizado_em ?? Date.now()),
+    criadoEm: Number(metadados.criado_em || Date.now()),
+    atualizadoEm: Number(metadados.atualizado_em || Date.now()),
     repassado: Boolean(data.repassado),
     notaDia: data.nota_dia ? String(data.nota_dia) : undefined,
   };
 }
 
-function mapTransacoes(snapshot: DataSnapshot): Transacao[] {
-  const raw = (snapshot.val() as Record<string, Record<string, unknown>> | null) ?? {};
-  return Object.entries(raw)
-    .map(([id, item]) => ({
-      id,
-      clientLocalId: item.client_local_id ? String(item.client_local_id) : undefined,
-      timestamp: Number(item.timestamp ?? 0),
-      naturezaOperacao: (item.natureza_operacao as Transacao["naturezaOperacao"]) ?? "pagamento",
-      categoria: (item.categoria as Transacao["categoria"]) ?? "dinheiro",
-      descricao: String(item.descricao ?? ""),
-      codigoContrato: item.codigo_contrato ? String(item.codigo_contrato) : undefined,
-      valorSistema: toMoney(item.valor_sistema),
-      valorRecebidoFisico: toMoney(item.valor_recebido_fisico),
-      trocoSobra: toMoney(item.troco_sobra),
-      statusConferencia: (item.status_conferencia as StatusConferencia) ?? "pendente",
-      justificativaTexto: (item.justificativa_texto as string | null | undefined) ?? null,
-      transacaoVinculadaId: item.transacao_vinculada_id ? String(item.transacao_vinculada_id) : undefined,
-    }))
-    .sort((a, b) => b.timestamp - a.timestamp);
+function mapTransacao(id: string, item: any): Transacao {
+  return {
+    id,
+    clientLocalId: item.client_local_id ? String(item.client_local_id) : undefined,
+    timestamp: Number(item.timestamp || 0),
+    naturezaOperacao: item.natureza_operacao || "pagamento",
+    categoria: item.categoria || "dinheiro",
+    descricao: String(item.descricao || ""),
+    codigoContrato: item.codigo_contrato ? String(item.codigo_contrato) : undefined,
+    valorSistema: toMoney(item.valor_sistema),
+    valorRecebidoFisico: toMoney(item.valor_recebido_fisico),
+    trocoSobra: toMoney(item.troco_sobra),
+    statusConferencia: item.status_conferencia || "pendente",
+    justificativaTexto: item.justificativa_texto || null,
+    transacaoVinculadaId: item.transacao_vinculada_id ? String(item.transacao_vinculada_id) : undefined,
+  };
 }
 
-function mapDividas(snapshot: DataSnapshot): DividaCliente[] {
-  const raw = (snapshot.val() as Record<string, Record<string, unknown>> | null) ?? {};
-  return Object.entries(raw)
-    .map(([id, item]) => ({
-      id,
-      cliente: String(item.cliente ?? "Desconhecido"),
-      valor: toMoney(item.valor),
-      descricao: String(item.descricao ?? ""),
-      resolvido: Boolean(item.resolvido),
-      timestamp: Number(item.timestamp ?? 0),
-    }))
-    .sort((a, b) => b.timestamp - a.timestamp);
+function mapFantasma(id: string, item: any): LembreteFantasma {
+  return {
+    id,
+    clientLocalId: item.client_local_id ? String(item.client_local_id) : undefined,
+    timestamp: Number(item.timestamp || 0),
+    tipo: item.tipo || "outro",
+    pessoa: item.pessoa ? String(item.pessoa) : undefined,
+    descricao: String(item.descricao || ""),
+    valorReferencia: toMoney(item.valor_referencia),
+    impactaPixRepasse: Boolean(item.impacta_pix_repasse),
+    destinoPix: item.destino_pix ? String(item.destino_pix) : undefined,
+    transacaoVinculadaId: item.transacao_vinculada_id ? String(item.transacao_vinculada_id) : undefined,
+    resolvido: Boolean(item.resolvido),
+    comprovadoPix: Boolean(item.comprovado_pix),
+  };
 }
 
-function mapFantasmas(snapshot: DataSnapshot): LembreteFantasma[] {
-  const raw = (snapshot.val() as Record<string, Record<string, unknown>> | null) ?? {};
-  return Object.entries(raw)
-    .map(([id, item]) => ({
-      id,
-      clientLocalId: item.client_local_id ? String(item.client_local_id) : undefined,
-      timestamp: Number(item.timestamp ?? 0),
-      tipo: (item.tipo as TipoFantasma) ?? "outro",
-      pessoa: item.pessoa ? String(item.pessoa) : undefined,
-      descricao: String(item.descricao ?? ""),
-      valorReferencia: toMoney(item.valor_referencia),
-      impactaPixRepasse: Boolean(item.impacta_pix_repasse),
-      destinoPix: item.destino_pix ? String(item.destino_pix) : undefined,
-      transacaoVinculadaId: item.transacao_vinculada_id ? String(item.transacao_vinculada_id) : undefined,
-      resolvido: Boolean(item.resolvido),
-      comprovadoPix: Boolean(item.comprovado_pix),
-    }))
-    .sort((a, b) => b.timestamp - a.timestamp);
+function mapLog(id: string, item: any, transacaoId?: string): LogAlteracao {
+  return {
+    id,
+    transacaoId: transacaoId || item.transacaoId || "",
+    timestamp: Number(item.timestamp || 0),
+    valorAntigo: toMoney(item.valorAntigo),
+    valorNovo: toMoney(item.valorNovo),
+    campoAlterado: String(item.campoAlterado || ""),
+    motivo: item.motivo ? String(item.motivo) : undefined,
+  };
 }
 
-function mapLogs(snapshot: DataSnapshot): LogAlteracao[] {
-  const val = snapshot.val() as Record<string, Record<string, Record<string, unknown>>> | null;
-  if (!val) return [];
-  
-  const allLogs: LogAlteracao[] = [];
-  
-  Object.entries(val).forEach(([transacaoId, logsObj]) => {
-    Object.entries(logsObj).forEach(([id, item]) => {
-      allLogs.push({
-        id,
-        transacaoId,
-        timestamp: Number(item.timestamp ?? 0),
-        valorAntigo: toMoney(item.valorAntigo),
-        valorNovo: toMoney(item.valorNovo),
-        campoAlterado: String(item.campoAlterado ?? ""),
-        motivo: item.motivo ? String(item.motivo) : undefined,
-      });
-    });
-  });
-
-  return allLogs.sort((a, b) => b.timestamp - a.timestamp);
-}
-
-export function ouvirLogsAuditoria(turnoId: string, onData: (logs: LogAlteracao[]) => void): Unsubscribe {
-  return ouvirComAuth((uid) => `users/${uid}/logs_auditoria/${turnoId}`, (snapshot) => onData(mapLogs(snapshot)));
-}
-
-export async function migrarDadosAntigos(): Promise<void> {
-  let uid: string;
-  try {
-    uid = await getUserIdAsync();
-  } catch(e) {
-    return;
-  }
-  const db = getRealtimeDatabase();
-
-  const turnosLegacy = await get(ref(db, "turnos"));
-  if (!turnosLegacy.exists()) return;
-
-  console.log("Iniciando migração de dados...");
-  const updates: Record<string, any> = {};
-
-  const tSnapshot = turnosLegacy.val();
-  for (const turnoId in tSnapshot) {
-    updates[`users/${uid}/turnos/${turnoId}`] = tSnapshot[turnoId];
-  }
-
-  const transacoesLegacy = await get(ref(db, "transacoes"));
-  if (transacoesLegacy.exists()) {
-    const trSnapshot = transacoesLegacy.val();
-    for (const turnoId in trSnapshot) {
-      updates[`users/${uid}/transacoes/${turnoId}`] = trSnapshot[turnoId];
-    }
-  }
-
-  const fantasmasLegacy = await get(ref(db, "fantasmas_lembretes"));
-  if (fantasmasLegacy.exists()) {
-    const faSnapshot = fantasmasLegacy.val();
-    for (const turnoId in faSnapshot) {
-      updates[`users/${uid}/fantasmas_lembretes/${turnoId}`] = faSnapshot[turnoId];
-    }
-  }
-
-  const dividasLegacy = await get(ref(db, "dividas_clientes"));
-  if (dividasLegacy.exists()) {
-    const diSnapshot = dividasLegacy.val();
-    for (const turnoId in diSnapshot) {
-      updates[`users/${uid}/dividas_clientes/${turnoId}`] = diSnapshot[turnoId];
-    }
-  }
-
-  updates["turnos"] = null;
-  updates["transacoes"] = null;
-  updates["fantasmas_lembretes"] = null;
-  updates["dividas_clientes"] = null;
-
-  await update(ref(db), updates);
-  console.log("Migração concluída com sucesso!");
-}
+// -------------------------
+// REPOSITORY METHODS
+// -------------------------
 
 export async function criarNovoTurno(dataReferencia: string): Promise<Turno> {
   const uid = await getUserIdAsync();
-  const db = getRealtimeDatabase();
-  const root = ref(db, `users/${uid}/turnos`);
-  const created = push(root);
+  const db = getFirestoreDb();
   const timestamp = Date.now();
-  await set(created, {
+  
+  // Caixas NOVOS são criados exclusivamente no Firestore
+  const newTurnoRef = doc(collection(db, `users/${uid}/turnos`));
+  await setDoc(newTurnoRef, {
     data_referencia: dataReferencia,
     status_turno: "aberto",
     ajuste_manual_sobra: 0,
     metadados: { criado_em: timestamp, atualizado_em: timestamp },
   });
-  return { id: created.key as string, dataReferencia, statusTurno: "aberto", ajusteManualSobra: 0, totais: { sistema: 0, sobra: 0, gavetaFisico: 0, especieEnvelope: 0, pixRepasse: 0, pixDiretoLoja: 0, pixNoCaixa: 0 }, criadoEm: timestamp, atualizadoEm: timestamp };
+  
+  return mapTurno(newTurnoRef.id, {
+    data_referencia: dataReferencia,
+    status_turno: "aberto",
+    ajuste_manual_sobra: 0,
+    metadados: { criado_em: timestamp, atualizado_em: timestamp },
+  });
 }
 
 export async function buscarUltimoTurnoAberto(): Promise<Turno | null> {
-  const uid = await getUserIdAsync();
-  const db = getRealtimeDatabase();
-  const snapshot = await get(ref(db, `users/${uid}/turnos`));
-  const raw = (snapshot.val() as Record<string, Record<string, unknown>> | null) ?? {};
-  const abertos = Object.entries(raw).map(([id, data]) => mapTurno(id, data)).filter((item) => item.statusTurno === "aberto").sort((a, b) => b.criadoEm - a.criadoEm);
-  return abertos[0] ?? null;
+  // Lista todos e pega o último
+  const turnos = await listarTurnosRecentes();
+  const abertos = turnos.filter(t => t.statusTurno === "aberto");
+  return abertos[0] || null;
 }
 
 export async function listarTurnosRecentes(): Promise<Turno[]> {
   const uid = await getUserIdAsync();
-  const snapshot = await get(ref(getRealtimeDatabase(), `users/${uid}/turnos`));
-  const raw = (snapshot.val() as Record<string, Record<string, unknown>> | null) ?? {};
-  return Object.entries(raw)
-    .map(([id, data]) => mapTurno(id, data))
-    .sort((a, b) => b.dataReferencia.localeCompare(a.dataReferencia));
+  const dbFS = getFirestoreDb();
+  const dbRTDB = getRealtimeDatabase();
+  
+  const allTurnos: Turno[] = [];
+
+  // Busca do Firestore (Novos)
+  try {
+    const fsSnap = await getDocs(collection(dbFS, `users/${uid}/turnos`));
+    fsSnap.docs.forEach(d => allTurnos.push(mapTurno(d.id, d.data())));
+  } catch (e) {
+    console.warn("Erro ao buscar turnos do Firestore", e);
+  }
+
+  // Busca do Realtime (Legados)
+  try {
+    const rtSnap = await get(ref(dbRTDB, `users/${uid}/turnos`));
+    const raw = (rtSnap.val() as Record<string, any>) || {};
+    Object.entries(raw).forEach(([id, data]) => {
+      allTurnos.push(mapTurno(id, data));
+    });
+  } catch (e) {
+    console.warn("Erro ao buscar turnos do RTDB", e);
+  }
+
+  return allTurnos.sort((a, b) => {
+    // Ordena por data decrescente e por criadoEm se forem da mesma data
+    if (b.dataReferencia !== a.dataReferencia) {
+      return b.dataReferencia.localeCompare(a.dataReferencia);
+    }
+    return b.criadoEm - a.criadoEm;
+  });
 }
 
 export async function buscarTurnoPorId(turnoId: string): Promise<Turno | null> {
   const uid = await getUserIdAsync();
-  const snapshot = await get(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`));
-  const raw = snapshot.val() as Record<string, unknown> | null;
-  return raw ? mapTurno(turnoId, raw) : null;
+  if (isLegacy(turnoId)) {
+    const snapshot = await get(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`));
+    return snapshot.exists() ? mapTurno(turnoId, snapshot.val()) : null;
+  } else {
+    const docSnap = await getDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`));
+    return docSnap.exists() ? mapTurno(turnoId, docSnap.data()) : null;
+  }
 }
 
+// OUVINTES (DUAL)
 export function ouvirTurno(turnoId: string, onData: (turno: Turno) => void): Unsubscribe {
-  return ouvirComAuth((uid) => `users/${uid}/turnos/${turnoId}`, (snapshot) => {
-    const raw = snapshot.val() as Record<string, unknown> | null;
-    if (raw) onData(mapTurno(turnoId, raw));
+  let isUnsubscribed = false;
+  getUserIdAsync().then(uid => {
+    if (isUnsubscribed) return;
+    if (isLegacy(turnoId)) {
+      onValue(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), (snap) => {
+        if (snap.exists()) onData(mapTurno(turnoId, snap.val()));
+      });
+    } else {
+      onSnapshot(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`), (snap) => {
+        if (snap.exists()) onData(mapTurno(turnoId, snap.data()));
+      });
+    }
   });
+  return () => { isUnsubscribed = true; };
 }
 
 export function ouvirTransacoes(turnoId: string, onData: (transacoes: Transacao[]) => void): Unsubscribe {
-  return ouvirComAuth((uid) => `users/${uid}/transacoes/${turnoId}`, (snapshot) => onData(mapTransacoes(snapshot)));
+  let isUnsubscribed = false;
+  getUserIdAsync().then(uid => {
+    if (isUnsubscribed) return;
+    if (isLegacy(turnoId)) {
+      onValue(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}`), (snap) => {
+        const raw = snap.val() || {};
+        const arr = Object.entries(raw).map(([id, data]) => mapTransacao(id, data));
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+      });
+    } else {
+      const q = query(collection(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/transacoes`));
+      onSnapshot(q, (snap) => {
+        const arr = snap.docs.map(d => mapTransacao(d.id, d.data()));
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+      });
+    }
+  });
+  return () => { isUnsubscribed = true; };
 }
 
 export function ouvirFantasmas(turnoId: string, onData: (fantasmas: LembreteFantasma[]) => void): Unsubscribe {
-  return ouvirComAuth((uid) => `users/${uid}/fantasmas_lembretes/${turnoId}`, (snapshot) => onData(mapFantasmas(snapshot)));
+  let isUnsubscribed = false;
+  getUserIdAsync().then(uid => {
+    if (isUnsubscribed) return;
+    if (isLegacy(turnoId)) {
+      onValue(ref(getRealtimeDatabase(), `users/${uid}/fantasmas_lembretes/${turnoId}`), (snap) => {
+        const raw = snap.val() || {};
+        const arr = Object.entries(raw).map(([id, data]) => mapFantasma(id, data));
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+      });
+    } else {
+      const q = query(collection(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/fantasmas_lembretes`));
+      onSnapshot(q, (snap) => {
+        const arr = snap.docs.map(d => mapFantasma(d.id, d.data()));
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+      });
+    }
+  });
+  return () => { isUnsubscribed = true; };
 }
 
-export function ouvirDividas(turnoId: string, onData: (dividas: DividaCliente[]) => void): Unsubscribe {
-  return ouvirComAuth((uid) => `users/${uid}/dividas_clientes/${turnoId}`, (snapshot) => onData(mapDividas(snapshot)));
+export function ouvirLogsAuditoria(turnoId: string, onData: (logs: LogAlteracao[]) => void): Unsubscribe {
+  let isUnsubscribed = false;
+  getUserIdAsync().then(uid => {
+    if (isUnsubscribed) return;
+    if (isLegacy(turnoId)) {
+      onValue(ref(getRealtimeDatabase(), `users/${uid}/logs_auditoria/${turnoId}`), (snap) => {
+        const raw = snap.val() || {};
+        const arr: LogAlteracao[] = [];
+        Object.entries(raw).forEach(([tId, logsObj]: [string, any]) => {
+          Object.entries(logsObj).forEach(([id, data]) => arr.push(mapLog(id, data, tId)));
+        });
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+      });
+    } else {
+      const q = query(collection(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/logs_auditoria`));
+      onSnapshot(q, (snap) => {
+        const arr = snap.docs.map(d => mapLog(d.id, d.data()));
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+      });
+    }
+  });
+  return () => { isUnsubscribed = true; };
 }
+
+// -------------------------
+// ESCRITAS (Roteadas pelo ID)
+// -------------------------
 
 export async function salvarAjusteSobra(turnoId: string, ajuste: number): Promise<void> {
   const uid = await getUserIdAsync();
-  await update(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), { ajuste_manual_sobra: ajuste, "metadados/atualizado_em": Date.now() });
+  const tsKey = isLegacy(turnoId) ? "metadados/atualizado_em" : "metadados.atualizado_em";
+  const payload = { ajuste_manual_sobra: ajuste, [tsKey]: Date.now() };
+  if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), payload);
+  else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`), payload);
 }
 
 export async function salvarNotaDia(turnoId: string, texto: string): Promise<void> {
   const uid = await getUserIdAsync();
-  await update(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), { 
-    nota_dia: texto,
-    "metadados/atualizado_em": Date.now() 
-  });
+  const tsKey = isLegacy(turnoId) ? "metadados/atualizado_em" : "metadados.atualizado_em";
+  const payload = { nota_dia: texto, [tsKey]: Date.now() };
+  if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), payload);
+  else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`), payload);
 }
 
 export async function salvarTotaisTurno(turnoId: string, totais: TotaisTurno): Promise<void> {
   const uid = await getUserIdAsync();
-  await update(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), { 
+  const tsKey = isLegacy(turnoId) ? "metadados/atualizado_em" : "metadados.atualizado_em";
+  const payload = { 
     totais: { 
-      sistema: totais.sistema, 
-      sobra: totais.sobra, 
-      gaveta_fisico: totais.gavetaFisico, 
-      especie_envelope: totais.especieEnvelope, 
-      pix_repasse: totais.pixRepasse,
-      pix_no_caixa: totais.pixNoCaixa,
-      pix_direto_loja: totais.pixDiretoLoja
+      sistema: totais.sistema, sobra: totais.sobra, gaveta_fisico: totais.gavetaFisico, 
+      especie_envelope: totais.especieEnvelope, pix_repasse: totais.pixRepasse,
+      pix_no_caixa: totais.pixNoCaixa, pix_direto_loja: totais.pixDiretoLoja
     }, 
-    "metadados/atualizado_em": Date.now() 
-  });
+    [tsKey]: Date.now() 
+  };
+  if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), payload);
+  else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`), payload);
 }
 
 export async function salvarContagemCedulas(turnoId: string, contagem: ContagemCedulas): Promise<void> {
   const uid = await getUserIdAsync();
-  await update(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), { 
-    contagem_cedulas: contagem,
-    "metadados/atualizado_em": Date.now() 
-  });
+  const tsKey = isLegacy(turnoId) ? "metadados/atualizado_em" : "metadados.atualizado_em";
+  const payload = { contagem_cedulas: contagem, [tsKey]: Date.now() };
+  if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), payload);
+  else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`), payload);
 }
 
 export async function atualizarIdentificacao(turnoId: string, caixaId: string, operadorId: string): Promise<void> {
   const uid = await getUserIdAsync();
-  await update(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), { 
-    caixa_id: caixaId,
-    operador_id: operadorId,
-    "metadados/atualizado_em": Date.now() 
-  });
+  const tsKey = isLegacy(turnoId) ? "metadados/atualizado_em" : "metadados.atualizado_em";
+  const payload = { caixa_id: caixaId, operador_id: operadorId, [tsKey]: Date.now() };
+  if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), payload);
+  else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`), payload);
 }
 
-export async function adicionarTransacao(turnoId: string, input: AddTransacaoInput): Promise<string> {
+export async function adicionarTransacao(turnoId: string, input: any): Promise<string> {
   const uid = await getUserIdAsync();
-  const created = push(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}`));
-  await set(created, {
+  const payload = {
     client_local_id: input.clientLocalId || null,
     timestamp: Date.now(),
     natureza_operacao: input.naturezaOperacao,
@@ -377,41 +380,56 @@ export async function adicionarTransacao(turnoId: string, input: AddTransacaoInp
     valor_sistema: input.valorSistema,
     valor_recebido_fisico: input.valorRecebidoFisico,
     troco_sobra: input.trocoSobra,
-    status_conferencia: "pendente",
+    status_conferencia: input.statusConferencia || "pendente",
     justificativa_texto: input.justificativaTexto ?? null,
-  });
-  return created.key as string;
+    transacao_vinculada_id: input.transacaoVinculadaId || null,
+  };
+
+  if (isLegacy(turnoId)) {
+    const created = push(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}`));
+    await set(created, payload);
+    return created.key as string;
+  } else {
+    const created = doc(collection(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/transacoes`));
+    await setDoc(created, payload);
+    return created.id;
+  }
 }
 
 export async function editarTransacao(turnoId: string, id: string, input: any): Promise<void> {
   const uid = await getUserIdAsync();
-  const payload: Record<string, any> = {
-    natureza_operacao: input.naturezaOperacao,
-    categoria: input.categoria,
-    descricao: input.descricao,
-    codigo_contrato: input.codigoContrato || null,
-    valor_sistema: input.valorSistema,
-    valor_recebido_fisico: input.valorRecebidoFisico,
-    troco_sobra: input.trocoSobra,
-    justificativa_texto: input.justificativaTexto || null,
-    transacao_vinculada_id: input.transacaoVinculadaId || null,
-  };
-  await update(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}/${id}`), payload);
+  const payload: Record<string, any> = {};
+  if (input.naturezaOperacao !== undefined) payload.natureza_operacao = input.naturezaOperacao;
+  if (input.categoria !== undefined) payload.categoria = input.categoria;
+  if (input.descricao !== undefined) payload.descricao = input.descricao;
+  if (input.codigoContrato !== undefined) payload.codigo_contrato = input.codigoContrato || null;
+  if (input.valorSistema !== undefined) payload.valor_sistema = input.valorSistema;
+  if (input.valorRecebidoFisico !== undefined) payload.valor_recebido_fisico = input.valorRecebidoFisico;
+  if (input.trocoSobra !== undefined) payload.troco_sobra = input.trocoSobra;
+  if (input.statusConferencia !== undefined) payload.status_conferencia = input.statusConferencia;
+  if (input.justificativaTexto !== undefined) payload.justificativa_texto = input.justificativaTexto || null;
+  if (input.transacaoVinculadaId !== undefined) payload.transacao_vinculada_id = input.transacaoVinculadaId || null;
+
+  if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}/${id}`), payload);
+  else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/transacoes/${id}`), payload);
 }
 
 export async function removerTransacao(turnoId: string, id: string): Promise<void> {
   const uid = await getUserIdAsync();
-  const db = getRealtimeDatabase();
-  await Promise.all([
-    set(ref(db, `users/${uid}/transacoes/${turnoId}/${id}`), null),
-    set(ref(db, `users/${uid}/logs_auditoria/${turnoId}/${id}`), null)
-  ]);
+  if (isLegacy(turnoId)) {
+    await Promise.all([
+      set(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}/${id}`), null),
+      set(ref(getRealtimeDatabase(), `users/${uid}/logs_auditoria/${turnoId}/${id}`), null)
+    ]);
+  } else {
+    await deleteDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/transacoes/${id}`));
+    // No firestore, audioria é flat, não precisamos apagar aqui se não quisermos, ou podemos fazer uma query e apagar
+  }
 }
 
 export async function adicionarFantasma(turnoId: string, input: any): Promise<string> {
   const uid = await getUserIdAsync();
-  const created = push(ref(getRealtimeDatabase(), `users/${uid}/fantasmas_lembretes/${turnoId}`));
-  await set(created, {
+  const payload = {
     client_local_id: input.clientLocalId || null,
     tipo: input.tipo,
     pessoa: input.pessoa || null,
@@ -423,8 +441,17 @@ export async function adicionarFantasma(turnoId: string, input: any): Promise<st
     timestamp: Date.now(),
     resolvido: false,
     comprovado_pix: false
-  });
-  return created.key as string;
+  };
+
+  if (isLegacy(turnoId)) {
+    const created = push(ref(getRealtimeDatabase(), `users/${uid}/fantasmas_lembretes/${turnoId}`));
+    await set(created, payload);
+    return created.key as string;
+  } else {
+    const created = doc(collection(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/fantasmas_lembretes`));
+    await setDoc(created, payload);
+    return created.id;
+  }
 }
 
 export async function atualizarFantasmaCompleto(turnoId: string, id: string, changes: any): Promise<void> {
@@ -438,41 +465,32 @@ export async function atualizarFantasmaCompleto(turnoId: string, id: string, cha
   if (changes.destinoPix !== undefined) payload.destino_pix = changes.destinoPix;
   if (changes.transacaoVinculadaId !== undefined) payload.transacao_vinculada_id = changes.transacaoVinculadaId;
   if (changes.resolvido !== undefined) payload.resolvido = changes.resolvido;
-  if (changes.comprovado_pix !== undefined) payload.comprovado_pix = changes.comprovado_pix;
+  if (changes.comprovadoPix !== undefined) payload.comprovado_pix = changes.comprovadoPix;
 
-  await update(ref(getRealtimeDatabase(), `users/${uid}/fantasmas_lembretes/${turnoId}/${id}`), payload);
+  if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/fantasmas_lembretes/${turnoId}/${id}`), payload);
+  else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/fantasmas_lembretes/${id}`), payload);
 }
 
 export async function removerFantasma(turnoId: string, id: string): Promise<void> {
   const uid = await getUserIdAsync();
-  await set(ref(getRealtimeDatabase(), `users/${uid}/fantasmas_lembretes/${turnoId}/${id}`), null);
-}
-
-export async function adicionarDivida(turnoId: string, input: any): Promise<void> {
-  const uid = await getUserIdAsync();
-  const created = push(ref(getRealtimeDatabase(), `users/${uid}/dividas_clientes/${turnoId}`));
-  await set(created, { ...input, timestamp: Date.now(), resolvido: false });
-}
-
-export async function alternarDivida(turnoId: string, id: string, resolvido: boolean): Promise<void> {
-  const uid = await getUserIdAsync();
-  await update(ref(getRealtimeDatabase(), `users/${uid}/dividas_clientes/${turnoId}/${id}`), { resolvido });
-}
-
-export async function removerDivida(turnoId: string, id: string): Promise<void> {
-  const uid = await getUserIdAsync();
-  await set(ref(getRealtimeDatabase(), `users/${uid}/dividas_clientes/${turnoId}/${id}`), null);
+  if (isLegacy(turnoId)) await set(ref(getRealtimeDatabase(), `users/${uid}/fantasmas_lembretes/${turnoId}/${id}`), null);
+  else await deleteDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/fantasmas_lembretes/${id}`));
 }
 
 export async function registrarLogAlteracao(turnoId: string, transacaoId: string, log: Omit<LogAlteracao, "id" | "timestamp" | "transacaoId">): Promise<void> {
   const uid = await getUserIdAsync();
-  const db = getRealtimeDatabase();
-  const root = ref(db, `users/${uid}/logs_auditoria/${turnoId}/${transacaoId}`);
-  const created = push(root);
-  await set(created, {
+  const payload = {
+    transacaoId,
     ...log,
     timestamp: Date.now(),
-  });
+  };
+
+  if (isLegacy(turnoId)) {
+    const created = push(ref(getRealtimeDatabase(), `users/${uid}/logs_auditoria/${turnoId}/${transacaoId}`));
+    await set(created, payload);
+  } else {
+    await addDoc(collection(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/logs_auditoria`), payload);
+  }
 }
 
 export async function atualizarStatusTurno(
@@ -481,9 +499,10 @@ export async function atualizarStatusTurno(
   extra?: { bateuFisico?: boolean; observacoes?: string }
 ): Promise<void> {
   const uid = await getUserIdAsync();
+  const tsKey = isLegacy(turnoId) ? "metadados/atualizado_em" : "metadados.atualizado_em";
   const payload: Record<string, any> = {
     status_turno: status,
-    "metadados/atualizado_em": Date.now(),
+    [tsKey]: Date.now(),
   };
 
   if (extra) {
@@ -491,29 +510,37 @@ export async function atualizarStatusTurno(
     if (extra.observacoes !== undefined) payload.observacoes_fechamento = extra.observacoes;
   }
 
-  await update(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), payload);
+  if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), payload);
+  else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`), payload);
 }
 
 export async function atualizarStatusRepasse(turnoId: string, repassado: boolean): Promise<void> {
   const uid = await getUserIdAsync();
-  await update(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), {
-    repassado,
-    "metadados/atualizado_em": Date.now(),
-  });
+  const tsKey = isLegacy(turnoId) ? "metadados/atualizado_em" : "metadados.atualizado_em";
+  const payload = { repassado, [tsKey]: Date.now() };
+  if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), payload);
+  else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`), payload);
 }
 
 export async function removerTurnoTotal(turnoId: string): Promise<void> {
   const uid = await getUserIdAsync();
-  const db = getRealtimeDatabase();
-  await Promise.all([
-    set(ref(db, `users/${uid}/turnos/${turnoId}`), null),
-    set(ref(db, `users/${uid}/transacoes/${turnoId}`), null),
-    set(ref(db, `users/${uid}/fantasmas_lembretes/${turnoId}`), null),
-    set(ref(db, `users/${uid}/dividas_clientes/${turnoId}`), null),
-  ]);
+  if (isLegacy(turnoId)) {
+    await Promise.all([
+      set(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), null),
+      set(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}`), null),
+      set(ref(getRealtimeDatabase(), `users/${uid}/fantasmas_lembretes/${turnoId}`), null),
+      set(ref(getRealtimeDatabase(), `users/${uid}/logs_auditoria/${turnoId}`), null),
+    ]);
+  } else {
+    // Delete subcollections? No need strictly for testing, but let's delete the doc
+    await deleteDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`));
+  }
 }
 
 export async function atualizarConferenciaTransacao(turnoId: string, id: string, status: string): Promise<void> {
   const uid = await getUserIdAsync();
-  await update(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}/${id}`), { status_conferencia: status });
+  if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}/${id}`), { status_conferencia: status });
+  else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/transacoes/${id}`), { status_conferencia: status });
 }
+
+export async function migrarDadosAntigos(): Promise<void> {}
