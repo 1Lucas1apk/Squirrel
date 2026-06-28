@@ -14,6 +14,8 @@ import {
   salvarTotaisTurno,
   salvarContagemCedulas,
   atualizarIdentificacao,
+  atualizarConferenciaPOS,
+  atualizarConferenciaConvenio,
   atualizarStatusRepasse,
   ouvirLogsAuditoria,
   salvarNotaDia,
@@ -23,7 +25,16 @@ import {
   adicionarFantasma,
   atualizarFantasmaCompleto,
   removerFantasma,
-  registrarLogAlteracao
+  registrarLogAlteracao,
+  ouvirRegistrosPOS,
+  ouvirRegistrosConvenio,
+  adicionarRegistroPOS,
+  editarRegistroPOS,
+  removerRegistroPOS,
+  adicionarConvenio,
+  editarConvenio,
+  removerConvenio,
+  salvarRelatorioPOSTotal,
 } from "../services/repositories/caixa-repository";
 import { LembreteFantasma, Transacao, Turno, ContagemCedulas, LogAlteracao } from "../types/domain";
 import { getTodayReferenceDate } from "../utils/date";
@@ -33,7 +44,7 @@ import { useCaixaStore } from "../store/caixa-store";
 
 export function useCaixaSeguro() {
   const state = useCaixaStore();
-  const { turno, transacoes, fantasmas, logs, historicoTurnos, loading, error } = state;
+  const { turno, transacoes, fantasmas, registrosPOS, registrosConvenio, logs, historicoTurnos, loading, error } = state;
 
   // Carregamento Inicial (Busca o último turno aberto se não houver um ativo)
   useEffect(() => {
@@ -85,17 +96,27 @@ export function useCaixaSeguro() {
       useCaixaStore.setState({ logs: data });
     });
 
+    const unsubPOS = ouvirRegistrosPOS(turno.id, (data) => {
+      useCaixaStore.setState({ registrosPOS: data });
+    });
+    
+    const unsubConvenio = ouvirRegistrosConvenio(turno.id, (data) => {
+      useCaixaStore.setState({ registrosConvenio: data });
+    });
+
     return () => {
       unsubTurno();
       unsubTransacoes();
       unsubFantasmas();
       unsubLogs();
+      unsubPOS();
+      unsubConvenio();
     };
   }, [turno?.id]);
 
   const totais = useMemo(
-    () => calcularTotaisTurno(transacoes, fantasmas, turno?.ajusteManualSobra ?? 0),
-    [transacoes, fantasmas, turno?.ajusteManualSobra]
+    () => calcularTotaisTurno(transacoes, fantasmas, registrosPOS, registrosConvenio, turno?.ajusteManualSobra ?? 0, turno?.posRelatorioTotal ?? 0),
+    [transacoes, fantasmas, registrosPOS, registrosConvenio, turno?.ajusteManualSobra, turno?.posRelatorioTotal]
   );
 
   // Calcula Totais e salva na nuvem (Debounce natural já ocorre pelo design de UI)
@@ -119,6 +140,8 @@ export function useCaixaSeguro() {
     turno,
     transacoes,
     fantasmas,
+    registrosPOS,
+    registrosConvenio,
     logs,
     historicoTurnos,
     loading,
@@ -132,7 +155,7 @@ export function useCaixaSeguro() {
       try {
         const t = historicoTurnos.find(x => x.id === id);
         if (t) {
-          useCaixaStore.setState({ turno: t, transacoes: [], fantasmas: [], logs: [] });
+          useCaixaStore.setState({ turno: t, transacoes: [], fantasmas: [], registrosPOS: [], registrosConvenio: [], logs: [] });
         }
       } catch (err) {
         useCaixaStore.setState({ error: "Não foi possível carregar o caixa." });
@@ -146,7 +169,7 @@ export function useCaixaSeguro() {
         const dataRef = (typeof dataManual === "string" && dataManual) ? dataManual : getTodayReferenceDate();
         // Novos sempre vão pro Firestore
         const novo = await criarNovoTurno(dataRef);
-        useCaixaStore.setState({ turno: novo, transacoes: [], fantasmas: [], logs: [] });
+        useCaixaStore.setState({ turno: novo, transacoes: [], fantasmas: [], registrosPOS: [], registrosConvenio: [], logs: [] });
         await carregarHistoricoTurnos();
       } catch (err) {
         console.error("Erro real ao abrirNovoCaixa:", err);
@@ -160,7 +183,7 @@ export function useCaixaSeguro() {
       await registrarLogAlteracao(turno.id, transacaoId, log);
     },
     sairDoDia: async () => {
-      useCaixaStore.setState({ turno: null, transacoes: [], fantasmas: [], logs: [] });
+      useCaixaStore.setState({ turno: null, transacoes: [], fantasmas: [], registrosPOS: [], registrosConvenio: [], logs: [] });
       await clearCurrentShiftCache();
     },
     fecharTurno: async () => {
@@ -201,6 +224,16 @@ export function useCaixaSeguro() {
       if (!turno) return;
       const nextStatus = t.statusConferencia === "pendente" ? "confirmada" : "pendente";
       await atualizarConferenciaTransacao(turno.id, t.id, nextStatus);
+    },
+    alternarConferenciaPOS: async (id: string, currentStatus: string) => {
+      if (!turno) return;
+      const nextStatus = currentStatus === "pendente" ? "confirmada" : "pendente";
+      await atualizarConferenciaPOS(turno.id, id, nextStatus);
+    },
+    alternarConferenciaConvenio: async (id: string, currentStatus: string) => {
+      if (!turno) return;
+      const nextStatus = currentStatus === "pendente" ? "confirmada" : "pendente";
+      await atualizarConferenciaConvenio(turno.id, id, nextStatus);
     },
     reportarErroTransacao: async (id: string, valorSistemaNovo: number, valorReal: number, justificativa: string) => {
       if (!turno) return;
@@ -244,6 +277,36 @@ export function useCaixaSeguro() {
     alternarRepasse: async (id: string, repassado: boolean) => {
       await atualizarStatusRepasse(id, repassado);
       await carregarHistoricoTurnos(); 
+    },
+    criarRegistroPOS: async (input: any) => {
+      if (!turno) return;
+      void scheduleInactivityAlert();
+      await adicionarRegistroPOS(turno.id, input);
+    },
+    editarRegistroPOS: async (id: string, input: any) => {
+      if (!turno) return;
+      await editarRegistroPOS(turno.id, id, input);
+    },
+    excluirRegistroPOS: async (id: string) => {
+      if (!turno) return;
+      await removerRegistroPOS(turno.id, id);
+    },
+    salvarRelatorioPOSTotal: async (valor: number) => {
+      if (!turno) return;
+      await salvarRelatorioPOSTotal(turno.id, valor);
+    },
+    criarConvenio: async (input: any) => {
+      if (!turno) return;
+      void scheduleInactivityAlert();
+      await adicionarConvenio(turno.id, input);
+    },
+    editarConvenio: async (id: string, input: any) => {
+      if (!turno) return;
+      await editarConvenio(turno.id, id, input);
+    },
+    excluirConvenio: async (id: string) => {
+      if (!turno) return;
+      await removerConvenio(turno.id, id);
     },
   };
 }

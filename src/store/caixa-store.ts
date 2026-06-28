@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Turno, Transacao, LembreteFantasma, LogAlteracao } from '../types/domain';
+import { Turno, Transacao, LembreteFantasma, LogAlteracao, RegistroPOS, RegistroConvenio } from '../types/domain';
 
 export interface SyncConflict {
   actionId: string;
@@ -15,6 +15,8 @@ interface CaixaState {
   turno: Turno | null;
   transacoes: Transacao[];
   fantasmas: LembreteFantasma[];
+  registrosPOS: RegistroPOS[];
+  registrosConvenio: RegistroConvenio[];
   logs: LogAlteracao[];
   historicoTurnos: Turno[];
   loading: boolean;
@@ -25,6 +27,8 @@ export const useCaixaStore = create<CaixaState>(() => ({
   turno: null,
   transacoes: [],
   fantasmas: [],
+  registrosPOS: [],
+  registrosConvenio: [],
   logs: [],
   historicoTurnos: [],
   loading: false,

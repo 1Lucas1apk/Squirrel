@@ -11,26 +11,36 @@ import {
   Info,
   AlertTriangle,
   CheckCircle2,
-  Banknote
+  Banknote,
+  CreditCard,
+  Building2,
+  Pin,
+  PenLine
 } from "lucide-react-native";
 import { TotaisTurno } from "../../types/domain";
 import { toBrl } from "../../utils/currency";
 import { SaldoCard } from "./saldo-card";
-
+import { useAppSettings } from "../../hooks/use-app-settings";
 
 interface PainelPrincipalProps {
   totais: TotaisTurno;
   pendenciasFantasma: number;
   valorTerceiros?: number;
   isDiscreto?: boolean;
+  onOpenChat?: () => void;
+  ultimaMensagemGlobal?: string;
 }
 
 export function PainelPrincipal({
   totais,
   pendenciasFantasma,
   valorTerceiros = 0,
-  isDiscreto
+  isDiscreto,
+  onOpenChat,
+  ultimaMensagemGlobal
 }: PainelPrincipalProps) {
+  const { settings } = useAppSettings();
+
   // No modo discreto, simulamos que todo o Pix interno é dinheiro físico na gaveta
   const gavetaSimulada = isDiscreto 
     ? (totais.gavetaFisico + (totais.pixNoCaixa || 0) + (totais.pixDiretoLoja || 0)) 
@@ -230,6 +240,55 @@ export function PainelPrincipal({
           </View>
         )}
       </View>
+
+      {/* OUTROS RECEBIMENTOS (POS / CONVÊNIO) */}
+      {!isDiscreto && (settings.posEnabled || settings.convenioEnabled) && (
+        <View className="rounded-[40px] border border-zinc-800 bg-ink-900 p-6 shadow-2xl">
+          <View className="flex-row items-center gap-2 mb-6">
+            <CreditCard size={14} color="#71717a" />
+            <Text className="text-[11px] font-black uppercase tracking-[3px] text-zinc-500">
+              Outros Recebimentos
+            </Text>
+          </View>
+          
+          <View className="gap-3">
+            {settings.posEnabled && (
+              <View className="flex-row items-center justify-between rounded-[24px] bg-blue-500/5 border border-blue-500/20 p-5">
+                <View className="flex-row items-center gap-3">
+                  <CreditCard size={18} color="#60a5fa" />
+                  <Text className="text-xs font-bold text-blue-400 uppercase tracking-tighter">Máquina POS</Text>
+                </View>
+                <Text 
+                  className="text-xl font-black text-blue-100 tracking-tighter flex-1 text-right"
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.4}
+                >
+                  {toBrl(totais.totalPOS || 0)}
+                </Text>
+              </View>
+            )}
+
+            {settings.convenioEnabled && (
+              <View className="flex-row items-center justify-between rounded-[24px] bg-purple-500/5 border border-purple-500/20 p-5">
+                <View className="flex-row items-center gap-3">
+                  <Building2 size={18} color="#c084fc" />
+                  <Text className="text-xs font-bold text-purple-400 uppercase tracking-tighter">Convênios</Text>
+                </View>
+                <Text 
+                  className="text-xl font-black text-purple-100 tracking-tighter flex-1 text-right"
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.4}
+                >
+                  {toBrl(totais.totalConvenio || 0)}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      )}
+
       {renderGabarito()}
     </View>
   );

@@ -34,6 +34,8 @@ interface PainelScreenProps {
   onAjusteSobra: (value: number) => void;
   isFechado?: boolean;
   isDiscreto?: boolean;
+  onOpenChat?: () => void;
+  ultimaMensagemGlobal?: string;
 }
 
 export function PainelScreen({
@@ -46,7 +48,9 @@ export function PainelScreen({
   ajusteManualSobra,
   onAjusteSobra,
   isFechado,
-  isDiscreto
+  isDiscreto,
+  onOpenChat,
+  ultimaMensagemGlobal
 }: PainelScreenProps) {
   const [modalNota, setModalNota] = useState(false);
   const [textoNota, setTextoNota] = useState(notaDia);
@@ -114,12 +118,14 @@ export function PainelScreen({
         </View>
       )}
 
-      {/* 1. RESUMO DOS TOTAIS (MATEMÁTICA ALGORÍTMICA) */}
+      {/* PAINEL PRINCIPAL (SISTEMA, GAVETA E GABARITO) */}
       <PainelPrincipal 
         totais={totais} 
-        pendenciasFantasma={pendencias.length} 
+        pendenciasFantasma={pendencias.length}
         valorTerceiros={totalTerceiros}
-        isDiscreto={isDiscreto} 
+        isDiscreto={isDiscreto}
+        onOpenChat={onOpenChat}
+        ultimaMensagemGlobal={ultimaMensagemGlobal}
       />
 
       {/* 2. AJUSTE DE SOBRA */}
@@ -264,19 +270,22 @@ export function PainelScreen({
       {!isDiscreto && (
         <View className="mt-2 mb-8">
           <Pressable 
-            onPress={() => !isFechado && setModalNota(true)}
-            className={`rounded-[32px] border p-6 flex-row items-center gap-4 shadow-2xl ${notaDia ? 'bg-amber-500/10 border-amber-500/20' : 'bg-ink-900 border-zinc-800 border-dashed opacity-70'}`}
+            onPress={onOpenChat}
+            className="rounded-[32px] border border-blue-500/20 bg-ink-900 p-6 flex-row items-center gap-4 shadow-xl"
+            style={{ shadowColor: "#3b82f6", elevation: 15 }}
           >
-            <View className={`h-12 w-12 items-center justify-center rounded-2xl ${notaDia ? 'bg-amber-500' : 'bg-zinc-800'}`}>
-              <Pin size={20} color={notaDia ? "#451a03" : "#71717a"} strokeWidth={3} />
+            <View className="h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10">
+              <Pin size={20} color="#3b82f6" strokeWidth={2.5} />
             </View>
             <View className="flex-1">
-              <Text className={`text-[9px] font-black uppercase tracking-widest ${notaDia ? 'text-amber-500' : 'text-zinc-600'}`}>Mural Global do Turno</Text>
-              <Text className={`text-xs font-bold leading-5 mt-1 ${notaDia ? 'text-zinc-100' : 'text-zinc-500'}`} numberOfLines={3}>
-                {notaDia || "Nenhum recado. Toque para adicionar uma mensagem para todos."}
+              <Text className="text-[10px] font-black uppercase tracking-[2px] text-blue-400 mb-1">Mural Global do Turno</Text>
+              <Text className="text-xs font-bold leading-5 text-zinc-300" numberOfLines={2}>
+                {ultimaMensagemGlobal || "Nenhum recado. Toque para adicionar uma mensagem para todos."}
               </Text>
             </View>
-            {!isFechado && <Edit3 size={16} color={notaDia ? "#fbbf24" : "#71717a"} />}
+            <View className="h-8 w-8 items-center justify-center rounded-full bg-ink-800">
+              <Edit3 size={14} color="#71717a" />
+            </View>
           </Pressable>
         </View>
       )}

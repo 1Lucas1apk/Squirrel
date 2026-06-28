@@ -31,7 +31,10 @@ export function calcularSobraBase(transacoes: Transacao[], ajusteManual = 0): nu
 export function calcularTotaisTurno(
   transacoes: Transacao[],
   lembretes: LembreteFantasma[],
-  ajusteManualSobra = 0
+  registrosPOS: import("../../types/domain").RegistroPOS[] = [],
+  registrosConvenio: import("../../types/domain").RegistroConvenio[] = [],
+  ajusteManualSobra = 0,
+  posRelatorioTotal = 0
 ): TotaisTurno {
   const sistema = calcularTotalSistema(transacoes);
   
@@ -89,6 +92,10 @@ export function calcularTotaisTurno(
   // É tudo o que você tem (Gaveta + Pix no Celular + Pix com Gerente) menos o que deve à Loja (Sistema) e Empréstimos
   const sobraAcumulada = roundMoney((gavetaFisico - emprestimosFisicos) + pixNoCaixa + pixDiretoLoja - sistema);
 
+  // Totais novos
+  const totalPOS = roundMoney(registrosPOS.reduce((acc, r) => acc + clampMoney(r.valor), posRelatorioTotal));
+  const totalConvenio = roundMoney(registrosConvenio.reduce((acc, r) => acc + clampMoney(r.valor), 0));
+
   return {
     sistema,
     sobra: sobraAcumulada,
@@ -96,6 +103,8 @@ export function calcularTotaisTurno(
     especieEnvelope: roundMoney(especieEnvelope),
     pixRepasse: roundMoney(pixRepasse),
     pixNoCaixa: roundMoney(pixNoCaixa),
-    pixDiretoLoja: roundMoney(pixDiretoLoja)
+    pixDiretoLoja: roundMoney(pixDiretoLoja),
+    totalPOS,
+    totalConvenio
   };
 }

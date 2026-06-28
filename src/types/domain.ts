@@ -17,6 +17,8 @@ export type TipoFantasma =
   | "destroca_pix_por_nota"    
   | "lembrete_geral";          
 
+export type TipoPOS = "cartao" | "pix_loja" | "gas_do_povo";
+
 export interface Transacao {
   id: string;
   clientLocalId?: string;
@@ -50,6 +52,24 @@ export interface LembreteFantasma {
   pendingSync?: boolean;
 }
 
+export interface RegistroPOS {
+  id: string;
+  timestamp: number;
+  tipo: TipoPOS;
+  descricao: string;
+  valor: number;
+  statusConferencia?: "pendente" | "confirmada" | "incorreto";
+}
+
+export interface RegistroConvenio {
+  id: string;
+  timestamp: number;
+  nome: string;
+  valor: number;
+  descricao?: string;
+  statusConferencia?: "pendente" | "confirmada" | "incorreto";
+}
+
 export interface DividaCliente {
   id: string;
   cliente: string;
@@ -77,6 +97,8 @@ export interface TotaisTurno {
   pixRepasse: number;
   pixNoCaixa: number; 
   pixDiretoLoja: number;
+  totalPOS: number;
+  totalConvenio: number;
 }
 
 export interface LogAlteracao {
@@ -87,6 +109,18 @@ export interface LogAlteracao {
   valorNovo: number;
   campoAlterado: string;
   motivo?: string;
+}
+
+export interface MensagemChat {
+  id: string;
+  remetenteId: string;
+  remetenteNome: string;
+  destinatarioId?: string; // Se nulo/undefined, é mensagem do Mural Global
+  texto: string;
+  timestamp: number;
+  lidasPor: string[]; // array de IDs de caixas que já leram
+  editadaEm?: number;
+  apagadaEm?: number;
 }
 
 export interface Turno {
@@ -104,4 +138,5 @@ export interface Turno {
   bateuFisico?: boolean;
   observacoesFechamento?: string;
   notaDia?: string;
+  posRelatorioTotal?: number;
 }

@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Text, View, Platform, StyleSheet, Share, Modal, 
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import * as Sharing from "expo-sharing";
+import { File, Paths } from "expo-file-system";
 
 import { useCaixaSeguro } from "../hooks/use-caixa-seguro";
 import { ChecklistScreen } from "./checklist-screen";
@@ -11,18 +12,23 @@ import { HistoricoScreen } from "./historico-screen";
 import { PainelScreen } from "./painel-screen";
 import { TransacoesScreen } from "./transacoes-screen";
 import { TurnoScreen } from "./turno-screen";
+import { POSScreen } from "./pos-screen";
+import { ConvenioScreen } from "./convenio-screen";
 import { CreditsScreen } from "./credits-screen";
 import { RetrospectiveScreen } from "./retrospective-screen";
 import { AnalyticsModal } from "./analytics-modal";
+import { ChatModal } from "../components/chat/chat-modal";
 import { toBrl } from "../utils/currency";
 
-import { RefreshCw, LayoutDashboard, PlusCircle, CheckSquare, Ghost, History, Share2, Lock, Unlock, CheckCircle2, AlertTriangle, X, AlertCircle, ShieldAlert, MoreHorizontal, Settings, CalendarDays, LogOut, Cloud, CloudOff, Zap, Sparkles, Info, ShieldCheck, Activity } from "lucide-react-native";
+import { RefreshCw, LayoutDashboard, PlusCircle, CheckSquare, Ghost, History, Share2, Lock, Unlock, CheckCircle2, AlertTriangle, X, AlertCircle, ShieldAlert, MoreHorizontal, Settings, CalendarDays, LogOut, Cloud, CloudOff, Zap, Sparkles, Info, ShieldCheck, Activity, CreditCard, Building2, Store } from "lucide-react-native";
 import { getDatabase, ref, onValue } from "firebase/database";
 import { getFirebaseApp } from "../services/firebase/client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import { useAuth } from "../hooks/use-auth";
+import { useChat } from "../hooks/use-chat";
 import { useAppSettings, HapticIntensity } from "../hooks/use-app-settings";
+import { useLoja } from "../hooks/use-loja";
 
 import * as Haptics from 'expo-haptics';
 import { scheduleDailyReminders } from "../services/notifications";
@@ -31,12 +37,14 @@ import { Skeleton } from "../components/common/skeleton";
 import { registrarLogAlteracao, atualizarStatusTurno } from "../services/repositories/caixa-repository";
 import { loadCurrentShiftCache } from "../services/local-storage";
 
-type SectionKey = "painel" | "transacoes" | "checklist" | "fantasmas" | "historico";
+type SectionKey = "painel" | "transacoes" | "checklist" | "fantasmas" | "historico" | "pos" | "convenio";
 
 export function MainScreen() {
   const { logout } = useAuth();
   const { settings, updateSettings, loading: settingsLoading } = useAppSettings();
   const caixa = useCaixaSeguro();
+  const { mensagensMural } = useChat();
+  const loja = useLoja();
 
   const [section, setSection] = useState<SectionKey>("painel");
   const [isDiscreto, setIsDiscreto] = useState(false);
@@ -49,11 +57,15 @@ export function MainScreen() {
   const [modalCreditos, setModalCreditos] = useState(false);
   const [modalRetrospectiva, setModalRetrospectiva] = useState(false);
   const [modalAnalytics, setModalAnalytics] = useState(false);
+  const [isChatVisible, setChatVisible] = useState(false);
   const [bateu, setBateu] = useState<boolean | null>(null);
   const [obs, setObs] = useState("");
 
   const [caixaId, setCaixaId] = useState("");
-  const [operadorId, setOperadorId] = useState("");
+  const [currentOperadorId, setCurrentOperadorId] = useState("");
+
+  const [inputLojaMode, setInputLojaMode] = useState(false);
+  const [lojaCodeInput, setLojaCodeInput] = useState("");
 
   // Memorização de IDs
   useEffect(() => {
@@ -62,7 +74,7 @@ export function MainScreen() {
         const lastCx = await AsyncStorage.getItem("@squirrel_last_caixa_id");
         const lastOp = await AsyncStorage.getItem("@squirrel_last_operador_id");
         if (lastCx) setCaixaId(lastCx);
-        if (lastOp) setOperadorId(lastOp);
+        if (lastOp) setCurrentOperadorId(lastOp);
       }
     }
     loadLastIds();
@@ -137,16 +149,24 @@ export function MainScreen() {
   const mainSections: { key: SectionKey; label: string; icon: any }[] = useMemo(() => {
     const sections: { key: SectionKey; label: string; icon: any }[] = [
       { key: "painel", label: "Painel", icon: LayoutDashboard },
-      { key: "transacoes", label: "Lançar", icon: PlusCircle },
-      { key: "checklist", label: "Check", icon: CheckSquare },
+      { key: "transacoes", label: "Dinheiro", icon: PlusCircle },
     ];
+    
+    if (settings.posEnabled) {
+      sections.push({ key: "pos", label: "POS", icon: CreditCard });
+    }
+    if (settings.convenioEnabled) {
+      sections.push({ key: "convenio", label: "Convênio", icon: Building2 });
+    }
+    
+    sections.push({ key: "checklist", label: "Check", icon: CheckSquare });
 
     if (!isDiscreto) {
       sections.push({ key: "fantasmas", label: "Notas", icon: Ghost });
     }
 
     return sections;
-  }, [isDiscreto]);
+  }, [isDiscreto, settings.posEnabled, settings.convenioEnabled]);
 
   // Sistema de Notificação de Pendências ao Abrir
   useEffect(() => {
@@ -173,7 +193,7 @@ export function MainScreen() {
   useEffect(() => {
     if (caixa.turno) {
       setCaixaId(caixa.turno.caixaId || "");
-      setOperadorId(caixa.turno.operadorId || "");
+      setCurrentOperadorId(caixa.turno.operadorId || "");
     }
   }, [caixa.turno?.id]);
 
@@ -307,6 +327,11 @@ export function MainScreen() {
                 `📩 **FECHAMENTO DE MALOTE EXATOS**\n` +
                 `  💵 DINHEIRO (NO SACO): ${toBrl(t.especieEnvelope)}\n` +
                 `  📱 TRANSFERIR PIX:     ${toBrl(t.pixRepasse)}\n\n` +
+                (settings.posEnabled || settings.convenioEnabled ? 
+                  `💳 **OUTROS RECEBIMENTOS**\n` +
+                  (settings.posEnabled ? `  ▪️ MÁQUINA POS:  ${toBrl(t.totalPOS)}\n` : '') +
+                  (settings.convenioEnabled ? `  ▪️ CONVÊNIOS:    ${toBrl(t.totalConvenio)}\n\n` : '')
+                : '') +
                 `━━━━━━━━━━━━━━━━━━━━\n` +
                 `🐿️`;
 
@@ -327,10 +352,9 @@ export function MainScreen() {
         fantasmas: cache.fantasmas,
         logs: cache.logs,
       };
-      const fileUri = `${FileSystem.cacheDirectory}squirrel-backup-${Date.now()}.json`;
-      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(payload, null, 2), {
-        encoding: FileSystem.EncodingType.UTF8,
-      });
+      const file = new File(Paths.cache, `squirrel-backup-${Date.now()}.json`);
+      file.write(JSON.stringify(payload, null, 2));
+      const fileUri = file.uri;
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(fileUri, {
           mimeType: "application/json",
@@ -436,15 +460,15 @@ export function MainScreen() {
 
       <Modal visible={modalPreferencias} transparent animationType="fade">
         <View className="flex-1 bg-black/90 items-center justify-center p-6">
-          <View className="w-full max-w-[380px] bg-ink-900 border border-zinc-800 rounded-[40px] p-8 shadow-2xl">
-            <View className="flex-row items-center justify-between mb-8">
+          <View className="w-full max-w-[380px] max-h-[90%] bg-ink-900 border border-zinc-800 rounded-[40px] p-6 shadow-2xl flex-shrink">
+            <View className="flex-row items-center justify-between mb-6">
               <Text className="text-xl font-black text-white uppercase">Ajustes</Text>
               <Pressable onPress={() => setModalPreferencias(false)} hitSlop={12}>
                 <X size={20} color="#71717a" />
               </Pressable>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} overScrollMode="never">
+            <ScrollView showsVerticalScrollIndicator={false} overScrollMode="never" className="flex-shrink" contentContainerStyle={{ paddingBottom: 16 }}>
               <View className="gap-8">
                 {/* HORÁRIOS */}
                 <View className="gap-4">
@@ -510,6 +534,147 @@ export function MainScreen() {
                   <Text className="text-[10px] font-bold text-zinc-500 uppercase leading-4">
                     Feedback físico ao tocar em botões e confirmar lançamentos.
                   </Text>
+                </View>
+
+                {/* MODULOS ADICIONAIS */}
+                <View className="gap-4">
+                  <Text className="text-[10px] font-black text-zinc-600 uppercase ml-1">Módulos do Sistema</Text>
+                  
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-row items-center gap-3">
+                      <CreditCard size={18} color="#60a5fa" />
+                      <Text className="text-xs font-black text-zinc-100 uppercase">Máquina POS</Text>
+                    </View>
+                    <Switch 
+                      value={settings.posEnabled}
+                      onValueChange={(val) => updateSettings({ posEnabled: val })}
+                      trackColor={{ false: "#27272a", true: "#3b82f6" }}
+                      thumbColor={"#f4f4f5"}
+                    />
+                  </View>
+
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-row items-center gap-3">
+                      <Building2 size={18} color="#c084fc" />
+                      <Text className="text-xs font-black text-zinc-100 uppercase">Convênios</Text>
+                    </View>
+                    <Switch 
+                      value={settings.convenioEnabled}
+                      onValueChange={(val) => updateSettings({ convenioEnabled: val })}
+                      trackColor={{ false: "#27272a", true: "#a855f7" }}
+                      thumbColor={"#f4f4f5"}
+                    />
+                  </View>
+                </View>
+
+                {/* GÁS DO POVO */}
+                {settings.posEnabled && (
+                  <View>
+                    <Text className="text-[10px] font-black text-zinc-600 uppercase mb-2 ml-1">Valor do Gás do Povo (Padrão)</Text>
+                    <TextInput 
+                      value={String(settings.gasDoPovoValorPadrao || 120.36)}
+                      onChangeText={(v) => {
+                        const parsed = parseFloat(v.replace(',', '.'));
+                        if (!isNaN(parsed)) updateSettings({ gasDoPovoValorPadrao: parsed });
+                      }}
+                      keyboardType="numeric"
+                      className="bg-ink-800 p-4 rounded-2xl text-white font-black border border-zinc-800"
+                    />
+                  </View>
+                )}
+
+                {/* REDE DE LOJAS */}
+                <View>
+                  <Text className="text-[10px] font-black text-zinc-600 uppercase mb-2 ml-1">Conexão de Loja (Para POS)</Text>
+                  {loja.lojaCodigo ? (
+                    <View className="bg-ink-800 p-4 rounded-2xl border border-emerald-500/30">
+                      <View className="flex-row items-center justify-between mb-3">
+                        <View>
+                          <Text className="text-emerald-400 font-black uppercase text-xs">{loja.lojaNome}</Text>
+                          <Text className="text-zinc-500 font-bold uppercase text-[10px]">Cód: {loja.lojaCodigo}</Text>
+                        </View>
+                        <Pressable onPress={() => void loja.sairDaLoja()} className="h-8 px-4 justify-center bg-red-500/10 rounded-xl">
+                          <Text className="text-red-400 font-black uppercase text-[10px]">Sair</Text>
+                        </Pressable>
+                      </View>
+                      <Text className="text-zinc-400 font-bold text-[10px]">{loja.membros.length} caixas conectados</Text>
+                    </View>
+                  ) : inputLojaMode ? (
+                    <View className="flex-row gap-2">
+                      <TextInput 
+                        value={lojaCodeInput}
+                        onChangeText={setLojaCodeInput}
+                        autoCapitalize="characters"
+                        maxLength={6}
+                        placeholder="Código..."
+                        placeholderTextColor="#52525b"
+                        className="flex-1 bg-ink-800 border border-zinc-800 p-4 rounded-2xl text-white font-black uppercase text-center"
+                      />
+                      <Pressable 
+                        onPress={() => {
+                          if (lojaCodeInput.length > 2) {
+                            void loja.entrarNaLoja(lojaCodeInput, "Operador");
+                            setInputLojaMode(false);
+                            setLojaCodeInput("");
+                          } else {
+                            setInputLojaMode(false);
+                          }
+                        }}
+                        className="w-16 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl items-center justify-center"
+                      >
+                        <Text className="text-emerald-400 font-black uppercase text-[10px]">OK</Text>
+                      </Pressable>
+                    </View>
+                  ) : (
+                    <View className="flex-row gap-2">
+                      <Pressable 
+                        onPress={() => setInputLojaMode(true)}
+                        className="flex-1 bg-ink-800 border border-zinc-800 p-4 rounded-2xl items-center"
+                      >
+                        <Text className="text-zinc-300 font-black uppercase text-[10px]">Entrar</Text>
+                      </Pressable>
+                      <Pressable 
+                        onPress={() => {
+                          const novoCod = Math.random().toString(36).substring(2, 8).toUpperCase();
+                          void loja.criarLoja(novoCod, "Minha Loja");
+                        }}
+                        className="flex-1 bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-2xl items-center"
+                      >
+                        <Text className="text-emerald-400 font-black uppercase text-[10px]">Criar</Text>
+                      </Pressable>
+                    </View>
+                  )}
+                </View>
+
+                {/* CONFIGURAÇÕES DO CHAT */}
+                <View className="gap-4">
+                  <Text className="text-[10px] font-black text-zinc-600 uppercase ml-1">Configurações do Chat</Text>
+                  
+                  <View className="gap-2">
+                    <Text className="text-[8px] font-black text-zinc-500 uppercase ml-1">Seu Nome no Chat</Text>
+                    <TextInput 
+                      value={settings.chatOperatorName}
+                      onChangeText={(v) => updateSettings({ chatOperatorName: v })}
+                      placeholder="Ex: Lucas"
+                      placeholderTextColor="#3f3f46"
+                      className="bg-ink-800 p-4 rounded-2xl text-white font-black border border-zinc-800"
+                    />
+                  </View>
+
+                  <View className="gap-2">
+                    <Text className="text-[8px] font-black text-zinc-500 uppercase ml-1">Código de Pareamento</Text>
+                    <TextInput 
+                      value={settings.chatPairingCode}
+                      onChangeText={(v) => updateSettings({ chatPairingCode: v })}
+                      autoCapitalize="characters"
+                      placeholder="Ex: LOJA1"
+                      placeholderTextColor="#3f3f46"
+                      className="bg-ink-800 p-4 rounded-2xl text-white font-black border border-zinc-800 uppercase"
+                    />
+                    <Text className="text-[10px] font-bold text-zinc-500 leading-4 ml-1">
+                      Apenas quem usar esse mesmo código poderá conversar com você.
+                    </Text>
+                  </View>
                 </View>
 
                 {/* MODO DE DIGITAÇÃO DE MOEDA */}
@@ -582,11 +747,11 @@ export function MainScreen() {
             <Text className="text-[10px] font-black text-zinc-600 uppercase mb-2 ml-2">ID do Caixa</Text>
             <TextInput value={caixaId} onChangeText={setCaixaId} placeholder="2701" placeholderTextColor="#3f3f46" className="bg-ink-800 p-5 rounded-2xl text-white font-black mb-4 border border-zinc-800" />
             <Text className="text-[10px] font-black text-zinc-600 uppercase mb-2 ml-2">ID do Operador</Text>
-            <TextInput value={operadorId} onChangeText={setOperadorId} placeholder="1306" placeholderTextColor="#3f3f46" className="bg-ink-800 p-5 rounded-2xl text-white font-black mb-8 border border-zinc-800" />
+            <TextInput value={currentOperadorId} onChangeText={setCurrentOperadorId} placeholder="1306" placeholderTextColor="#3f3f46" className="bg-ink-800 p-5 rounded-2xl text-white font-black mb-8 border border-zinc-800" />
             <Pressable onPress={async () => { 
-              await caixa.salvarIDs(caixaId, operadorId); 
+              await caixa.salvarIDs(caixaId, currentOperadorId); 
               await AsyncStorage.setItem("@squirrel_last_caixa_id", caixaId);
-              await AsyncStorage.setItem("@squirrel_last_operador_id", operadorId);
+              await AsyncStorage.setItem("@squirrel_last_operador_id", currentOperadorId);
               setModalConfig(false); 
             }} className="bg-zinc-100 py-5 rounded-2xl shadow-xl"><Text className="text-center font-black uppercase text-zinc-950">Salvar Dados</Text></Pressable>
           </View>
@@ -684,6 +849,8 @@ export function MainScreen() {
                 ) : (
                   <PainelScreen 
                     totais={caixa.totais} 
+                    onOpenChat={() => setChatVisible(true)}
+                    ultimaMensagemGlobal={mensagensMural[mensagensMural.length - 1]?.texto}
                     fantasmas={caixa.fantasmas || []} 
                     transacoes={caixa.transacoes}
                     logs={caixa.logs}
@@ -714,12 +881,35 @@ export function MainScreen() {
                 {section === "checklist" && (
                   <ChecklistScreen 
                     transacoes={caixa.transacoes} 
-                    fantasmas={caixa.fantasmas || []}
+                    pos={caixa.registrosPOS}
+                    convenios={caixa.registrosConvenio}
                     logs={caixa.logs}
                     onToggle={caixa.alternarConferencia} 
+                    onTogglePOS={caixa.alternarConferenciaPOS}
+                    onToggleConvenio={caixa.alternarConferenciaConvenio}
                     onExcluir={(id) => mostrarAlerta("EXCLUIR", "Apagar?", () => caixa.excluirTransacao(id), true)} 
                     onReportarErro={caixa.reportarErroTransacao}
                     isFechado={isFechado} 
+                  />
+                )}
+                {section === "pos" && (
+                  <POSScreen 
+                    turno={caixa.turno}
+                    historicoTurnos={caixa.historicoTurnos}
+                    registros={caixa.registrosPOS}
+                    onAdicionar={caixa.criarRegistroPOS}
+                    onExcluir={caixa.excluirRegistroPOS}
+                    onSalvarRelatorio={caixa.salvarRelatorioPOSTotal}
+                    isFechado={isFechado}
+                    gasDoPovoValorPadrao={settings.gasDoPovoValorPadrao}
+                  />
+                )}
+                {section === "convenio" && (
+                  <ConvenioScreen 
+                    registros={caixa.registrosConvenio}
+                    onAdicionar={caixa.criarConvenio}
+                    onExcluir={caixa.excluirConvenio}
+                    isFechado={isFechado}
                   />
                 )}
                 {section === "fantasmas" && <FantasmasScreen transacoes={caixa.transacoes} fantasmas={caixa.fantasmas || []} onCriar={caixa.criarFantasma} onEditar={caixa.editarFantasma} onToggleResolvido={caixa.alternarFantasmaResolvido} onToggleComprovado={caixa.alternarFantasmaComprovado} onExcluir={(id) => mostrarAlerta("EXCLUIR", "Remover?", () => caixa.excluirFantasma(id), true)} isFechado={isFechado} />}
@@ -769,6 +959,9 @@ export function MainScreen() {
           </View>
         </>
       )}
+      {/* Chat Modal */}
+      <ChatModal visible={isChatVisible} onClose={() => setChatVisible(false)} />
+
     </SafeAreaView>
   );
 }

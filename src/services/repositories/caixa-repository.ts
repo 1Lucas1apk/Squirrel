@@ -30,7 +30,9 @@ import {
   Transacao,
   Turno,
   ContagemCedulas,
-  LogAlteracao
+  LogAlteracao,
+  RegistroPOS,
+  RegistroConvenio
 } from "../../types/domain";
 import { getFirestoreDb, getFirebaseAuth } from "../firebase/client";
 import { getRealtimeDatabase } from "../firebase/realtime";
@@ -41,7 +43,7 @@ function isLegacy(id: string) {
   return id.startsWith("-");
 }
 
-async function getUserIdAsync(): Promise<string> {
+export async function getUserIdAsync(): Promise<string> {
   const auth = getFirebaseAuth();
   if (auth.currentUser) return auth.currentUser.uid;
 
@@ -99,11 +101,14 @@ function mapTurno(id: string, data: any): Turno {
       pixRepasse: Number(totais.pix_repasse || 0),
       pixNoCaixa: Number(totais.pix_no_caixa || 0),
       pixDiretoLoja: Number(totais.pix_direto_loja || 0),
+      totalPOS: Number(totais.total_pos || 0),
+      totalConvenio: Number(totais.total_convenio || 0),
     },
     criadoEm: Number(metadados.criado_em || Date.now()),
     atualizadoEm: Number(metadados.atualizado_em || Date.now()),
     repassado: Boolean(data.repassado),
     notaDia: data.nota_dia ? String(data.nota_dia) : undefined,
+    posRelatorioTotal: data.pos_relatorio_total !== undefined ? Number(data.pos_relatorio_total) : undefined,
   };
 }
 
@@ -151,6 +156,28 @@ function mapLog(id: string, item: any, transacaoId?: string): LogAlteracao {
     valorNovo: toMoney(item.valorNovo),
     campoAlterado: String(item.campoAlterado || ""),
     motivo: item.motivo ? String(item.motivo) : undefined,
+  };
+}
+
+function mapRegistroPOS(id: string, item: any): RegistroPOS {
+  return {
+    id,
+    timestamp: Number(item.timestamp || 0),
+    tipo: item.tipo || "cartao",
+    descricao: String(item.descricao || ""),
+    valor: toMoney(item.valor),
+    statusConferencia: item.status_conferencia || "pendente",
+  };
+}
+
+function mapRegistroConvenio(id: string, item: any): RegistroConvenio {
+  return {
+    id,
+    timestamp: Number(item.timestamp || 0),
+    nome: String(item.nome || ""),
+    valor: toMoney(item.valor),
+    descricao: item.descricao ? String(item.descricao) : undefined,
+    statusConferencia: item.status_conferencia || "pendente",
   };
 }
 
@@ -344,7 +371,8 @@ export async function salvarTotaisTurno(turnoId: string, totais: TotaisTurno): P
     totais: { 
       sistema: totais.sistema, sobra: totais.sobra, gaveta_fisico: totais.gavetaFisico, 
       especie_envelope: totais.especieEnvelope, pix_repasse: totais.pixRepasse,
-      pix_no_caixa: totais.pixNoCaixa, pix_direto_loja: totais.pixDiretoLoja
+      pix_no_caixa: totais.pixNoCaixa, pix_direto_loja: totais.pixDiretoLoja,
+      total_pos: totais.totalPOS, total_convenio: totais.totalConvenio
     }, 
     [tsKey]: Date.now() 
   };
@@ -541,6 +569,143 @@ export async function atualizarConferenciaTransacao(turnoId: string, id: string,
   const uid = await getUserIdAsync();
   if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}/${id}`), { status_conferencia: status });
   else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/transacoes/${id}`), { status_conferencia: status });
+}
+
+export async function atualizarConferenciaPOS(turnoId: string, id: string, status: string): Promise<void> {
+  const uid = await getUserIdAsync();
+  if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/registros_pos/${turnoId}/${id}`), { status_conferencia: status });
+  else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/registros_pos/${id}`), { status_conferencia: status });
+}
+
+export async function atualizarConferenciaConvenio(turnoId: string, id: string, status: string): Promise<void> {
+  const uid = await getUserIdAsync();
+  if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/registros_convenio/${turnoId}/${id}`), { status_conferencia: status });
+  else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/registros_convenio/${id}`), { status_conferencia: status });
+}
+
+export async function salvarRelatorioPOSTotal(turnoId: string, valor: number): Promise<void> {
+  const uid = await getUserIdAsync();
+  const tsKey = isLegacy(turnoId) ? "metadados/atualizado_em" : "metadados.atualizado_em";
+  const payload = { pos_relatorio_total: valor, [tsKey]: Date.now() };
+  if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), payload);
+  else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`), payload);
+}
+
+// OUVINTES NOVOS
+export function ouvirRegistrosPOS(turnoId: string, onData: (registros: RegistroPOS[]) => void): Unsubscribe {
+  let isUnsubscribed = false;
+  getUserIdAsync().then(uid => {
+    if (isUnsubscribed) return;
+    if (isLegacy(turnoId)) {
+      onValue(ref(getRealtimeDatabase(), `users/${uid}/registros_pos/${turnoId}`), (snap) => {
+        const raw = snap.val() || {};
+        const arr = Object.entries(raw).map(([id, data]) => mapRegistroPOS(id, data));
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+      });
+    } else {
+      const q = query(collection(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/registros_pos`));
+      onSnapshot(q, (snap) => {
+        const arr = snap.docs.map(d => mapRegistroPOS(d.id, d.data()));
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+      });
+    }
+  });
+  return () => { isUnsubscribed = true; };
+}
+
+export function ouvirRegistrosConvenio(turnoId: string, onData: (registros: RegistroConvenio[]) => void): Unsubscribe {
+  let isUnsubscribed = false;
+  getUserIdAsync().then(uid => {
+    if (isUnsubscribed) return;
+    if (isLegacy(turnoId)) {
+      onValue(ref(getRealtimeDatabase(), `users/${uid}/registros_convenio/${turnoId}`), (snap) => {
+        const raw = snap.val() || {};
+        const arr = Object.entries(raw).map(([id, data]) => mapRegistroConvenio(id, data));
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+      });
+    } else {
+      const q = query(collection(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/registros_convenio`));
+      onSnapshot(q, (snap) => {
+        const arr = snap.docs.map(d => mapRegistroConvenio(d.id, d.data()));
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+      });
+    }
+  });
+  return () => { isUnsubscribed = true; };
+}
+
+// CRUD POS
+export async function adicionarRegistroPOS(turnoId: string, input: Omit<RegistroPOS, 'id' | 'timestamp'>): Promise<string> {
+  const uid = await getUserIdAsync();
+  const payload = {
+    tipo: input.tipo,
+    descricao: input.descricao,
+    valor: input.valor,
+    timestamp: Date.now()
+  };
+  if (isLegacy(turnoId)) {
+    const created = push(ref(getRealtimeDatabase(), `users/${uid}/registros_pos/${turnoId}`));
+    await set(created, payload);
+    return created.key as string;
+  } else {
+    const created = doc(collection(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/registros_pos`));
+    await setDoc(created, payload);
+    return created.id;
+  }
+}
+
+export async function editarRegistroPOS(turnoId: string, id: string, input: Partial<Omit<RegistroPOS, 'id' | 'timestamp'>>): Promise<void> {
+  const uid = await getUserIdAsync();
+  const payload: Record<string, any> = {};
+  if (input.tipo !== undefined) payload.tipo = input.tipo;
+  if (input.descricao !== undefined) payload.descricao = input.descricao;
+  if (input.valor !== undefined) payload.valor = input.valor;
+
+  if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/registros_pos/${turnoId}/${id}`), payload);
+  else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/registros_pos/${id}`), payload);
+}
+
+export async function removerRegistroPOS(turnoId: string, id: string): Promise<void> {
+  const uid = await getUserIdAsync();
+  if (isLegacy(turnoId)) await set(ref(getRealtimeDatabase(), `users/${uid}/registros_pos/${turnoId}/${id}`), null);
+  else await deleteDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/registros_pos/${id}`));
+}
+
+// CRUD CONVENIO
+export async function adicionarConvenio(turnoId: string, input: Omit<RegistroConvenio, 'id' | 'timestamp'>): Promise<string> {
+  const uid = await getUserIdAsync();
+  const payload = {
+    nome: input.nome,
+    valor: input.valor,
+    descricao: input.descricao || null,
+    timestamp: Date.now()
+  };
+  if (isLegacy(turnoId)) {
+    const created = push(ref(getRealtimeDatabase(), `users/${uid}/registros_convenio/${turnoId}`));
+    await set(created, payload);
+    return created.key as string;
+  } else {
+    const created = doc(collection(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/registros_convenio`));
+    await setDoc(created, payload);
+    return created.id;
+  }
+}
+
+export async function editarConvenio(turnoId: string, id: string, input: Partial<Omit<RegistroConvenio, 'id' | 'timestamp'>>): Promise<void> {
+  const uid = await getUserIdAsync();
+  const payload: Record<string, any> = {};
+  if (input.nome !== undefined) payload.nome = input.nome;
+  if (input.valor !== undefined) payload.valor = input.valor;
+  if (input.descricao !== undefined) payload.descricao = input.descricao || null;
+
+  if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/registros_convenio/${turnoId}/${id}`), payload);
+  else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/registros_convenio/${id}`), payload);
+}
+
+export async function removerConvenio(turnoId: string, id: string): Promise<void> {
+  const uid = await getUserIdAsync();
+  if (isLegacy(turnoId)) await set(ref(getRealtimeDatabase(), `users/${uid}/registros_convenio/${turnoId}/${id}`), null);
+  else await deleteDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/registros_convenio/${id}`));
 }
 
 export async function migrarDadosAntigos(): Promise<void> {}

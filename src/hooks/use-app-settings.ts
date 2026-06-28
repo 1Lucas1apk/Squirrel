@@ -11,6 +11,11 @@ interface AppSettings {
   fechamentoSabado: string; // Ex: "12:00"
   biometricsEnabled: boolean;
   moneyInputMode: MoneyInputMode;
+  posEnabled: boolean;
+  convenioEnabled: boolean;
+  gasDoPovoValorPadrao: number;
+  chatOperatorName: string;
+  chatPairingCode: string;
 }
 
 const SETTINGS_KEY = '@squirrel_app_settings';
@@ -23,6 +28,11 @@ export function useAppSettings() {
     fechamentoSabado: '12:00',
     biometricsEnabled: false,
     moneyInputMode: 'rtl',
+    posEnabled: false,
+    convenioEnabled: false,
+    gasDoPovoValorPadrao: 120.36,
+    chatOperatorName: '',
+    chatPairingCode: ''
   });
 
   const [loading, setLoading] = useState(true);
