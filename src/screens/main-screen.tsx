@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Pressable, ScrollView, Text, View, Platform, StyleSheet, Share, Modal, TextInput, Switch, Animated, Easing } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import * as FileSystem from "expo-file-system/legacy";
+
 import * as Sharing from "expo-sharing";
 
 import { useCaixaSeguro } from "../hooks/use-caixa-seguro";

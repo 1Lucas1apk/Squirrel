@@ -1,5 +1,5 @@
-import { ReactNode } from "react";
-import { Text, View } from "react-native";
+import { ReactNode, useState, useRef } from "react";
+import { Text, View, Pressable, Modal } from "react-native";
 import { 
   Monitor, 
   Coins, 
@@ -16,6 +16,7 @@ import {
 import { TotaisTurno } from "../../types/domain";
 import { toBrl } from "../../utils/currency";
 import { SaldoCard } from "./saldo-card";
+
 
 interface PainelPrincipalProps {
   totais: TotaisTurno;
@@ -41,15 +42,94 @@ export function PainelPrincipal({
   const isNegativo = totais.sobra < 0;
   const isPerfeito = totais.sobra === 0;
 
+  const clickCount = useRef(0);
+  const lastClickTime = useRef(0);
+  const [showGabarito, setShowGabarito] = useState(false);
+
+  const handleSystemClick = () => {
+    const now = Date.now();
+    if (now - lastClickTime.current < 400) {
+      if (clickCount.current + 1 >= 3) {
+        setShowGabarito(true);
+        clickCount.current = 0;
+      } else {
+        clickCount.current += 1;
+      }
+    } else {
+      clickCount.current = 1;
+    }
+    lastClickTime.current = now;
+  };
+
+  const renderGabarito = () => {
+    if (!showGabarito) return null;
+    
+    let remaining = Math.floor(Math.abs(totais.sistema));
+    const coinsFraction = Math.abs(totais.sistema) - remaining;
+    const notes = [100, 50, 20, 10, 5, 2];
+    const breakdown = [];
+    
+    for (const note of notes) {
+      const count = Math.floor(remaining / note);
+      if (count > 0) {
+        breakdown.push({ note, count });
+        remaining -= count * note;
+      }
+    }
+    const totalCoins = remaining + coinsFraction;
+
+    return (
+      <Modal visible={showGabarito} transparent animationType="fade" onRequestClose={() => setShowGabarito(false)}>
+        <Pressable className="flex-1 bg-black/90 justify-center items-center p-6" onPress={() => setShowGabarito(false)}>
+          <Pressable className="w-full max-w-[400px] bg-ink-900 border border-zinc-800 rounded-[40px] p-8 shadow-2xl" onPress={(e) => e.stopPropagation()}>
+            <View className="items-center mb-6">
+              <View className="h-12 w-12 rounded-2xl bg-zinc-100 items-center justify-center mb-4">
+                <Banknote size={24} color="#09090b" />
+              </View>
+              <Text className="text-xl font-black text-zinc-100 tracking-tighter uppercase">Gabarito Físico</Text>
+              <Text className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mt-1">
+                Sugestão ideal para {toBrl(Math.abs(totais.sistema))}
+              </Text>
+            </View>
+
+            <View className="gap-2 mb-6">
+              {breakdown.map((item) => (
+                <View key={item.note} className="flex-row items-center justify-between bg-ink-950 p-4 rounded-2xl border border-zinc-800/50">
+                  <Text className="text-sm font-bold text-zinc-400">Notas de R$ {item.note.toFixed(2)}</Text>
+                  <Text className="text-lg font-black text-emerald-400">{item.count} <Text className="text-xs text-emerald-600">x</Text></Text>
+                </View>
+              ))}
+              {totalCoins > 0 && (
+                <View className="flex-row items-center justify-between bg-ink-950 p-4 rounded-2xl border border-zinc-800/50">
+                  <Text className="text-sm font-bold text-zinc-400">Valor em Moedas</Text>
+                  <Text className="text-lg font-black text-yellow-400">{toBrl(totalCoins)}</Text>
+                </View>
+              )}
+            </View>
+
+            <Pressable 
+              onPress={() => setShowGabarito(false)}
+              className="bg-zinc-100 h-14 rounded-full items-center justify-center active:opacity-80"
+            >
+              <Text className="text-zinc-950 font-black text-sm uppercase tracking-widest">Fechar Gabarito</Text>
+            </Pressable>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    );
+  };
+
   return (
     <View className="gap-6">
       <View className="flex-row gap-4">
         <View className="flex-1">
-          <SaldoCard 
-            label="Total Sistema" 
-            value={toBrl(totais.sistema)} 
-            icon={<Monitor size={12} color="#71717a" />}
-          />
+          <Pressable onPress={handleSystemClick} delayLongPress={2000}>
+            <SaldoCard 
+              label="Total Sistema" 
+              value={toBrl(totais.sistema)} 
+              icon={<Monitor size={12} color="#71717a" />}
+            />
+          </Pressable>
         </View>
         {!isDiscreto && (
           <View className="flex-1">
@@ -91,11 +171,13 @@ export function PainelPrincipal({
       </View>
 
       <View className="rounded-[40px] border border-zinc-800 bg-ink-900 p-6 shadow-2xl">
-        <View className="flex-row items-center gap-2 mb-6">
-          <Mail size={14} color="#71717a" />
-          <Text className="text-[11px] font-black uppercase tracking-[3px] text-zinc-500">
-            Malote para a Loja
-          </Text>
+        <View className="flex-row items-center justify-between mb-6">
+          <View className="flex-row items-center gap-2">
+            <Mail size={14} color="#71717a" />
+            <Text className="text-[11px] font-black uppercase tracking-[3px] text-zinc-500">
+              Malote para a Loja
+            </Text>
+          </View>
         </View>
         
         <View className="gap-3">
@@ -148,6 +230,7 @@ export function PainelPrincipal({
           </View>
         )}
       </View>
+      {renderGabarito()}
     </View>
   );
 }
