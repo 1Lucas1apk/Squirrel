@@ -41,7 +41,7 @@ export function ConvenioScreen({
   return (
     <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
       {/* HEADER DE TOTAL */}
-      <View className="bg-ink-900 border border-zinc-800 rounded-3xl p-6 mb-6 items-center">
+      <View className="rounded-[32px] border border-zinc-800 bg-ink-900 p-6 mb-6 items-center">
         <View className="flex-row items-center gap-3 mb-2">
           <Building2 size={20} color="#c084fc" />
           <Text className="text-zinc-500 font-bold uppercase text-[10px] tracking-widest">Total em Convênios</Text>
@@ -51,7 +51,7 @@ export function ConvenioScreen({
 
       {/* ADICIONAR REGISTROS */}
       {!isFechado && (
-        <View className="bg-ink-900 border border-zinc-800 rounded-3xl p-6 mb-6">
+        <View className="rounded-[32px] border border-zinc-800 bg-ink-900 p-6 mb-6">
           <Text className="text-zinc-100 font-black uppercase tracking-widest mb-4">Lançar Convênio</Text>
           
           <View className="gap-3 mb-4">
@@ -60,7 +60,7 @@ export function ConvenioScreen({
               onChangeText={setNome} 
               placeholder="Nome da Financeira (ex: UME)" 
               placeholderTextColor="#52525b"
-              className="w-full bg-ink-800 border border-zinc-800 rounded-xl p-4 text-white font-bold"
+              className="w-full bg-ink-800 border border-zinc-800 rounded-[24px] p-4 text-white font-bold"
             />
             <View className="flex-row gap-3">
               <TextInput 
@@ -68,20 +68,20 @@ export function ConvenioScreen({
                 onChangeText={setDesc} 
                 placeholder="Detalhes (opcional)" 
                 placeholderTextColor="#52525b"
-                className="flex-[1.5] bg-ink-800 border border-zinc-800 rounded-xl p-4 text-white font-bold text-xs"
+                className="flex-[1.5] bg-ink-800 border border-zinc-800 rounded-[24px] p-4 text-white font-bold text-xs"
               />
               <View className="flex-[1.2]">
                 <MoneyInput 
                   value={valorRegistro} 
                   onChangeValue={setValorRegistro}
-                  className="w-full bg-ink-800 border border-zinc-800 rounded-xl p-4 text-white font-black text-center"
+                  className="w-full bg-ink-800 border border-zinc-800 rounded-[24px] p-4 text-white font-black text-center"
                 />
               </View>
             </View>
           </View>
 
-          <Pressable onPress={addRegistro} disabled={valorRegistro <= 0 || !nome.trim()} className={`py-4 rounded-xl items-center ${valorRegistro > 0 && nome.trim() ? 'bg-zinc-100' : 'bg-zinc-800 opacity-50'}`}>
-            <Text className="text-zinc-950 font-black uppercase text-xs">Registrar Venda</Text>
+          <Pressable onPress={addRegistro} disabled={valorRegistro <= 0 || !nome.trim()} className={`py-4 rounded-[24px] items-center ${valorRegistro > 0 && nome.trim() ? 'bg-zinc-100' : 'bg-zinc-800 opacity-50'}`}>
+            <Text className="text-zinc-950 font-black uppercase text-[11px] tracking-widest">Registrar Venda</Text>
           </Pressable>
         </View>
       )}
@@ -92,9 +92,9 @@ export function ConvenioScreen({
           <Text className="text-zinc-600 font-bold text-center text-[10px] tracking-[2px] uppercase my-6">Nenhum convênio registrado</Text>
         ) : (
           registros.map(r => (
-            <View key={r.id} className="flex-row items-center justify-between bg-ink-900 border border-zinc-800 p-4 rounded-2xl">
+            <View key={r.id} className="flex-row items-center justify-between bg-ink-900 border border-zinc-800 p-4 rounded-[24px]">
               <View className="flex-row items-center gap-3">
-                <View className="h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10">
+                <View className="h-10 w-10 items-center justify-center rounded-[20px] bg-purple-500/10">
                   <Building2 size={18} color="#c084fc" />
                 </View>
                 <View>

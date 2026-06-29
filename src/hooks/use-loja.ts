@@ -5,7 +5,10 @@ import {
   entrarNaLoja, 
   sairDaLoja as sairDaLojaRepo, 
   buscarFechamentosPOSDoDia,
+  ouvirFechamentosPOSDoDia,
   registrarFechamentoPOS,
+  removerFechamentoPOS as removerFechamentoPOSRepo,
+  limparFechamentosPOSDoDia,
   FechamentoPOS
 } from '../services/repositories/loja-repository';
 import { getFirebaseAuth } from '../services/firebase/client';
@@ -50,9 +53,6 @@ export function useLoja() {
       setMembros([]);
       return;
     }
-
-    const auth = getFirebaseAuth();
-    if (!auth.currentUser) return;
 
     const db = getFirestoreDb();
     const unsub = onSnapshot(collection(db, `lojas/${lojaCodigo}/membros`), (snap) => {
@@ -99,17 +99,32 @@ export function useLoja() {
     setMembros([]);
   }
 
-  async function fetchFechamentosPOS(dataReferencia: string): Promise<FechamentoPOS[]> {
+  async function fetchFechamentosPOS(dataReferencia: string, meuTurnoId: string): Promise<FechamentoPOS[]> {
     if (!lojaCodigo) return [];
-    return buscarFechamentosPOSDoDia(lojaCodigo, dataReferencia);
+    return buscarFechamentosPOSDoDia(lojaCodigo, dataReferencia, meuTurnoId);
   }
 
-  async function registrarRelatorioPOS(dataReferencia: string, valorTotal: number) {
+  function ouvirFechamentosPOS(dataReferencia: string, meuTurnoId: string, meuCriadoEm: number, callback: (f: FechamentoPOS[]) => void): () => void {
+    if (!lojaCodigo) return () => {};
+    return ouvirFechamentosPOSDoDia(lojaCodigo, dataReferencia, meuTurnoId, meuCriadoEm, callback);
+  }
+
+  async function registrarRelatorioPOS(dataReferencia: string, turnoId: string, turnoCriadoEm: number, valorTotal: number) {
     if (!lojaCodigo) return;
     const uid = getFirebaseAuth().currentUser?.uid;
     const meuMembro = membros.find(m => m.uid === uid);
     const operador = meuMembro ? meuMembro.nome : "Operador";
-    await registrarFechamentoPOS(lojaCodigo, dataReferencia, valorTotal, operador);
+    await registrarFechamentoPOS(lojaCodigo, dataReferencia, turnoId, turnoCriadoEm, valorTotal, operador);
+  }
+
+  async function removerFechamentoPOSDeTurno(dataReferencia: string, turnoId: string) {
+    if (!lojaCodigo) return;
+    await removerFechamentoPOSRepo(lojaCodigo, dataReferencia, turnoId);
+  }
+
+  async function limparFechamentosDoDia(dataReferencia: string) {
+    if (!lojaCodigo) return;
+    await limparFechamentosPOSDoDia(lojaCodigo, dataReferencia);
   }
 
   return {
@@ -121,6 +136,9 @@ export function useLoja() {
     entrarNaLoja: handleEntrarLoja,
     sairDaLoja: handleSairLoja,
     buscarFechamentosPOS: fetchFechamentosPOS,
-    registrarFechamentoPOS: registrarRelatorioPOS
+    ouvirFechamentosPOS,
+    registrarFechamentoPOS: registrarRelatorioPOS,
+    removerFechamentoPOS: removerFechamentoPOSDeTurno,
+    limparFechamentosDoDia
   };
 }

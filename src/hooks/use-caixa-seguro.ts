@@ -42,7 +42,7 @@ import { clearCurrentShiftCache, saveCurrentShiftCache } from "../services/local
 import { scheduleInactivityAlert } from "../services/notifications";
 import { useCaixaStore } from "../store/caixa-store";
 
-export function useCaixaSeguro() {
+export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
   const state = useCaixaStore();
   const { turno, transacoes, fantasmas, registrosPOS, registrosConvenio, logs, historicoTurnos, loading, error } = state;
 
@@ -115,8 +115,8 @@ export function useCaixaSeguro() {
   }, [turno?.id]);
 
   const totais = useMemo(
-    () => calcularTotaisTurno(transacoes, fantasmas, registrosPOS, registrosConvenio, turno?.ajusteManualSobra ?? 0, turno?.posRelatorioTotal ?? 0),
-    [transacoes, fantasmas, registrosPOS, registrosConvenio, turno?.ajusteManualSobra, turno?.posRelatorioTotal]
+    () => calcularTotaisTurno(transacoes, fantasmas, registrosPOS, registrosConvenio, turno?.ajusteManualSobra ?? 0, turno?.posRelatorioTotal ?? 0, posSomaOutrosTurnos),
+    [transacoes, fantasmas, registrosPOS, registrosConvenio, turno?.ajusteManualSobra, turno?.posRelatorioTotal, posSomaOutrosTurnos]
   );
 
   // Calcula Totais e salva na nuvem (Debounce natural já ocorre pelo design de UI)

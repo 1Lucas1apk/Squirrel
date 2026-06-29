@@ -5,10 +5,12 @@ import { Turno, RegistroPOS, TipoPOS } from '../types/domain';
 import { toBrl } from '../utils/currency';
 import { MoneyInput } from '../components/common/money-input';
 import * as Haptics from 'expo-haptics';
+import { FechamentoPOS } from '../services/repositories/loja-repository';
 
 interface POSScreenProps {
   turno: Turno;
-  historicoTurnos: Turno[];
+  fechamentosLoja?: FechamentoPOS[];
+  somaOutrosTurnos: number;
   registros: RegistroPOS[];
   onAdicionar: (input: any) => void;
   onExcluir: (id: string) => void;
@@ -19,7 +21,8 @@ interface POSScreenProps {
 
 export function POSScreen({
   turno,
-  historicoTurnos,
+  fechamentosLoja = [],
+  somaOutrosTurnos,
   registros,
   onAdicionar,
   onExcluir,
@@ -30,9 +33,9 @@ export function POSScreen({
   const [valorFinal, setValorFinal] = useState(turno.posRelatorioTotal || 0);
   const [showInput, setShowInput] = useState(false);
 
-  const outrosTurnosDia = historicoTurnos.filter(t => t.id !== turno.id && t.dataReferencia === turno.dataReferencia && (t.posRelatorioTotal || 0) > 0);
-  const somaOutrosTurnos = outrosTurnosDia.reduce((acc, t) => acc + (t.posRelatorioTotal || 0), 0);
-  const meuRelatorioCalculado = Math.max(0, valorFinal - somaOutrosTurnos);
+  // O desconto já foi feito em calculos.ts via posSomaOutrosTurnos.
+  // Aqui só mostramos o resultado: posRelatorioTotal - somaOutrosTurnos
+  const meuRelatorioCalculado = Math.max(0, (turno.posRelatorioTotal || 0) - somaOutrosTurnos);
 
   const [desc, setDesc] = useState('');
   const [valorRegistro, setValorRegistro] = useState(0);
@@ -72,7 +75,7 @@ export function POSScreen({
   return (
     <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
       {/* CARD DO RELATÓRIO POS */}
-      <View className="bg-ink-900 border border-zinc-800 rounded-3xl p-6 mb-6">
+      <View className="rounded-[32px] border border-zinc-800 bg-ink-900 p-6 mb-6">
         <View className="flex-row items-center gap-3 mb-4">
           <CreditCard size={24} color="#60a5fa" />
           <Text className="text-zinc-100 font-black uppercase tracking-widest">Maquininha POS</Text>
@@ -83,11 +86,34 @@ export function POSScreen({
             <Text className="text-zinc-500 font-bold uppercase text-[10px] mb-1">Meu Fechamento</Text>
             <Text className="text-3xl font-black text-white mb-4">{toBrl(meuRelatorioCalculado)}</Text>
             
-            {somaOutrosTurnos > 0 && (
-              <View className="bg-zinc-800/50 p-4 rounded-xl mb-4 border border-zinc-800">
-                <Text className="text-zinc-400 font-bold text-[10px] uppercase mb-2">Cálculo Compartilhado:</Text>
-                <Text className="text-zinc-300 font-black text-xs">Total Lançado: {toBrl(valorFinal)}</Text>
-                <Text className="text-zinc-300 font-black text-xs text-red-400">Menos turno anterior: -{toBrl(somaOutrosTurnos)}</Text>
+            {fechamentosLoja.length > 0 && (
+              <View className="bg-zinc-800/30 p-5 rounded-[24px] mb-4 border border-zinc-800/80">
+                <Text className="text-zinc-400 font-black text-[11px] uppercase mb-4 text-center tracking-widest">Outros Caixas Hoje</Text>
+                
+                <View className="pl-3 border-l-2 border-amber-500/50 my-2 gap-3 mb-4">
+                  {fechamentosLoja.map(f => {
+                    const time = new Date(f.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                    return (
+                      <Text key={f.id} className="text-zinc-300 font-bold text-xs leading-5">
+                        <Text className="text-amber-400 font-black">{f.operador}</Text> fechou o caixa às {time} com POS de <Text className="text-white font-black">{toBrl(f.valorTotal)}</Text>
+                      </Text>
+                    );
+                  })}
+                </View>
+                
+                <Text className="text-zinc-400 font-bold text-xs leading-5 mb-2">
+                  Total da maquininha: <Text className="text-white font-black">{toBrl(turno.posRelatorioTotal || 0)}</Text>
+                </Text>
+                <Text className="text-zinc-400 font-bold text-xs leading-5 mb-3">
+                  Descontando {fechamentosLoja.length === 1 ? `o caixa de ${fechamentosLoja[0].operador}` : 'os outros caixas'}: <Text className="text-red-400 font-black">-{toBrl(somaOutrosTurnos)}</Text>
+                </Text>
+                
+                <View className="bg-emerald-500/10 p-4 rounded-[20px] border border-emerald-500/20">
+                  <Text className="text-emerald-400 font-bold text-[13px] leading-5 text-center">
+                    Seu valor real de POS:{"\n"}
+                    <Text className="text-emerald-300 font-black text-lg">{toBrl(meuRelatorioCalculado)}</Text>
+                  </Text>
+                </View>
               </View>
             )}
             
@@ -97,9 +123,9 @@ export function POSScreen({
                   void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   setShowInput(true);
                 }}
-                className="bg-zinc-800 py-3 rounded-xl items-center mt-2"
+                className="bg-zinc-800/80 py-4 rounded-[24px] items-center mt-2 border border-zinc-700/50"
               >
-                <Text className="text-zinc-200 font-black uppercase text-xs">Alterar Relatório Final</Text>
+                <Text className="text-zinc-300 font-black uppercase text-xs tracking-widest">Alterar Relatório Final</Text>
               </Pressable>
             )}
           </View>
@@ -109,14 +135,14 @@ export function POSScreen({
             <MoneyInput 
               value={valorFinal} 
               onChangeValue={setValorFinal}
-              className="bg-ink-800 border border-zinc-800 rounded-xl p-4 text-white font-black text-2xl text-center mb-4" 
+              className="bg-ink-800 border border-zinc-800 rounded-[24px] p-4 text-white font-black text-2xl text-center mb-4" 
             />
             <View className="flex-row gap-2">
-              <Pressable onPress={() => { setValorFinal(turno.posRelatorioTotal || 0); setShowInput(false); }} className="flex-1 bg-zinc-800 py-4 rounded-xl items-center">
-                <Text className="text-zinc-400 font-black uppercase text-xs">Cancelar</Text>
+              <Pressable onPress={() => setShowInput(false)} className="bg-zinc-800 p-4 rounded-[24px] items-center flex-1">
+                <Text className="text-zinc-300 font-black uppercase tracking-widest text-[11px]">Cancelar</Text>
               </Pressable>
-              <Pressable onPress={handleSalvarTotal} className="flex-1 bg-emerald-500 py-4 rounded-xl items-center">
-                <Text className="text-emerald-950 font-black uppercase text-xs">Salvar</Text>
+              <Pressable onPress={handleSalvarTotal} className="bg-blue-600 p-4 rounded-[24px] items-center flex-1">
+                <Text className="text-white font-black uppercase tracking-widest text-[11px]">Salvar Total</Text>
               </Pressable>
             </View>
           </View>
@@ -125,10 +151,10 @@ export function POSScreen({
 
       {/* ADICIONAR REGISTROS MANUAIS */}
       {!isFechado && (
-        <View className="bg-ink-900 border border-zinc-800 rounded-3xl p-6 mb-6">
+        <View className="bg-ink-900 border border-zinc-800 rounded-[32px] p-6 mb-6">
           <Text className="text-zinc-100 font-black uppercase tracking-widest mb-4">Lançamentos Isolados</Text>
           
-          <Pressable onPress={addGasDoPovo} className="flex-row items-center justify-between bg-orange-500/10 border border-orange-500/30 p-4 rounded-2xl mb-6">
+          <Pressable onPress={addGasDoPovo} className="flex-row items-center justify-between bg-orange-500/10 border border-orange-500/30 p-4 rounded-[24px] mb-6">
             <View className="flex-row items-center gap-3">
               <View className="bg-orange-500/20 p-2 rounded-xl">
                 <Flame size={20} color="#f97316" />
@@ -147,26 +173,26 @@ export function POSScreen({
               onChangeText={setDesc} 
               placeholder="Descrição (Opcional)" 
               placeholderTextColor="#52525b"
-              className="flex-[1.5] bg-ink-800 border border-zinc-800 rounded-xl p-4 text-white font-bold"
+              className="flex-[1.5] bg-ink-800 border border-zinc-800 rounded-[24px] p-4 text-white font-bold"
             />
             <View className="flex-[1.2]">
               <MoneyInput 
                 value={valorRegistro} 
                 onChangeValue={setValorRegistro}
-                className="bg-ink-800 border border-zinc-800 rounded-xl p-4 text-white font-black text-center"
+                className="bg-ink-800 border border-zinc-800 rounded-[24px] p-4 text-white font-black text-center"
               />
             </View>
           </View>
           
           <View className="flex-row gap-2">
-            <Pressable onPress={() => addRegistro('cartao')} className="flex-1 bg-blue-500/10 border border-blue-500/30 py-4 rounded-xl items-center">
-              <Text className="text-blue-400 font-black uppercase text-[10px]">Cartão</Text>
+            <Pressable onPress={() => addRegistro('cartao')} className="bg-zinc-800/80 p-4 rounded-[24px] items-center flex-1 border border-zinc-700/50">
+              <Text className="text-blue-400 font-black text-[11px] uppercase tracking-widest">Cartão</Text>
             </Pressable>
-            <Pressable onPress={() => addRegistro('gas_do_povo')} className="flex-1 bg-orange-500/10 border border-orange-500/30 py-4 rounded-xl items-center">
-              <Text className="text-orange-400 font-black uppercase text-[10px]">Gás</Text>
+            <Pressable onPress={addGasDoPovo} className="bg-orange-900/20 p-4 rounded-[24px] items-center flex-1 border border-orange-500/20">
+              <Text className="text-orange-400 font-black text-[11px] uppercase tracking-widest">Gás</Text>
             </Pressable>
-            <Pressable onPress={() => addRegistro('pix_loja')} className="flex-1 bg-emerald-500/10 border border-emerald-500/30 py-4 rounded-xl items-center">
-              <Text className="text-emerald-400 font-black uppercase text-[10px]">Pix</Text>
+            <Pressable onPress={() => addRegistro('pix_loja')} className="bg-emerald-900/20 p-4 rounded-[24px] items-center flex-1 border border-emerald-500/20">
+              <Text className="text-emerald-400 font-black text-[11px] uppercase tracking-widest">Pix</Text>
             </Pressable>
           </View>
         </View>

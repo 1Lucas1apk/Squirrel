@@ -42,9 +42,11 @@ type SectionKey = "painel" | "transacoes" | "checklist" | "fantasmas" | "histori
 export function MainScreen() {
   const { logout } = useAuth();
   const { settings, updateSettings, loading: settingsLoading } = useAppSettings();
-  const caixa = useCaixaSeguro();
-  const { mensagensMural } = useChat();
   const loja = useLoja();
+  const [somaOutros, setSomaOutros] = useState(0);
+
+  const caixa = useCaixaSeguro(somaOutros);
+  const { mensagensMural } = useChat();
 
   const [section, setSection] = useState<SectionKey>("painel");
   const [isDiscreto, setIsDiscreto] = useState(false);
@@ -66,6 +68,32 @@ export function MainScreen() {
 
   const [inputLojaMode, setInputLojaMode] = useState(false);
   const [lojaCodeInput, setLojaCodeInput] = useState("");
+  
+  const [fechamentosLoja, setFechamentosLoja] = useState<import("../services/repositories/loja-repository").FechamentoPOS[]>([]);
+
+  useEffect(() => {
+    if (loja.lojaCodigo && caixa.turno?.dataReferencia) {
+      const unsub = loja.ouvirFechamentosPOS(caixa.turno.dataReferencia, caixa.turno.id, caixa.turno.criadoEm, (f) => {
+        setFechamentosLoja(f);
+        // Usa apenas o fechamento do turno imediatamente anterior (maior turnoCriadoEm < meuCriadoEm).
+        // O caixa da manhã (primeiro) não terá fechamentos anteriores, então somaOutros = 0.
+        // O caixa da tarde (segundo) terá o fechamento da manhã, e desconta apenas esse valor.
+        if (f && f.length > 0) {
+          const ultimo = f.reduce((best, cur) => 
+            (best == null || (cur.turnoCriadoEm || 0) > (best.turnoCriadoEm || 0)) ? cur : best, 
+            null as any
+          );
+          setSomaOutros(ultimo ? ultimo.valorTotal : 0);
+        } else {
+          setSomaOutros(0);
+        }
+      });
+      return () => unsub();
+    } else {
+      setFechamentosLoja([]);
+      setSomaOutros(0);
+    }
+  }, [loja.lojaCodigo, caixa.turno?.dataReferencia, caixa.turno?.id, caixa.turno?.criadoEm]);
 
   // Memorização de IDs
   useEffect(() => {
@@ -117,6 +145,17 @@ export function MainScreen() {
     await caixa.editarLançamento(id, input);
   };
 
+  // Ao excluir um turno, também limpa os pos_fechamentos da loja
+  // para evitar dados órfãos que causariam descontos incorretos
+  const handleExcluirTurno = async (id: string) => {
+    // Encontra o turno no histórico para saber a dataReferencia
+    const turnoAlvo = caixa.historicoTurnos.find(t => t.id === id);
+    if (turnoAlvo && loja.lojaCodigo) {
+      await loja.removerFechamentoPOS(turnoAlvo.dataReferencia, id);
+    }
+    await caixa.excluirTurno(id);
+  };
+
   // Função para salvar e reagendar notificações
   const saveAndSchedule = async (newSettings: any) => {
     await updateSettings(newSettings);
@@ -162,7 +201,7 @@ export function MainScreen() {
     sections.push({ key: "checklist", label: "Check", icon: CheckSquare });
 
     if (!isDiscreto) {
-      sections.push({ key: "fantasmas", label: "Notas", icon: Ghost });
+      // Fantasmas foram movidos para o header
     }
 
     return sections;
@@ -411,6 +450,10 @@ export function MainScreen() {
               </Pressable>
               <Pressable onPress={() => { setModalMais(false); setModalAnalytics(true); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
                 <Activity size={20} color="#60a5fa" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">Mapa de Movimentação</Text>
+              </Pressable>
+              
+              <Pressable onPress={() => { setModalMais(false); void gerarRelatorio(); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
+                <Share2 size={20} color="#a78bfa" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">Compartilhar Relatório</Text>
               </Pressable>
 
               <Pressable onPress={() => { setModalMais(false); void exportarBackupLocal(); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
@@ -772,7 +815,7 @@ export function MainScreen() {
                     caixa.carregarTurnoExistente(turnoId);
                     setSection("painel");
                   }} 
-                  onExcluirDia={(id) => mostrarAlerta("APAGAR DIA", "Deseja deletar?", () => caixa.excluirTurno(id), true)} 
+                  onExcluirDia={(id) => mostrarAlerta("APAGAR DIA", "Deseja deletar?", () => handleExcluirTurno(id), true)} 
                   onVoltar={() => setSection("painel")}
                 />
               </View>
@@ -822,7 +865,12 @@ export function MainScreen() {
                 </View>
               </View>
               <View className="flex-row gap-2 flex-shrink-0">
-                <Pressable className="h-10 w-10 items-center justify-center rounded-2xl border border-zinc-800 bg-ink-900 active:bg-zinc-800" onPress={gerarRelatorio}><Share2 size={18} color="#a78bfa" /></Pressable>
+                <Pressable className="h-10 w-10 items-center justify-center rounded-2xl border border-zinc-800 bg-ink-900 active:bg-zinc-800 relative" onPress={() => changeSection("fantasmas")}>
+                  <Ghost size={18} color={section === "fantasmas" ? "#09090b" : "#71717a"} strokeWidth={section === "fantasmas" ? 3 : 2} />
+                  {(caixa.fantasmas || []).some(f => !f.resolvido) && (
+                    <View className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-amber-500 border-2 border-ink-900" />
+                  )}
+                </Pressable>
                 <Pressable className="h-10 w-10 items-center justify-center rounded-2xl border border-zinc-800 bg-ink-900 active:bg-zinc-800" onPress={() => changeSection("historico")}><CalendarDays size={18} color="#71717a" /></Pressable>
                 {isFechado ? (
                   <Pressable onLongPress={() => handleReabrir()} delayLongPress={2000} className="h-10 w-10 items-center justify-center rounded-2xl border border-red-500/30 bg-red-500/10"><Lock size={18} color="#f87171" /></Pressable>
@@ -895,11 +943,17 @@ export function MainScreen() {
                 {section === "pos" && (
                   <POSScreen 
                     turno={caixa.turno}
-                    historicoTurnos={caixa.historicoTurnos}
+                    fechamentosLoja={fechamentosLoja}
+                    somaOutrosTurnos={somaOutros}
                     registros={caixa.registrosPOS}
                     onAdicionar={caixa.criarRegistroPOS}
                     onExcluir={caixa.excluirRegistroPOS}
-                    onSalvarRelatorio={caixa.salvarRelatorioPOSTotal}
+                    onSalvarRelatorio={async (v) => {
+                      await caixa.salvarRelatorioPOSTotal(v);
+                      if (loja.lojaCodigo && caixa.turno) {
+                        await loja.registrarFechamentoPOS(caixa.turno.dataReferencia, caixa.turno.id, caixa.turno.criadoEm, v);
+                      }
+                    }}
                     isFechado={isFechado}
                     gasDoPovoValorPadrao={settings.gasDoPovoValorPadrao}
                   />
@@ -922,7 +976,7 @@ export function MainScreen() {
                       caixa.carregarTurnoExistente(turnoId);
                       setSection("painel");
                     }} 
-                    onExcluirDia={(id) => mostrarAlerta("APAGAR DIA", "Deseja deletar?", () => caixa.excluirTurno(id), true)} 
+                    onExcluirDia={(id) => mostrarAlerta("APAGAR DIA", "Deseja deletar?", () => handleExcluirTurno(id), true)} 
                     onToggleRepasse={(id, state) => caixa.alternarRepasse(id, state)} 
                     onVoltar={() => setSection("painel")}
                   />
@@ -948,9 +1002,6 @@ export function MainScreen() {
                   >
                     <View>
                       <Icon size={18} color={active ? "#09090b" : "#71717a"} strokeWidth={active ? 3 : 2} />
-                      {s.key === "fantasmas" && (caixa.fantasmas || []).some(f => !f.resolvido) && (
-                        <View className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-amber-500 border-2 border-ink-900" />
-                      )}
                     </View>
                     {active && <Text style={styles.navLabel}>{s.label}</Text>}
                   </Pressable>

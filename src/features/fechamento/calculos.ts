@@ -34,7 +34,8 @@ export function calcularTotaisTurno(
   registrosPOS: import("../../types/domain").RegistroPOS[] = [],
   registrosConvenio: import("../../types/domain").RegistroConvenio[] = [],
   ajusteManualSobra = 0,
-  posRelatorioTotal = 0
+  posRelatorioTotal = 0,
+  posSomaOutrosTurnos = 0
 ): TotaisTurno {
   const sistema = calcularTotalSistema(transacoes);
   
@@ -93,7 +94,8 @@ export function calcularTotaisTurno(
   const sobraAcumulada = roundMoney((gavetaFisico - emprestimosFisicos) + pixNoCaixa + pixDiretoLoja - sistema);
 
   // Totais novos
-  const totalPOS = roundMoney(registrosPOS.reduce((acc, r) => acc + clampMoney(r.valor), posRelatorioTotal));
+  const posDoTurnoCorrigido = Math.max(0, posRelatorioTotal - posSomaOutrosTurnos);
+  const totalPOS = roundMoney(registrosPOS.reduce((acc, r) => acc + clampMoney(r.valor), posDoTurnoCorrigido));
   const totalConvenio = roundMoney(registrosConvenio.reduce((acc, r) => acc + clampMoney(r.valor), 0));
 
   return {
