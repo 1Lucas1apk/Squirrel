@@ -35,6 +35,8 @@ import {
   editarConvenio,
   removerConvenio,
   salvarRelatorioPOSTotal,
+  atualizarTurnoAtivoConta,
+  ouvirTurnoAtivoConta,
 } from "../services/repositories/caixa-repository";
 import { LembreteFantasma, Transacao, Turno, ContagemCedulas, LogAlteracao } from "../types/domain";
 import { getTodayReferenceDate } from "../utils/date";
@@ -44,7 +46,7 @@ import { useCaixaStore } from "../store/caixa-store";
 
 export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
   const state = useCaixaStore();
-  const { turno, transacoes, fantasmas, registrosPOS, registrosConvenio, logs, historicoTurnos, loading, error } = state;
+  const { turno, transacoes, fantasmas, registrosPOS, registrosConvenio, logs, historicoTurnos, loading, error, isTransacoesLoaded, isFantasmasLoaded, isRegistrosPOSLoaded, isRegistrosConvenioLoaded } = state;
 
   // Carregamento Inicial (Busca o último turno aberto se não houver um ativo)
   useEffect(() => {
@@ -65,6 +67,32 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
       }
     }
     init();
+    
+    const unsub = ouvirTurnoAtivoConta((activeId) => {
+      if (!activeId) return;
+      const state = useCaixaStore.getState();
+      if (!state.turno || state.turno.id !== activeId) {
+        const t = state.historicoTurnos.find(x => x.id === activeId);
+        if (t) {
+          useCaixaStore.setState({ turno: t, transacoes: [], fantasmas: [], registrosPOS: [], registrosConvenio: [], logs: [], isTransacoesLoaded: false, isFantasmasLoaded: false, isRegistrosPOSLoaded: false, isRegistrosConvenioLoaded: false });
+        } else {
+          // Se não encontrou no histórico local ainda, recarrega o histórico e tenta de novo
+          import("../services/repositories/caixa-repository").then(repo => {
+            repo.listarTurnosRecentes().then(todos => {
+              useCaixaStore.setState({ historicoTurnos: todos });
+              const t2 = todos.find(x => x.id === activeId);
+              if (t2) {
+                useCaixaStore.setState({ turno: t2, transacoes: [], fantasmas: [], registrosPOS: [], registrosConvenio: [], logs: [], isTransacoesLoaded: false, isFantasmasLoaded: false, isRegistrosPOSLoaded: false, isRegistrosConvenioLoaded: false });
+              }
+            });
+          });
+        }
+      }
+    });
+
+    return () => {
+      unsub();
+    };
   }, []);
 
   // Backup em Local Storage apenas como segurança da interface (opcional agora)
@@ -84,24 +112,36 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
       useCaixaStore.setState({ turno: data || null });
     });
     
-    const unsubTransacoes = ouvirTransacoes(turno.id, (data) => {
-      useCaixaStore.setState({ transacoes: data });
+    const unsubTransacoes = ouvirTransacoes(turno.id, (data, isSuspectEmpty) => {
+      const state = useCaixaStore.getState();
+      const isNewTurno = state.turno && (Date.now() - state.turno.criadoEm < 5 * 60 * 1000);
+      if (isSuspectEmpty && !isNewTurno && !state.isTransacoesLoaded) return;
+      useCaixaStore.setState({ transacoes: data, isTransacoesLoaded: true });
     });
     
-    const unsubFantasmas = ouvirFantasmas(turno.id, (data) => {
-      useCaixaStore.setState({ fantasmas: data });
+    const unsubFantasmas = ouvirFantasmas(turno.id, (data, isSuspectEmpty) => {
+      const state = useCaixaStore.getState();
+      const isNewTurno = state.turno && (Date.now() - state.turno.criadoEm < 5 * 60 * 1000);
+      if (isSuspectEmpty && !isNewTurno && !state.isFantasmasLoaded) return;
+      useCaixaStore.setState({ fantasmas: data, isFantasmasLoaded: true });
     });
     
     const unsubLogs = ouvirLogsAuditoria(turno.id, (data) => {
       useCaixaStore.setState({ logs: data });
     });
 
-    const unsubPOS = ouvirRegistrosPOS(turno.id, (data) => {
-      useCaixaStore.setState({ registrosPOS: data });
+    const unsubPOS = ouvirRegistrosPOS(turno.id, (data, isSuspectEmpty) => {
+      const state = useCaixaStore.getState();
+      const isNewTurno = state.turno && (Date.now() - state.turno.criadoEm < 5 * 60 * 1000);
+      if (isSuspectEmpty && !isNewTurno && !state.isRegistrosPOSLoaded) return;
+      useCaixaStore.setState({ registrosPOS: data, isRegistrosPOSLoaded: true });
     });
     
-    const unsubConvenio = ouvirRegistrosConvenio(turno.id, (data) => {
-      useCaixaStore.setState({ registrosConvenio: data });
+    const unsubConvenio = ouvirRegistrosConvenio(turno.id, (data, isSuspectEmpty) => {
+      const state = useCaixaStore.getState();
+      const isNewTurno = state.turno && (Date.now() - state.turno.criadoEm < 5 * 60 * 1000);
+      if (isSuspectEmpty && !isNewTurno && !state.isRegistrosConvenioLoaded) return;
+      useCaixaStore.setState({ registrosConvenio: data, isRegistrosConvenioLoaded: true });
     });
 
     return () => {
@@ -114,17 +154,26 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
     };
   }, [turno?.id]);
 
-  const totais = useMemo(
-    () => calcularTotaisTurno(transacoes, fantasmas, registrosPOS, registrosConvenio, turno?.ajusteManualSobra ?? 0, turno?.posRelatorioTotal ?? 0, posSomaOutrosTurnos),
-    [transacoes, fantasmas, registrosPOS, registrosConvenio, turno?.ajusteManualSobra, turno?.posRelatorioTotal, posSomaOutrosTurnos]
-  );
+  const isAllLoaded = isTransacoesLoaded && isFantasmasLoaded && isRegistrosPOSLoaded && isRegistrosConvenioLoaded;
+
+  const totais = useMemo(() => {
+    // Enquanto carrega, mostra os totais que já estavam salvos no banco para não piscar R$ 0,00 na tela
+    if (!isAllLoaded && turno?.totais) {
+      return turno.totais;
+    }
+    return calcularTotaisTurno(transacoes, fantasmas, registrosPOS, registrosConvenio, turno?.ajusteManualSobra ?? 0, turno?.posRelatorioTotal ?? 0, posSomaOutrosTurnos);
+  }, [isAllLoaded, turno, transacoes, fantasmas, registrosPOS, registrosConvenio, posSomaOutrosTurnos]);
 
   // Calcula Totais e salva na nuvem (Debounce natural já ocorre pelo design de UI)
   useEffect(() => {
-    if (turno && turno.statusTurno === "aberto") {
-      void salvarTotaisTurno(turno.id, totais);
+    if (turno && turno.statusTurno === "aberto" && isAllLoaded) {
+      // Só salva se realmente houve alteração nos totais para evitar sobrescritas indevidas e writes desnecessários
+      const mudou = JSON.stringify(totais) !== JSON.stringify(turno.totais);
+      if (mudou) {
+        void salvarTotaisTurno(turno.id, totais);
+      }
     }
-  }, [turno?.id, totais]);
+  }, [turno?.id, totais, isAllLoaded, turno?.statusTurno]);
 
   async function carregarHistoricoTurnos() {
     try {
@@ -155,7 +204,8 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
       try {
         const t = historicoTurnos.find(x => x.id === id);
         if (t) {
-          useCaixaStore.setState({ turno: t, transacoes: [], fantasmas: [], registrosPOS: [], registrosConvenio: [], logs: [] });
+          useCaixaStore.setState({ turno: t, transacoes: [], fantasmas: [], registrosPOS: [], registrosConvenio: [], logs: [], isTransacoesLoaded: false, isFantasmasLoaded: false, isRegistrosPOSLoaded: false, isRegistrosConvenioLoaded: false });
+          atualizarTurnoAtivoConta(id).catch(console.error);
         }
       } catch (err) {
         useCaixaStore.setState({ error: "Não foi possível carregar o caixa." });
@@ -169,7 +219,8 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
         const dataRef = (typeof dataManual === "string" && dataManual) ? dataManual : getTodayReferenceDate();
         // Novos sempre vão pro Firestore
         const novo = await criarNovoTurno(dataRef);
-        useCaixaStore.setState({ turno: novo, transacoes: [], fantasmas: [], registrosPOS: [], registrosConvenio: [], logs: [] });
+        useCaixaStore.setState({ turno: novo, transacoes: [], fantasmas: [], registrosPOS: [], registrosConvenio: [], logs: [], isTransacoesLoaded: false, isFantasmasLoaded: false, isRegistrosPOSLoaded: false, isRegistrosConvenioLoaded: false });
+        atualizarTurnoAtivoConta(novo.id).catch(console.error);
         await carregarHistoricoTurnos();
       } catch (err) {
         console.error("Erro real ao abrirNovoCaixa:", err);
@@ -183,7 +234,7 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
       await registrarLogAlteracao(turno.id, transacaoId, log);
     },
     sairDoDia: async () => {
-      useCaixaStore.setState({ turno: null, transacoes: [], fantasmas: [], registrosPOS: [], registrosConvenio: [], logs: [] });
+      useCaixaStore.setState({ turno: null, transacoes: [], fantasmas: [], registrosPOS: [], registrosConvenio: [], logs: [], isTransacoesLoaded: false, isFantasmasLoaded: false, isRegistrosPOSLoaded: false, isRegistrosConvenioLoaded: false });
       await clearCurrentShiftCache();
     },
     fecharTurno: async () => {

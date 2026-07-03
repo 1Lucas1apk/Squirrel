@@ -21,6 +21,10 @@ interface CaixaState {
   historicoTurnos: Turno[];
   loading: boolean;
   error: string | null;
+  isTransacoesLoaded: boolean;
+  isFantasmasLoaded: boolean;
+  isRegistrosPOSLoaded: boolean;
+  isRegistrosConvenioLoaded: boolean;
 }
 
 export const useCaixaStore = create<CaixaState>(() => ({
@@ -33,4 +37,8 @@ export const useCaixaStore = create<CaixaState>(() => ({
   historicoTurnos: [],
   loading: false,
   error: null,
+  isTransacoesLoaded: false,
+  isFantasmasLoaded: false,
+  isRegistrosPOSLoaded: false,
+  isRegistrosConvenioLoaded: false,
 }));

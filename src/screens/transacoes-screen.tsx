@@ -15,12 +15,14 @@ import {
   Trash2,
   Edit3,
   Cloud,
-  History
+  History,
+  Search
 } from "lucide-react-native";
 import * as Haptics from 'expo-haptics';
 import { MoneyInput } from "../components/common/money-input";
 import { CategoriaTransacao, LogAlteracao, NaturezaOperacao, TotaisTurno, Transacao } from "../types/domain";
 import { toBrl } from "../utils/currency";
+import { useAppSettings } from "../hooks/use-app-settings";
 
 interface TransacoesScreenProps {
   transacoes: Transacao[];
@@ -56,6 +58,8 @@ function naturezaPorCategoria(categoria: CategoriaTransacao): NaturezaOperacao {
 }
 
 export function TransacoesScreen({ transacoes, logs, onAdicionar, onExcluir, onEditar, onConfirmar, isFechado }: TransacoesScreenProps) {
+  const { settings } = useAppSettings();
+  const [busca, setBusca] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [categoria, setCategoria] = useState<CategoriaTransacao>("dinheiro");
   const [subTipoEntrada, setSubTipoEntrada] = useState<string | null>(null);
@@ -82,7 +86,21 @@ export function TransacoesScreen({ transacoes, logs, onAdicionar, onExcluir, onE
   const valorNaGaveta = isCalculadora ? (valorCliente - valorTrocoEntregue) : valorEntregueSimples;
 
   const trocoSobra = !isSaida ? valorNaGaveta - totalSistemaAtual : 0;
-  const listagem = useMemo(() => showAll ? transacoes : transacoes.slice(0, 10), [transacoes, showAll]);
+  const listagem = useMemo(() => {
+    let base = transacoes;
+    if (settings.searchEnabled && busca) {
+      const buscaLower = busca.toLowerCase();
+      const buscaNumStr = buscaLower.replace(".", ",");
+      const queryNum = parseFloat(busca.replace(",", "."));
+      
+      base = base.filter(t => {
+        const isNumMatch = !isNaN(queryNum) && t.valorSistema === queryNum;
+        const valorStr = t.valorSistema.toString().replace(".", ",");
+        return isNumMatch || valorStr.includes(buscaNumStr) || (t.descricao || "").toLowerCase().includes(buscaLower);
+      });
+    }
+    return showAll || (settings.searchEnabled && busca) ? base : base.slice(0, 10);
+  }, [transacoes, showAll, settings.searchEnabled, busca]);
 
   const isPerfeito = trocoSobra === 0;
 
@@ -500,6 +518,27 @@ export function TransacoesScreen({ transacoes, logs, onAdicionar, onExcluir, onE
               </View>
             </View>
           )}
+          {settings.searchEnabled && (
+            <View className="mb-6">
+              <View className="rounded-[32px] border border-zinc-800 bg-ink-900 p-6 shadow-sm">
+                <View className="flex-row items-center gap-3 mb-4 ml-1">
+                  <Search size={14} color="#f472b6" />
+                  <Text className="text-[10px] font-black uppercase tracking-[3px] text-zinc-600">
+                    Busca
+                  </Text>
+                </View>
+                <TextInput
+                  className="rounded-2xl border border-zinc-700 bg-ink-800 px-6 py-5 text-zinc-100 font-bold text-lg"
+                  placeholder="Valor ou descrição..."
+                  placeholderTextColor="#3f3f46"
+                  value={busca}
+                  onChangeText={setBusca}
+                  keyboardType="numbers-and-punctuation"
+                />
+              </View>
+            </View>
+          )}
+          
           <Text className="ml-2 text-[11px] font-black uppercase tracking-[3px] text-zinc-600 mb-4">Histórico de Hoje</Text>
         </View>
       }

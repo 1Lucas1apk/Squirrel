@@ -61,13 +61,15 @@ export function useChat() {
       const novas = mensagens.slice(lastMsgCount);
       novas.forEach(msg => {
         if (msg.remetenteId !== chatUserId && !msg.apagadaEm) {
-          Notifications.scheduleNotificationAsync({
-            content: {
-              title: `Mensagem de ${msg.remetenteNome}`,
-              body: msg.texto,
-            },
-            trigger: null,
-          });
+          if (Platform.OS !== 'web') {
+            Notifications.scheduleNotificationAsync({
+              content: {
+                title: `Mensagem de ${msg.remetenteNome}`,
+                body: msg.texto,
+              },
+              trigger: null,
+            });
+          }
         }
       });
       setLastMsgCount(mensagens.length);

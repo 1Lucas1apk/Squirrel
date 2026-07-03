@@ -263,69 +263,89 @@ export async function buscarTurnoPorId(turnoId: string): Promise<Turno | null> {
 // OUVINTES (DUAL)
 export function ouvirTurno(turnoId: string, onData: (turno: Turno) => void): Unsubscribe {
   let isUnsubscribed = false;
+  let firebaseUnsub: Unsubscribe | null = null;
   getUserIdAsync().then(uid => {
     if (isUnsubscribed) return;
     if (isLegacy(turnoId)) {
-      onValue(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), (snap) => {
-        if (snap.exists()) onData(mapTurno(turnoId, snap.val()));
+      firebaseUnsub = onValue(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), (snap) => {
+        if (snap.exists() && !isUnsubscribed) onData(mapTurno(turnoId, snap.val()));
       });
     } else {
-      onSnapshot(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`), (snap) => {
-        if (snap.exists()) onData(mapTurno(turnoId, snap.data()));
+      firebaseUnsub = onSnapshot(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`), (snap) => {
+        if (snap.exists() && !isUnsubscribed) onData(mapTurno(turnoId, snap.data()));
       });
     }
   });
-  return () => { isUnsubscribed = true; };
+  return () => { 
+    isUnsubscribed = true;
+    if (firebaseUnsub) firebaseUnsub();
+  };
 }
 
-export function ouvirTransacoes(turnoId: string, onData: (transacoes: Transacao[]) => void): Unsubscribe {
+export function ouvirTransacoes(turnoId: string, onData: (transacoes: Transacao[], isSuspectEmpty?: boolean) => void): Unsubscribe {
   let isUnsubscribed = false;
+  let firebaseUnsub: Unsubscribe | null = null;
   getUserIdAsync().then(uid => {
     if (isUnsubscribed) return;
     if (isLegacy(turnoId)) {
-      onValue(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}`), (snap) => {
+      firebaseUnsub = onValue(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}`), (snap) => {
+        if (isUnsubscribed) return;
         const raw = snap.val() || {};
         const arr = Object.entries(raw).map(([id, data]) => mapTransacao(id, data));
-        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp), false);
       });
     } else {
       const q = query(collection(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/transacoes`));
-      onSnapshot(q, (snap) => {
+      firebaseUnsub = onSnapshot(q, { includeMetadataChanges: true }, (snap) => {
+        if (isUnsubscribed) return;
+        const isSuspectEmpty = snap.metadata.fromCache && !snap.metadata.hasPendingWrites && snap.empty;
         const arr = snap.docs.map(d => mapTransacao(d.id, d.data()));
-        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp), isSuspectEmpty);
       });
     }
   });
-  return () => { isUnsubscribed = true; };
+  return () => { 
+    isUnsubscribed = true;
+    if (firebaseUnsub) firebaseUnsub();
+  };
 }
 
-export function ouvirFantasmas(turnoId: string, onData: (fantasmas: LembreteFantasma[]) => void): Unsubscribe {
+export function ouvirFantasmas(turnoId: string, onData: (fantasmas: LembreteFantasma[], isSuspectEmpty?: boolean) => void): Unsubscribe {
   let isUnsubscribed = false;
+  let firebaseUnsub: Unsubscribe | null = null;
   getUserIdAsync().then(uid => {
     if (isUnsubscribed) return;
     if (isLegacy(turnoId)) {
-      onValue(ref(getRealtimeDatabase(), `users/${uid}/fantasmas_lembretes/${turnoId}`), (snap) => {
+      firebaseUnsub = onValue(ref(getRealtimeDatabase(), `users/${uid}/fantasmas_lembretes/${turnoId}`), (snap) => {
+        if (isUnsubscribed) return;
         const raw = snap.val() || {};
         const arr = Object.entries(raw).map(([id, data]) => mapFantasma(id, data));
-        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp), false);
       });
     } else {
       const q = query(collection(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/fantasmas_lembretes`));
-      onSnapshot(q, (snap) => {
+      firebaseUnsub = onSnapshot(q, { includeMetadataChanges: true }, (snap) => {
+        if (isUnsubscribed) return;
+        const isSuspectEmpty = snap.metadata.fromCache && !snap.metadata.hasPendingWrites && snap.empty;
         const arr = snap.docs.map(d => mapFantasma(d.id, d.data()));
-        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp), isSuspectEmpty);
       });
     }
   });
-  return () => { isUnsubscribed = true; };
+  return () => { 
+    isUnsubscribed = true;
+    if (firebaseUnsub) firebaseUnsub();
+  };
 }
 
 export function ouvirLogsAuditoria(turnoId: string, onData: (logs: LogAlteracao[]) => void): Unsubscribe {
   let isUnsubscribed = false;
+  let firebaseUnsub: Unsubscribe | null = null;
   getUserIdAsync().then(uid => {
     if (isUnsubscribed) return;
     if (isLegacy(turnoId)) {
-      onValue(ref(getRealtimeDatabase(), `users/${uid}/logs_auditoria/${turnoId}`), (snap) => {
+      firebaseUnsub = onValue(ref(getRealtimeDatabase(), `users/${uid}/logs_auditoria/${turnoId}`), (snap) => {
+        if (isUnsubscribed) return;
         const raw = snap.val() || {};
         const arr: LogAlteracao[] = [];
         Object.entries(raw).forEach(([tId, logsObj]: [string, any]) => {
@@ -335,13 +355,17 @@ export function ouvirLogsAuditoria(turnoId: string, onData: (logs: LogAlteracao[
       });
     } else {
       const q = query(collection(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/logs_auditoria`));
-      onSnapshot(q, (snap) => {
+      firebaseUnsub = onSnapshot(q, (snap) => {
+        if (isUnsubscribed) return;
         const arr = snap.docs.map(d => mapLog(d.id, d.data()));
         onData(arr.sort((a, b) => b.timestamp - a.timestamp));
       });
     }
   });
-  return () => { isUnsubscribed = true; };
+  return () => { 
+    isUnsubscribed = true;
+    if (firebaseUnsub) firebaseUnsub();
+  };
 }
 
 // -------------------------
@@ -592,46 +616,60 @@ export async function salvarRelatorioPOSTotal(turnoId: string, valor: number): P
 }
 
 // OUVINTES NOVOS
-export function ouvirRegistrosPOS(turnoId: string, onData: (registros: RegistroPOS[]) => void): Unsubscribe {
+export function ouvirRegistrosPOS(turnoId: string, onData: (registros: RegistroPOS[], isSuspectEmpty?: boolean) => void): Unsubscribe {
   let isUnsubscribed = false;
+  let firebaseUnsub: Unsubscribe | null = null;
   getUserIdAsync().then(uid => {
     if (isUnsubscribed) return;
     if (isLegacy(turnoId)) {
-      onValue(ref(getRealtimeDatabase(), `users/${uid}/registros_pos/${turnoId}`), (snap) => {
+      firebaseUnsub = onValue(ref(getRealtimeDatabase(), `users/${uid}/registros_pos/${turnoId}`), (snap) => {
+        if (isUnsubscribed) return;
         const raw = snap.val() || {};
         const arr = Object.entries(raw).map(([id, data]) => mapRegistroPOS(id, data));
-        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp), false);
       });
     } else {
       const q = query(collection(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/registros_pos`));
-      onSnapshot(q, (snap) => {
+      firebaseUnsub = onSnapshot(q, { includeMetadataChanges: true }, (snap) => {
+        if (isUnsubscribed) return;
+        const isSuspectEmpty = snap.metadata.fromCache && !snap.metadata.hasPendingWrites && snap.empty;
         const arr = snap.docs.map(d => mapRegistroPOS(d.id, d.data()));
-        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp), isSuspectEmpty);
       });
     }
   });
-  return () => { isUnsubscribed = true; };
+  return () => { 
+    isUnsubscribed = true;
+    if (firebaseUnsub) firebaseUnsub();
+  };
 }
 
-export function ouvirRegistrosConvenio(turnoId: string, onData: (registros: RegistroConvenio[]) => void): Unsubscribe {
+export function ouvirRegistrosConvenio(turnoId: string, onData: (registros: RegistroConvenio[], isSuspectEmpty?: boolean) => void): Unsubscribe {
   let isUnsubscribed = false;
+  let firebaseUnsub: Unsubscribe | null = null;
   getUserIdAsync().then(uid => {
     if (isUnsubscribed) return;
     if (isLegacy(turnoId)) {
-      onValue(ref(getRealtimeDatabase(), `users/${uid}/registros_convenio/${turnoId}`), (snap) => {
+      firebaseUnsub = onValue(ref(getRealtimeDatabase(), `users/${uid}/registros_convenio/${turnoId}`), (snap) => {
+        if (isUnsubscribed) return;
         const raw = snap.val() || {};
         const arr = Object.entries(raw).map(([id, data]) => mapRegistroConvenio(id, data));
-        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp), false);
       });
     } else {
       const q = query(collection(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/registros_convenio`));
-      onSnapshot(q, (snap) => {
+      firebaseUnsub = onSnapshot(q, { includeMetadataChanges: true }, (snap) => {
+        if (isUnsubscribed) return;
+        const isSuspectEmpty = snap.metadata.fromCache && !snap.metadata.hasPendingWrites && snap.empty;
         const arr = snap.docs.map(d => mapRegistroConvenio(d.id, d.data()));
-        onData(arr.sort((a, b) => b.timestamp - a.timestamp));
+        onData(arr.sort((a, b) => b.timestamp - a.timestamp), isSuspectEmpty);
       });
     }
   });
-  return () => { isUnsubscribed = true; };
+  return () => { 
+    isUnsubscribed = true;
+    if (firebaseUnsub) firebaseUnsub();
+  };
 }
 
 // CRUD POS
@@ -709,3 +747,32 @@ export async function removerConvenio(turnoId: string, id: string): Promise<void
 }
 
 export async function migrarDadosAntigos(): Promise<void> {}
+
+export async function atualizarTurnoAtivoConta(turnoId: string): Promise<void> {
+  try {
+    const uid = await getUserIdAsync();
+    const docRef = doc(getFirestoreDb(), `users/${uid}`);
+    await setDoc(docRef, { activeTurnoId: turnoId }, { merge: true });
+  } catch (e) {
+    console.error("Erro ao sincronizar dia ativo:", e);
+  }
+}
+
+export function ouvirTurnoAtivoConta(callback: (turnoId: string | null) => void): Unsubscribe {
+  let unsub: Unsubscribe | null = null;
+  getUserIdAsync().then(uid => {
+    const docRef = doc(getFirestoreDb(), `users/${uid}`);
+    unsub = onSnapshot(docRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.activeTurnoId) {
+          callback(data.activeTurnoId);
+        }
+      }
+    });
+  }).catch(e => console.error("Erro ao ouvir dia ativo:", e));
+  
+  return () => {
+    if (unsub) unsub();
+  };
+}

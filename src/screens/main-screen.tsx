@@ -20,7 +20,7 @@ import { AnalyticsModal } from "./analytics-modal";
 import { ChatModal } from "../components/chat/chat-modal";
 import { toBrl } from "../utils/currency";
 
-import { RefreshCw, LayoutDashboard, PlusCircle, CheckSquare, Ghost, History, Share2, Lock, Unlock, CheckCircle2, AlertTriangle, X, AlertCircle, ShieldAlert, MoreHorizontal, Settings, CalendarDays, LogOut, Cloud, CloudOff, Zap, Sparkles, Info, ShieldCheck, Activity, CreditCard, Building2, Store } from "lucide-react-native";
+import { RefreshCw, LayoutDashboard, PlusCircle, CheckSquare, Ghost, History, Share2, Lock, Unlock, CheckCircle2, AlertTriangle, X, AlertCircle, ShieldAlert, MoreHorizontal, Settings, CalendarDays, LogOut, Cloud, CloudOff, Zap, Sparkles, Info, ShieldCheck, Activity, CreditCard, Building2, Store, Search } from "lucide-react-native";
 import { getDatabase, ref, onValue } from "firebase/database";
 import { getFirebaseApp } from "../services/firebase/client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -582,6 +582,19 @@ export function MainScreen() {
                 {/* MODULOS ADICIONAIS */}
                 <View className="gap-4">
                   <Text className="text-[10px] font-black text-zinc-600 uppercase ml-1">Módulos do Sistema</Text>
+                  
+                  <View className="flex-row items-center justify-between">
+                    <View className="flex-row items-center gap-3">
+                      <Search size={18} color="#f472b6" />
+                      <Text className="text-xs font-black text-zinc-100 uppercase">Busca</Text>
+                    </View>
+                    <Switch 
+                      value={settings.searchEnabled}
+                      onValueChange={(val) => updateSettings({ searchEnabled: val })}
+                      trackColor={{ false: "#27272a", true: "#ec4899" }}
+                      thumbColor={"#f4f4f5"}
+                    />
+                  </View>
                   
                   <View className="flex-row items-center justify-between">
                     <View className="flex-row items-center gap-3">

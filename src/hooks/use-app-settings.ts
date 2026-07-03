@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type HapticIntensity = 'light' | 'medium' | 'heavy';
@@ -16,12 +16,20 @@ interface AppSettings {
   gasDoPovoValorPadrao: number;
   chatOperatorName: string;
   chatPairingCode: string;
+  searchEnabled: boolean;
 }
 
 const SETTINGS_KEY = '@squirrel_app_settings';
 
-export function useAppSettings() {
-  const [settings, setSettings] = useState<AppSettings>({
+interface AppSettingsStore {
+  settings: AppSettings;
+  loading: boolean;
+  loadSettings: () => Promise<void>;
+  updateSettings: (newSettings: Partial<AppSettings>) => Promise<void>;
+}
+
+export const useAppSettings = create<AppSettingsStore>((set, get) => ({
+  settings: {
     hapticsEnabled: true,
     hapticIntensity: 'light',
     fechamentoSemana: '17:00',
@@ -32,39 +40,37 @@ export function useAppSettings() {
     convenioEnabled: false,
     gasDoPovoValorPadrao: 120.36,
     chatOperatorName: '',
-    chatPairingCode: ''
-  });
-
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  async function loadSettings() {
+    chatPairingCode: '',
+    searchEnabled: false
+  },
+  loading: true,
+  
+  loadSettings: async () => {
     try {
       const saved = await AsyncStorage.getItem(SETTINGS_KEY);
       if (saved) {
-        // Faz o merge das configs antigas com as novas (caso a pessoa já tenha configs salvas sem a nova propriedade)
+        // Faz o merge das configs antigas com as novas
         const parsed = JSON.parse(saved);
-        setSettings(prev => ({ ...prev, ...parsed }));
+        set((state) => ({ settings: { ...state.settings, ...parsed } }));
       }
     } catch (e) {
       console.error("Erro ao carregar ajustes", e);
     } finally {
-      setLoading(false);
+      set({ loading: false });
     }
-  }
+  },
 
-  async function updateSettings(newSettings: Partial<AppSettings>) {
+  updateSettings: async (newSettings: Partial<AppSettings>) => {
     try {
+      const { settings } = get();
       const updated = { ...settings, ...newSettings };
-      setSettings(updated);
+      set({ settings: updated });
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
     } catch (e) {
       console.error("Erro ao salvar ajustes", e);
     }
   }
+}));
 
-  return { settings, updateSettings, loading };
-}
+// Inicia o carregamento assim que o módulo é importado
+useAppSettings.getState().loadSettings();

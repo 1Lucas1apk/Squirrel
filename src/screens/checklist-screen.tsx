@@ -177,6 +177,8 @@ function ChecklistItem({ item, logs, isFechado, onToggle, onExcluir, onAbrirErro
 
 export function ChecklistScreen({ transacoes, pos, convenios, logs, onToggle, onTogglePOS, onToggleConvenio, onExcluir, onReportarErro, isFechado }: ChecklistScreenProps) {
   const [modoChecagem, setModoChecagem] = useState<"transacoes" | "outros">("transacoes");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const flatListRef = useRef<FlatList>(null);
 
   const [busca, setBusca] = useState("");
   const [apenasPendentes, setApenasPendentes] = useState(false);
@@ -213,8 +215,15 @@ export function ChecklistScreen({ transacoes, pos, convenios, logs, onToggle, on
       if (horaFim !== null && itemHour > horaFim) return false;
     }
     if (!busca) return true;
+    
+    const buscaLower = busca.toLowerCase();
+    const buscaNumStr = buscaLower.replace(".", ",");
+    const queryNum = parseFloat(busca.replace(",", "."));
+    
+    const isNumMatch = !isNaN(queryNum) && t.valorSistema === queryNum;
     const valorStr = t.valorSistema.toString().replace(".", ",");
-    return valorStr.includes(busca) || t.descricao.toLowerCase().includes(busca.toLowerCase());
+    
+    return isNumMatch || valorStr.includes(buscaNumStr) || t.descricao.toLowerCase().includes(buscaLower);
   });
 
   const calcNetTotal = (list: Transacao[]) => {
@@ -369,9 +378,11 @@ export function ChecklistScreen({ transacoes, pos, convenios, logs, onToggle, on
       </Modal>
 
       <FlatList
+        ref={flatListRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         overScrollMode="never"
+        keyboardShouldPersistTaps="handled"
         ListHeaderComponent={
           <View className="gap-5 mb-4">
             <View className="flex-row gap-2 bg-ink-900 p-2 rounded-[32px] border border-zinc-800">
@@ -471,6 +482,11 @@ export function ChecklistScreen({ transacoes, pos, convenios, logs, onToggle, on
                 placeholderTextColor="#3f3f46"
                 value={busca}
                 onChangeText={setBusca}
+                onFocus={() => {
+                  setIsSearchFocused(true);
+                  flatListRef.current?.scrollToOffset({ offset: 320, animated: true });
+                }}
+                onBlur={() => setIsSearchFocused(false)}
                 keyboardType="numbers-and-punctuation"
               />
             </View>
@@ -540,13 +556,20 @@ export function ChecklistScreen({ transacoes, pos, convenios, logs, onToggle, on
             )}
           </View>
         }
-        data={(modoChecagem === "transacoes" ? transacoesFiltradas : [...pos, ...convenios].filter((f: any) => !busca || (f.descricao || f.nome || '').toLowerCase().includes(busca.toLowerCase()) || f.valor.toString().includes(busca)).sort((a,b) => b.timestamp - a.timestamp)) as any[]}
+        data={(modoChecagem === "transacoes" ? transacoesFiltradas : [...pos, ...convenios].filter((f: any) => {
+          if (!busca) return true;
+          const buscaLower = busca.toLowerCase();
+          const buscaNumStr = buscaLower.replace(".", ",");
+          const queryNum = parseFloat(busca.replace(",", "."));
+          const isNumMatch = !isNaN(queryNum) && f.valor === queryNum;
+          return isNumMatch || f.valor.toString().replace(".", ",").includes(buscaNumStr) || (f.descricao || f.nome || '').toLowerCase().includes(buscaLower);
+        }).sort((a,b) => b.timestamp - a.timestamp)) as any[]}
         keyExtractor={(item) => item.id}
         renderItem={modoChecagem === "transacoes" ? (renderItem as any) : (renderOutrosItem as any)}
         initialNumToRender={20}
         maxToRenderPerBatch={20}
         windowSize={10}
-        contentContainerStyle={{ paddingBottom: 140 }}
+        contentContainerStyle={{ paddingBottom: isSearchFocused || busca ? 400 : 140 }}
         ListEmptyComponent={
           <View className="rounded-[32px] border border-dashed border-zinc-800 py-20 items-center justify-center mt-4">
             <Search size={32} color="#27272a" />
