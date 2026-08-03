@@ -106,7 +106,7 @@ export function MoneyInput({ value, onChangeValue, ...props }: MoneyInputProps) 
       {...props}
       value={localValue}
       onChangeText={handleChangeText}
-      keyboardType="decimal-pad"
+      keyboardType="numeric"
       placeholder="0,00"
       placeholderTextColor="#27272a"
       cursorColor="#f4f4f5"

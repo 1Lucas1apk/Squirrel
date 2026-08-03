@@ -85,7 +85,7 @@ export function TurnoScreen({
 
       <View className="absolute bottom-12 left-0 right-0 items-center">
         <Text className="text-[9px] font-black uppercase tracking-[5px] text-zinc-800">
-          CLARA ELETRO • OPERACIONAL
+          SQUIRREL • OPERACIONAL
         </Text>
       </View>
     </View>

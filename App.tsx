@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { View, ActivityIndicator, Text, Pressable, Platform } from "react-native";
+import { View, ActivityIndicator, Text, Pressable, Platform, UIManager } from "react-native";
 import * as LocalAuthentication from 'expo-local-authentication';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ShieldCheck, Lock } from "lucide-react-native";
@@ -10,6 +10,10 @@ import { MainScreen } from "./src/screens/main-screen";
 import { LoginScreen } from "./src/screens/login-screen";
 import { useAuth } from "./src/hooks/use-auth";
 import { requestNotificationPermissions } from "./src/services/notifications";
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 function RootNavigator() {
   const { user, loading: authLoading } = useAuth();
@@ -124,14 +128,17 @@ function RootNavigator() {
 }
 
 import { ErrorBoundary } from "./src/components/common/error-boundary";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 export default function App() {
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
-      <ErrorBoundary>
-        <RootNavigator />
-      </ErrorBoundary>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <ErrorBoundary>
+          <RootNavigator />
+        </ErrorBoundary>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

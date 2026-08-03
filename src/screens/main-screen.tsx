@@ -20,7 +20,7 @@ import { AnalyticsModal } from "./analytics-modal";
 import { ChatModal } from "../components/chat/chat-modal";
 import { toBrl } from "../utils/currency";
 
-import { RefreshCw, LayoutDashboard, PlusCircle, CheckSquare, Ghost, History, Share2, Lock, Unlock, CheckCircle2, AlertTriangle, X, AlertCircle, ShieldAlert, MoreHorizontal, Settings, CalendarDays, LogOut, Cloud, CloudOff, Zap, Sparkles, Info, ShieldCheck, Activity, CreditCard, Building2, Store, Search } from "lucide-react-native";
+import { RefreshCw, LayoutDashboard, PlusCircle, CheckSquare, Ghost, History, Share2, Lock, Unlock, CheckCircle2, AlertTriangle, X, AlertCircle, ShieldAlert, MoreHorizontal, Settings, CalendarDays, LogOut, Cloud, CloudOff, Zap, Sparkles, Info, ShieldCheck, Activity, CreditCard, Building2, Store, Search, ChevronDown } from "lucide-react-native";
 import { getDatabase, ref, onValue } from "firebase/database";
 import { getFirebaseApp } from "../services/firebase/client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -873,8 +873,9 @@ export function MainScreen() {
                   <Text className={`text-lg font-black uppercase tracking-tighter ${isDiscreto ? 'text-zinc-700' : 'text-zinc-100'}`}>CAIXA</Text>
                   <Text className="text-[10px] font-black uppercase tracking-[2px] text-zinc-600">{caixa.turno.dataReferencia} • {caixaId || 'S/C'}</Text>
                 </Pressable>
-                <View className={`h-6 min-w-6 px-1 items-center justify-center rounded-full ${isOnline ? 'bg-emerald-500/10' : 'bg-red-500/10'}`}>
+                <View className={`h-6 px-2 flex-row items-center justify-center rounded-full gap-1.5 ${isOnline ? 'bg-emerald-500/10' : 'bg-red-500/20'}`}>
                   {isOnline ? <Cloud size={12} color="#34d399" /> : <CloudOff size={12} color="#f87171" />}
+                  {!isOnline && <Text className="text-[9px] font-black uppercase text-red-400">Offline</Text>}
                 </View>
               </View>
               <View className="flex-row gap-2 flex-shrink-0">
@@ -991,7 +992,13 @@ export function MainScreen() {
                     }} 
                     onExcluirDia={(id) => mostrarAlerta("APAGAR DIA", "Deseja deletar?", () => handleExcluirTurno(id), true)} 
                     onToggleRepasse={(id, state) => caixa.alternarRepasse(id, state)} 
-                    onVoltar={() => setSection("painel")}
+                    onVoltar={async () => {
+                      const activeId = caixa.historicoTurnos.find(t => t.statusTurno === "aberto")?.id;
+                      if (activeId) {
+                        await caixa.carregarTurnoExistente(activeId);
+                      }
+                      setSection("painel");
+                    }}
                   />
                 )}
               </View>

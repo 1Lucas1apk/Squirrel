@@ -107,8 +107,15 @@ export function useAuth() {
       void trySilentLogin("network-restored");
     });
 
+    const fallbackTimer = setTimeout(() => {
+      if (isMounted) {
+        setLoading(false);
+      }
+    }, 3000);
+
     return () => {
       isMounted = false;
+      clearTimeout(fallbackTimer);
       unsubscribe();
       unsubscribeNet();
     };

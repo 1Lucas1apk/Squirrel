@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Pressable, Text, TextInput, View, FlatList, ScrollView } from "react-native";
+import { useMemo, useState, useRef, useCallback } from "react";
+import { Pressable, Text, TextInput, View, FlatList, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform, LayoutAnimation } from "react-native";
 import { 
   Layers, 
   Link as LinkIcon, 
@@ -47,8 +47,8 @@ interface TransacoesScreenProps {
 const categorias: { value: CategoriaTransacao; label: string; icon: any; color: string }[] = [
   { value: "dinheiro", label: "Dinheiro", icon: Banknote, color: "text-emerald-400" },
   { value: "entrada_prestacao", label: "Entrada", icon: ArrowDownCircle, color: "text-blue-400" },
-  { value: "compra_vista", label: "À Vista", icon: ShoppingCart, color: "text-zinc-100" },
   { value: "multiplo", label: "Misto", icon: Split, color: "text-orange-400" },
+  { value: "compra_vista", label: "À Vista", icon: ShoppingCart, color: "text-zinc-100" },
   { value: "sangria", label: "Sangria", icon: ArrowUpCircle, color: "text-red-400" },
   { value: "cancelamento", label: "Cancel", icon: XCircle, color: "text-red-500" },
 ];
@@ -57,8 +57,16 @@ function naturezaPorCategoria(categoria: CategoriaTransacao): NaturezaOperacao {
   return categoria === "entrada_prestacao" ? "entrada" : "pagamento";
 }
 
+const withTimeout = <T,>(promise: Promise<T>, ms: number = 8000): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms))
+  ]);
+};
+
 export function TransacoesScreen({ transacoes, logs, onAdicionar, onExcluir, onEditar, onConfirmar, isFechado }: TransacoesScreenProps) {
   const { settings } = useAppSettings();
+  const descricaoRef = useRef<TextInput>(null);
   const [busca, setBusca] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [categoria, setCategoria] = useState<CategoriaTransacao>("dinheiro");
@@ -78,6 +86,7 @@ export function TransacoesScreen({ transacoes, logs, onAdicionar, onExcluir, onE
   const [erro, setErro] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [preConfirmado, setPreConfirmado] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isSaida = categoria === "sangria" || categoria === "cancelamento";
   const totalSistemaAtual = isModoAvançado ? pagamentos.reduce((acc, p) => acc + p.valor, 0) : valorSistema;
@@ -121,10 +130,23 @@ export function TransacoesScreen({ transacoes, logs, onAdicionar, onExcluir, onE
     setBuscaVenda("");
     setErro(null);
     setPreConfirmado(false);
+    setIsSubmitting(false);
+  }
+
+  function showError(msg: string) {
+    setErro(msg);
+    setTimeout(() => setErro(null), 4000);
+  }
+
+  function formatarTexto(txt: string) {
+    const t = txt.trim();
+    if (!t) return t;
+    return t.charAt(0).toUpperCase() + t.slice(1);
   }
 
   async function onSalvar() {
-    if (totalSistemaAtual > 100000) { setErro("Limite de 100 mil."); return; }
+    if (isSubmitting) return;
+    if (totalSistemaAtual > 100000) { showError("Limite de 100 mil."); return; }
 
     // Alerta de Valor Atípico (> R$ 2.000,00) - Usando o modal do app
     if (!preConfirmado && totalSistemaAtual > 2000) {
@@ -144,53 +166,56 @@ export function TransacoesScreen({ transacoes, logs, onAdicionar, onExcluir, onE
     if (!preConfirmado && !isSaida && Math.abs(trocoSobra) >= 1) {
       setPreConfirmado(true);
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      setErro(`Atenção: Diferença de ${toBrl(trocoSobra)}. Clique de novo para confirmar.`);
+      showError(`Atenção: Diferença de ${toBrl(trocoSobra)}. Clique de novo para confirmar.`);
       return;
     }
 
+    setIsSubmitting(true);
     if (isModoAvançado) {
       const valid = pagamentos.filter(p => p.valor > 0);
-      if (valid.length === 0) { setErro("Informe um valor."); return; }
+      if (valid.length === 0) { showError("Informe um valor."); setIsSubmitting(false); return; }
       try {
         let sobraRestante = trocoSobra;
         for (let i = 0; i < valid.length; i++) {
           const p = valid[i];
           const sobraAplicada = i === 0 ? sobraRestante : 0;
           const gavetaAplicada = !isSaida ? p.valor + sobraAplicada : 0;
-          await onAdicionar({
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+          await withTimeout(onAdicionar({
             naturezaOperacao: naturezaPorCategoria(categoria),
             categoria,
-            descricao: p.descricao.trim() || `Pgto ${i+1}`,
+            descricao: formatarTexto(p.descricao) || `Pgto ${i+1}`,
             codigoContrato: p.contrato.trim() || undefined,
             valorSistema: Math.abs(p.valor),
             valorRecebidoFisico: gavetaAplicada,
             trocoSobra: sobraAplicada,
             transacaoVinculadaId: transacaoVinculadaId || undefined,
-          });
+          }));
         }
         resetForm();
-      } catch (e) { setErro("Erro ao salvar."); }
+      } catch (e: any) { showError(e?.message === "Timeout" ? "Tempo limite excedido. Tente novamente." : "Erro ao salvar."); setIsSubmitting(false); }
     } else {
-      if (valorSistema <= 0) { setErro("Informe o valor."); return; }
+      if (valorSistema <= 0) { showError("Informe o valor."); setIsSubmitting(false); return; }
       try {
         const payload = {
           naturezaOperacao: naturezaPorCategoria(categoria),
           categoria,
-          descricao: descricao.trim(),
+          descricao: formatarTexto(descricao),
           codigoContrato: codigoContrato.trim() || undefined,
           valorSistema: Math.abs(valorSistema),
           valorRecebidoFisico: !isSaida ? Math.abs(valorNaGaveta) : 0,
           trocoSobra: !isSaida ? trocoSobra : 0,
           transacaoVinculadaId: transacaoVinculadaId || undefined,
         };
-        if (editingId) await onEditar(editingId, payload);
-        else await onAdicionar(payload);
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        if (editingId) await withTimeout(onEditar(editingId, payload));
+        else await withTimeout(onAdicionar(payload));
         resetForm();
-      } catch (e) { setErro("Erro ao salvar."); }
+      } catch (e: any) { showError(e?.message === "Timeout" ? "Tempo limite excedido. Tente novamente." : "Erro ao salvar."); setIsSubmitting(false); }
     }
   }
 
-  const renderItem = ({ item }: { item: Transacao }) => {
+  const renderItem = useCallback(({ item }: { item: Transacao }) => {
     const cat = categorias.find(c => c.value === item.categoria) || categorias[0];
     const Icon = cat.icon;
     const refT = item.transacaoVinculadaId
@@ -278,7 +303,10 @@ export function TransacoesScreen({ transacoes, logs, onAdicionar, onExcluir, onE
                 setTransacaoVinculadaId(item.transacaoVinculadaId || "");
                 setValorEntregueSimples(item.valorRecebidoFisico);
               }} className="h-10 w-10 items-center justify-center rounded-xl bg-zinc-800/50 border border-zinc-700/50"><Edit3 size={16} color="#71717a" /></Pressable>
-              <Pressable onPress={() => onExcluir(item.id)} className="h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20"><Trash2 size={16} color="#f87171" /></Pressable>
+              <Pressable onPress={() => {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                onExcluir(item.id);
+              }} className="h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20"><Trash2 size={16} color="#f87171" /></Pressable>
             </View>
           )}
         </View>
@@ -298,7 +326,7 @@ export function TransacoesScreen({ transacoes, logs, onAdicionar, onExcluir, onE
         )}
       </View>
     );
-  };
+  }, [logs, transacoes, isFechado]);
 
   const currentThemeColor = useMemo(() => {
     const map: Record<CategoriaTransacao, string> = {
@@ -314,9 +342,10 @@ export function TransacoesScreen({ transacoes, logs, onAdicionar, onExcluir, onE
   }, [categoria]);
 
   return (
-    <FlatList
-      className="flex-1"
-      showsVerticalScrollIndicator={false}
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+      <FlatList
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
       overScrollMode="never"
       keyboardShouldPersistTaps="handled"
       data={listagem}
@@ -393,6 +422,9 @@ export function TransacoesScreen({ transacoes, logs, onAdicionar, onExcluir, onE
                         className="rounded-[24px] border bg-ink-800 px-6 py-5 text-2xl font-black text-zinc-100" 
                         value={valorSistema} 
                         onChangeValue={(v) => { setValorSistema(v); setPreConfirmado(false); }} 
+                        returnKeyType="next"
+                        onSubmitEditing={() => descricaoRef.current?.focus()}
+                        blurOnSubmit={false}
                       />
                     </View>
                     <View className="mt-1">
@@ -417,6 +449,7 @@ export function TransacoesScreen({ transacoes, logs, onAdicionar, onExcluir, onE
                     <View className="flex-row gap-3 w-full">
                       <View className="flex-[1.5] min-w-0">
                         <TextInput 
+                          ref={descricaoRef}
                           style={{ borderColor: `${currentThemeColor}20` }}
                           className="rounded-[24px] border bg-ink-800 px-6 py-5 text-zinc-200 font-bold" 
                           placeholder="Descrição" 
@@ -501,18 +534,24 @@ export function TransacoesScreen({ transacoes, logs, onAdicionar, onExcluir, onE
                 <View className="flex-row gap-2">
                   {editingId && <Pressable className="flex-1 rounded-[24px] bg-zinc-800 py-6" onPress={resetForm}><Text className="text-center font-black uppercase text-zinc-400 text-xs">Sair</Text></Pressable>}
                   <Pressable 
-                    style={{ backgroundColor: currentThemeColor }}
-                    className="flex-[2] rounded-[24px] py-6 shadow-2xl" 
+                    style={{ backgroundColor: currentThemeColor, opacity: isSubmitting ? 0.7 : 1 }}
+                    className="flex-[2] rounded-[24px] py-6 shadow-2xl flex-row items-center justify-center gap-2" 
                     onPress={() => {
+                      if (isSubmitting) return;
                       if (preConfirmado) {
                         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                       }
                       onSalvar();
                     }}
+                    disabled={isSubmitting}
                   >
-                    <Text className={`text-center font-black uppercase text-xs ${categoria === "compra_vista" ? "text-zinc-950" : "text-zinc-100"}`}>
-                      {preConfirmado ? "Confirmar Diferença?" : (editingId ? "Salvar Alterações" : "Registrar Lançamento")}
-                    </Text>
+                    {isSubmitting ? (
+                      <ActivityIndicator color={categoria === "compra_vista" ? "#09090b" : "#f4f4f5"} size="small" />
+                    ) : (
+                      <Text className={`text-center font-black uppercase text-xs ${categoria === "compra_vista" ? "text-zinc-950" : "text-zinc-100"}`}>
+                        {preConfirmado ? "Confirmar Diferença?" : (editingId ? "Salvar Alterações" : "Registrar Lançamento")}
+                      </Text>
+                    )}
                   </Pressable>
                 </View>
               </View>
@@ -545,5 +584,6 @@ export function TransacoesScreen({ transacoes, logs, onAdicionar, onExcluir, onE
       ListEmptyComponent={<View className="rounded-[32px] border border-dashed border-zinc-800 py-20 items-center justify-center mt-4"><Text className="text-zinc-600 font-bold uppercase tracking-widest text-xs">Nenhum lançamento</Text></View>}
       ListFooterComponent={!showAll && transacoes.length > 10 ? <Pressable onPress={() => setShowAll(true)} className="mx-auto w-full max-w-[460px] flex-row items-center justify-center gap-2 py-6 mt-4 rounded-[32px] border border-dashed border-zinc-800"><ChevronDown size={16} color="#3f3f46" /><Text className="text-[10px] font-black uppercase text-zinc-600">Ver todos</Text></Pressable> : null}
     />
+    </KeyboardAvoidingView>
   );
 }

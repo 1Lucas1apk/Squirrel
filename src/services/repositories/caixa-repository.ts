@@ -3,6 +3,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  getDocsFromCache,
   setDoc,
   updateDoc as fsUpdateDoc,
   deleteDoc,
@@ -223,8 +224,19 @@ export async function listarTurnosRecentes(): Promise<Turno[]> {
 
   // Busca do Firestore (Novos)
   try {
-    const fsSnap = await getDocs(collection(dbFS, `users/${uid}/turnos`));
-    fsSnap.docs.forEach(d => allTurnos.push(mapTurno(d.id, d.data())));
+    const colRef = collection(dbFS, `users/${uid}/turnos`);
+    let fsSnap;
+    try {
+      // Tenta buscar do servidor com timeout de 3 segundos
+      fsSnap = await Promise.race([
+        getDocs(colRef),
+        new Promise<any>((_, rej) => setTimeout(() => rej(new Error("timeout")), 3000))
+      ]);
+    } catch (err) {
+      // Se a internet falhar ou estiver muito lenta, força a leitura do cache offline local
+      fsSnap = await getDocsFromCache(colRef);
+    }
+    fsSnap.docs.forEach((d: any) => allTurnos.push(mapTurno(d.id, d.data())));
   } catch (e) {
     console.warn("Erro ao buscar turnos do Firestore", e);
   }
@@ -605,6 +617,25 @@ export async function atualizarConferenciaConvenio(turnoId: string, id: string, 
   const uid = await getUserIdAsync();
   if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/registros_convenio/${turnoId}/${id}`), { status_conferencia: status });
   else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/registros_convenio/${id}`), { status_conferencia: status });
+}
+
+export async function vincularRegistrosRepository(
+  turnoId: string,
+  transacaoId: string,
+  fantasmaId: string
+) {
+  const uid = await getUserIdAsync();
+  const db = getFirestoreDb();
+  const timestamp = Date.now();
+
+  const legacy = isLegacy(turnoId);
+  const payloadT = { transacao_vinculada_id: fantasmaId, atualizado_em: timestamp };
+  if (legacy) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}/${transacaoId}`), payloadT);
+  else await fsUpdateDoc(doc(db, `users/${uid}/turnos/${turnoId}/transacoes/${transacaoId}`), payloadT);
+
+  const payloadF = { transacao_vinculada_id: transacaoId, resolvido: true, comprovado_pix: true, atualizado_em: timestamp };
+  if (legacy) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/fantasmas_lembretes/${turnoId}/${fantasmaId}`), payloadF);
+  else await fsUpdateDoc(doc(db, `users/${uid}/turnos/${turnoId}/fantasmas_lembretes/${fantasmaId}`), payloadF);
 }
 
 export async function salvarRelatorioPOSTotal(turnoId: string, valor: number): Promise<void> {

@@ -193,6 +193,7 @@ export function ChecklistScreen({ transacoes, pos, convenios, logs, onToggle, on
   const [valorSistemaNovo, setValorSistemaNovo] = useState(0);
   const [valorRealPago, setValorRealPago] = useState(0);
   const [notaErro, setNotaErro] = useState("");
+  const [searchByText, setSearchByText] = useState(false);
 
   const transacoesPorAba = transacoes.filter((t) => {
     if (abaAtiva === "dinheiro") {
@@ -470,25 +471,40 @@ export function ChecklistScreen({ transacoes, pos, convenios, logs, onToggle, on
             )}
 
             <View className="rounded-[32px] border border-zinc-800 bg-ink-900 p-6 shadow-2xl mt-2">
-              <View className="flex-row items-center gap-3 mb-4 ml-1">
-                <Search size={14} color="#71717a" />
-                <Text className="text-[10px] font-black uppercase tracking-[3px] text-zinc-600">
-                  Localizar Recibo
-                </Text>
+              <View className="flex-row items-center justify-between mb-4 ml-1">
+                <View className="flex-row items-center gap-3">
+                  <Search size={14} color="#71717a" />
+                  <Text className="text-[10px] font-black uppercase tracking-[3px] text-zinc-600">
+                    Localizar Recibo
+                  </Text>
+                </View>
+                <Pressable onPress={() => setSearchByText(!searchByText)} className={`px-2 py-1.5 rounded-lg border flex-row items-center gap-1 ${searchByText ? 'bg-zinc-800 border-zinc-700' : 'bg-transparent border-zinc-800'}`}>
+                  <Text className={`text-[9px] font-black uppercase tracking-wider ${searchByText ? 'text-zinc-300' : 'text-zinc-600'}`}>abc</Text>
+                </Pressable>
               </View>
-              <TextInput
-                className="rounded-2xl border border-zinc-700 bg-ink-800 px-6 py-5 text-zinc-100 font-bold text-lg"
-                placeholder="Valor ou descrição..."
-                placeholderTextColor="#3f3f46"
-                value={busca}
-                onChangeText={setBusca}
-                onFocus={() => {
-                  setIsSearchFocused(true);
-                  flatListRef.current?.scrollToOffset({ offset: 320, animated: true });
-                }}
-                onBlur={() => setIsSearchFocused(false)}
-                keyboardType="numbers-and-punctuation"
-              />
+              <View className="relative justify-center">
+                <TextInput
+                  className="rounded-2xl border border-zinc-700 bg-ink-800 px-6 py-5 text-zinc-100 font-bold text-lg pr-12"
+                  placeholder="Valor ou descrição..."
+                  placeholderTextColor="#3f3f46"
+                  value={busca}
+                  onChangeText={setBusca}
+                  onFocus={() => {
+                    setIsSearchFocused(true);
+                    flatListRef.current?.scrollToOffset({ offset: 320, animated: true });
+                  }}
+                  onBlur={() => setIsSearchFocused(false)}
+                  keyboardType={searchByText ? "default" : "numeric"}
+                />
+                {busca.length > 0 && (
+                  <Pressable 
+                    onPress={() => setBusca("")} 
+                    className="absolute right-4 p-2 bg-zinc-700/50 rounded-full active:bg-zinc-700"
+                  >
+                    <X size={16} color="#a1a1aa" />
+                  </Pressable>
+                )}
+              </View>
             </View>
 
             {modoChecagem === "transacoes" && (

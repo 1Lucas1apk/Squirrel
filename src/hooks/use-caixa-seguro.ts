@@ -23,6 +23,7 @@ import {
   editarTransacao,
   removerTransacao,
   adicionarFantasma,
+  vincularRegistrosRepository,
   atualizarFantasmaCompleto,
   removerFantasma,
   registrarLogAlteracao,
@@ -115,14 +116,28 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
     const unsubTransacoes = ouvirTransacoes(turno.id, (data, isSuspectEmpty) => {
       const state = useCaixaStore.getState();
       const isNewTurno = state.turno && (Date.now() - state.turno.criadoEm < 5 * 60 * 1000);
-      if (isSuspectEmpty && !isNewTurno && !state.isTransacoesLoaded) return;
+      if (isSuspectEmpty && !isNewTurno && !state.isTransacoesLoaded) {
+        setTimeout(() => {
+          if (!useCaixaStore.getState().isTransacoesLoaded) {
+            useCaixaStore.setState({ transacoes: data, isTransacoesLoaded: true });
+          }
+        }, 2000);
+        return;
+      }
       useCaixaStore.setState({ transacoes: data, isTransacoesLoaded: true });
     });
     
     const unsubFantasmas = ouvirFantasmas(turno.id, (data, isSuspectEmpty) => {
       const state = useCaixaStore.getState();
       const isNewTurno = state.turno && (Date.now() - state.turno.criadoEm < 5 * 60 * 1000);
-      if (isSuspectEmpty && !isNewTurno && !state.isFantasmasLoaded) return;
+      if (isSuspectEmpty && !isNewTurno && !state.isFantasmasLoaded) {
+        setTimeout(() => {
+          if (!useCaixaStore.getState().isFantasmasLoaded) {
+            useCaixaStore.setState({ fantasmas: data, isFantasmasLoaded: true });
+          }
+        }, 2000);
+        return;
+      }
       useCaixaStore.setState({ fantasmas: data, isFantasmasLoaded: true });
     });
     
@@ -133,14 +148,28 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
     const unsubPOS = ouvirRegistrosPOS(turno.id, (data, isSuspectEmpty) => {
       const state = useCaixaStore.getState();
       const isNewTurno = state.turno && (Date.now() - state.turno.criadoEm < 5 * 60 * 1000);
-      if (isSuspectEmpty && !isNewTurno && !state.isRegistrosPOSLoaded) return;
+      if (isSuspectEmpty && !isNewTurno && !state.isRegistrosPOSLoaded) {
+        setTimeout(() => {
+          if (!useCaixaStore.getState().isRegistrosPOSLoaded) {
+            useCaixaStore.setState({ registrosPOS: data, isRegistrosPOSLoaded: true });
+          }
+        }, 2000);
+        return;
+      }
       useCaixaStore.setState({ registrosPOS: data, isRegistrosPOSLoaded: true });
     });
     
     const unsubConvenio = ouvirRegistrosConvenio(turno.id, (data, isSuspectEmpty) => {
       const state = useCaixaStore.getState();
       const isNewTurno = state.turno && (Date.now() - state.turno.criadoEm < 5 * 60 * 1000);
-      if (isSuspectEmpty && !isNewTurno && !state.isRegistrosConvenioLoaded) return;
+      if (isSuspectEmpty && !isNewTurno && !state.isRegistrosConvenioLoaded) {
+        setTimeout(() => {
+          if (!useCaixaStore.getState().isRegistrosConvenioLoaded) {
+            useCaixaStore.setState({ registrosConvenio: data, isRegistrosConvenioLoaded: true });
+          }
+        }, 2000);
+        return;
+      }
       useCaixaStore.setState({ registrosConvenio: data, isRegistrosConvenioLoaded: true });
     });
 
@@ -200,6 +229,10 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
     syncConflicts: [], // Firestore resolve conflitos
     carregarHistoricoTurnos,
     carregarTurnoExistente: async (id: string) => {
+      const currentTurno = useCaixaStore.getState().turno;
+      if (currentTurno?.id === id) {
+        return; // Já está carregado, não reseta as arrays
+      }
       useCaixaStore.setState({ loading: true, error: null });
       try {
         const t = historicoTurnos.find(x => x.id === id);
@@ -359,5 +392,9 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
       if (!turno) return;
       await removerConvenio(turno.id, id);
     },
+    vincularRegistros: async (transacaoId: string, fantasmaId: string) => {
+      if (!turno) return;
+      await vincularRegistrosRepository(turno.id, transacaoId, fantasmaId);
+    }
   };
 }
