@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { 
-  criarLoja, 
-  entrarNaLoja, 
-  sairDaLoja as sairDaLojaRepo, 
+import {
+  criarLoja,
+  entrarNaLoja,
+  sairDaLoja as sairDaLojaRepo,
   buscarFechamentosPOSDoDia,
   ouvirFechamentosPOSDoDia,
   registrarFechamentoPOS,
@@ -105,7 +105,7 @@ export function useLoja() {
   }
 
   function ouvirFechamentosPOS(dataReferencia: string, meuTurnoId: string, meuCriadoEm: number, callback: (f: FechamentoPOS[]) => void): () => void {
-    if (!lojaCodigo) return () => {};
+    if (!lojaCodigo) return () => { };
     return ouvirFechamentosPOSDoDia(lojaCodigo, dataReferencia, meuTurnoId, meuCriadoEm, callback);
   }
 

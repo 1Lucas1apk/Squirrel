@@ -8,7 +8,7 @@ import {
 } from "firebase/auth";
 import NetInfo from "@react-native-community/netinfo";
 import { getFirebaseAuth } from "../services/firebase/client";
-import { getCredentials, clearCredentials } from "../services/auth-storage";
+import { getCredentials, clearCredentials, saveUid, getUid } from "../services/auth-storage";
 
 const AUTH_TIMEOUT_MS = 8000;
 let silentLoginInFlight = false;
@@ -40,9 +40,11 @@ export function useAuth() {
     // 1. Carrega imediatamente do SecureStore para pular a tela de login (Offline First)
     async function checkLocalSession() {
       try {
-        const creds = await getCredentials();
+        const [creds, storedUid] = await Promise.all([getCredentials(), getUid()]);
         if (creds && creds.email && isMounted) {
-          setUser({ email: creds.email, uid: "local-session" } as User);
+          // Usa o UID real salvo no SecureStore (não mais "local-session")
+          const uid = storedUid || "local-session";
+          setUser({ email: creds.email, uid } as User);
           setLoading(false);
         }
       } catch (e) {
@@ -77,6 +79,8 @@ export function useAuth() {
 
       if (firebaseUser) {
         console.log("[Auth] Sessão Firebase restaurada com sucesso.");
+        // Persiste o UID real para uso offline futuro
+        void saveUid(firebaseUser.uid);
         setUser(firebaseUser);
         setLoading(false);
       } else {

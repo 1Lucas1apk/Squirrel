@@ -10,6 +10,7 @@ import {
   ouvirTransacoes,
   ouvirTurno,
   removerTurnoTotal,
+  deletarTurnoPermanente,
   salvarAjusteSobra,
   salvarTotaisTurno,
   salvarContagemCedulas,
@@ -38,10 +39,11 @@ import {
   salvarRelatorioPOSTotal,
   atualizarTurnoAtivoConta,
   ouvirTurnoAtivoConta,
+  restaurarTurnoExcluido,
 } from "../services/repositories/caixa-repository";
 import { LembreteFantasma, Transacao, Turno, ContagemCedulas, LogAlteracao } from "../types/domain";
 import { getTodayReferenceDate } from "../utils/date";
-import { clearCurrentShiftCache, saveCurrentShiftCache } from "../services/local-storage";
+import { clearCurrentShiftCache, saveCurrentShiftCache, loadCurrentShiftCache, saveSnapshot } from "../services/local-storage";
 import { scheduleInactivityAlert } from "../services/notifications";
 import { useCaixaStore } from "../store/caixa-store";
 
@@ -49,11 +51,32 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
   const state = useCaixaStore();
   const { turno, transacoes, fantasmas, registrosPOS, registrosConvenio, logs, historicoTurnos, loading, error, isTransacoesLoaded, isFantasmasLoaded, isRegistrosPOSLoaded, isRegistrosConvenioLoaded } = state;
 
-  // Carregamento Inicial (Busca o último turno aberto se não houver um ativo)
+  // Carregamento Inicial: Cache local PRIMEIRO, depois Firebase
   useEffect(() => {
     async function init() {
       useCaixaStore.setState({ loading: true, error: null });
       try {
+        // PASSO 1: Carrega do cache local (MMKV) imediatamente para mostrar dados na tela
+        // Isso resolve o bug de abrir o app e não ver as transações
+        const cached = await loadCurrentShiftCache();
+        if (cached.turno && !useCaixaStore.getState().turno) {
+          console.log("[CaixaSeguro] Restaurando dados do cache local...");
+          useCaixaStore.setState({
+            turno: cached.turno,
+            transacoes: cached.transacoes,
+            fantasmas: cached.fantasmas,
+            logs: cached.logs,
+            registrosPOS: cached.registrosPOS || [],
+            registrosConvenio: cached.registrosConvenio || [],
+            // NÃO marca como loaded — os listeners do Firestore vão sobrescrever com dados atualizados
+            isTransacoesLoaded: false,
+            isFantasmasLoaded: false,
+            isRegistrosPOSLoaded: false,
+            isRegistrosConvenioLoaded: false,
+          });
+        }
+
+        // PASSO 2: Busca o último turno aberto do Firebase (pode sobrescrever o cache)
         if (!useCaixaStore.getState().turno) {
           const ultimo = await buscarUltimoTurnoAberto();
           if (ultimo) {
@@ -62,13 +85,19 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
         }
         await carregarHistoricoTurnos();
       } catch (err) {
-        useCaixaStore.setState({ error: "Erro ao iniciar o caixa." });
+        console.error("[CaixaSeguro] Erro ao iniciar:", err);
+        // Se falhou mas tem cache, não mostra erro — o usuário pode usar offline
+        const currentState = useCaixaStore.getState();
+        if (!currentState.turno) {
+          useCaixaStore.setState({ error: "Erro ao iniciar o caixa." });
+        }
       } finally {
         useCaixaStore.setState({ loading: false });
       }
     }
     init();
     
+    // Sincronização multi-dispositivo: ouve mudanças de turno ativo na conta
     const unsub = ouvirTurnoAtivoConta((activeId) => {
       if (!activeId) return;
       const state = useCaixaStore.getState();
@@ -96,49 +125,66 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
     };
   }, []);
 
-  // Backup em Local Storage apenas como segurança da interface (opcional agora)
+  // Backup em Local Storage (inclui POS e Convênio agora)
   useEffect(() => {
     if (turno) {
-      void saveCurrentShiftCache(turno, transacoes, fantasmas, logs);
+      void saveCurrentShiftCache(turno, transacoes, fantasmas, logs, registrosPOS, registrosConvenio);
     }
-  }, [turno, transacoes, fantasmas, logs]);
+  }, [turno, transacoes, fantasmas, logs, registrosPOS, registrosConvenio]);
 
   // Ouvintes do Banco de Dados (Firestore / RTDB)
+  // Proteção contra perda de dados: se o Firestore retorna vazio do cache mas
+  // o local tem dados, usa o local como fallback até o servidor responder
   useEffect(() => {
     if (!turno?.id) return;
     
-    // O banco de dados (Firestore ou RTDB) avisará automaticamente se houver mudanças.
-    // O Firestore resolve offline e merges automaticamente antes de disparar isso.
     const unsubTurno = ouvirTurno(turno.id, (data) => {
       useCaixaStore.setState({ turno: data || null });
     });
     
-    const unsubTransacoes = ouvirTransacoes(turno.id, (data, isSuspectEmpty) => {
+    // Helper: aceita dados do Firestore apenas se faz sentido
+    // Previne o bug de "abrir o app e as transações sumirem"
+    const handleFirestoreData = <T>(
+      key: "transacoes" | "fantasmas" | "registrosPOS" | "registrosConvenio",
+      loadedKey: "isTransacoesLoaded" | "isFantasmasLoaded" | "isRegistrosPOSLoaded" | "isRegistrosConvenioLoaded",
+      data: T[],
+      isSuspectEmpty?: boolean
+    ) => {
       const state = useCaixaStore.getState();
+      const currentData = state[key] as T[];
       const isNewTurno = state.turno && (Date.now() - state.turno.criadoEm < 5 * 60 * 1000);
-      if (isSuspectEmpty && !isNewTurno && !state.isTransacoesLoaded) {
-        setTimeout(() => {
-          if (!useCaixaStore.getState().isTransacoesLoaded) {
-            useCaixaStore.setState({ transacoes: data, isTransacoesLoaded: true });
-          }
-        }, 2000);
-        return;
+      const alreadyLoaded = state[loadedKey];
+
+      // Caso 1: dados vieram vazios do cache do Firestore (suspeito)
+      // E já temos dados locais — NÃO sobrescreve, espera o servidor
+      if (isSuspectEmpty && !isNewTurno) {
+        if (currentData.length > 0) {
+          // Já temos dados no estado (do cache MMKV), mantém eles
+          console.log(`[CaixaSeguro] ${key}: Firestore cache vazio mas temos ${currentData.length} itens locais. Mantendo local.`);
+          return;
+        }
+        // Se não temos dados locais E é a primeira vez, espera 3s antes de aceitar vazio
+        if (!alreadyLoaded) {
+          setTimeout(() => {
+            if (!useCaixaStore.getState()[loadedKey]) {
+              console.log(`[CaixaSeguro] ${key}: Timeout - aceitando resultado vazio.`);
+              useCaixaStore.setState({ [key]: data, [loadedKey]: true } as any);
+            }
+          }, 3000);
+          return;
+        }
       }
-      useCaixaStore.setState({ transacoes: data, isTransacoesLoaded: true });
+
+      // Caso 2: dados vieram com conteúdo, ou turno é novo — aceita normalmente
+      useCaixaStore.setState({ [key]: data, [loadedKey]: true } as any);
+    };
+
+    const unsubTransacoes = ouvirTransacoes(turno.id, (data, isSuspectEmpty) => {
+      handleFirestoreData("transacoes", "isTransacoesLoaded", data, isSuspectEmpty);
     });
     
     const unsubFantasmas = ouvirFantasmas(turno.id, (data, isSuspectEmpty) => {
-      const state = useCaixaStore.getState();
-      const isNewTurno = state.turno && (Date.now() - state.turno.criadoEm < 5 * 60 * 1000);
-      if (isSuspectEmpty && !isNewTurno && !state.isFantasmasLoaded) {
-        setTimeout(() => {
-          if (!useCaixaStore.getState().isFantasmasLoaded) {
-            useCaixaStore.setState({ fantasmas: data, isFantasmasLoaded: true });
-          }
-        }, 2000);
-        return;
-      }
-      useCaixaStore.setState({ fantasmas: data, isFantasmasLoaded: true });
+      handleFirestoreData("fantasmas", "isFantasmasLoaded", data, isSuspectEmpty);
     });
     
     const unsubLogs = ouvirLogsAuditoria(turno.id, (data) => {
@@ -146,31 +192,11 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
     });
 
     const unsubPOS = ouvirRegistrosPOS(turno.id, (data, isSuspectEmpty) => {
-      const state = useCaixaStore.getState();
-      const isNewTurno = state.turno && (Date.now() - state.turno.criadoEm < 5 * 60 * 1000);
-      if (isSuspectEmpty && !isNewTurno && !state.isRegistrosPOSLoaded) {
-        setTimeout(() => {
-          if (!useCaixaStore.getState().isRegistrosPOSLoaded) {
-            useCaixaStore.setState({ registrosPOS: data, isRegistrosPOSLoaded: true });
-          }
-        }, 2000);
-        return;
-      }
-      useCaixaStore.setState({ registrosPOS: data, isRegistrosPOSLoaded: true });
+      handleFirestoreData("registrosPOS", "isRegistrosPOSLoaded", data, isSuspectEmpty);
     });
     
     const unsubConvenio = ouvirRegistrosConvenio(turno.id, (data, isSuspectEmpty) => {
-      const state = useCaixaStore.getState();
-      const isNewTurno = state.turno && (Date.now() - state.turno.criadoEm < 5 * 60 * 1000);
-      if (isSuspectEmpty && !isNewTurno && !state.isRegistrosConvenioLoaded) {
-        setTimeout(() => {
-          if (!useCaixaStore.getState().isRegistrosConvenioLoaded) {
-            useCaixaStore.setState({ registrosConvenio: data, isRegistrosConvenioLoaded: true });
-          }
-        }, 2000);
-        return;
-      }
-      useCaixaStore.setState({ registrosConvenio: data, isRegistrosConvenioLoaded: true });
+      handleFirestoreData("registrosConvenio", "isRegistrosConvenioLoaded", data, isSuspectEmpty);
     });
 
     return () => {
@@ -207,9 +233,46 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
   async function carregarHistoricoTurnos() {
     try {
       const todos = await listarTurnosRecentes();
-      useCaixaStore.setState({ historicoTurnos: todos });
+      
+      // Limpeza automática (Hard delete) apenas para turnos já na LIXEIRA há mais de 30 dias
+      const TRINTA_DIAS_MS = 30 * 24 * 60 * 60 * 1000;
+      const agora = Date.now();
+      
+      const turnosNaLixeira = todos.filter(t => t.excluido);
+      const lixoAntigo = turnosNaLixeira.filter(t => (agora - t.atualizadoEm) >= TRINTA_DIAS_MS);
+      
+      if (lixoAntigo.length > 0) {
+        // Deleta os lixos antigos no background para não travar a aplicação
+        Promise.all(lixoAntigo.map(t => deletarTurnoPermanente(t.id)))
+          .catch(err => console.warn("Erro ao limpar lixeira antiga automaticamente:", err));
+      }
+
+      // Remove da lista os que acabamos de mandar deletar (para não aparecerem mais)
+      const idsDeletados = lixoAntigo.map(t => t.id);
+      const historicoAtualizado = todos.filter(t => !idsDeletados.includes(t.id));
+      
+      useCaixaStore.setState({ historicoTurnos: historicoAtualizado });
     } catch (err) {
       console.warn("Erro ao buscar historico", err);
+    }
+  }
+
+  // Helper: salva snapshot automaticamente antes de operações destrutivas
+  async function autoSnapshot(reason: string) {
+    const currentState = useCaixaStore.getState();
+    if (!currentState.turno) return;
+    try {
+      await saveSnapshot(
+        reason, 
+        currentState.turno, 
+        currentState.transacoes, 
+        currentState.fantasmas, 
+        currentState.logs, 
+        currentState.registrosPOS, 
+        currentState.registrosConvenio
+      );
+    } catch (e) {
+      console.error("[Snapshot] Falha ao salvar snapshot automático:", e);
     }
   }
 
@@ -272,6 +335,8 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
     },
     fecharTurno: async () => {
       if (!turno) return;
+      // Snapshot automático antes de fechar o turno
+      await autoSnapshot("antes_fechar_turno");
       await atualizarStatusTurno(turno.id, "fechado");
     },
     reabrirTurno: async () => {
@@ -279,9 +344,36 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
       await atualizarStatusTurno(turno.id, "aberto");
     },
     excluirTurno: async (id: string) => {
+      const currentState = useCaixaStore.getState();
+      const turnoAlvo = currentState.historicoTurnos.find(x => x.id === id);
+      if (turnoAlvo) {
+        await saveSnapshot(
+          "antes_excluir_turno",
+          turnoAlvo,
+          currentState.turno?.id === id ? currentState.transacoes : [],
+          currentState.turno?.id === id ? currentState.fantasmas : [],
+          currentState.turno?.id === id ? currentState.logs : [],
+          currentState.turno?.id === id ? currentState.registrosPOS : [],
+          currentState.turno?.id === id ? currentState.registrosConvenio : []
+        );
+      }
       await removerTurnoTotal(id);
-      if (turno?.id === id) useCaixaStore.setState({ turno: null });
+      if (currentState.turno?.id === id) useCaixaStore.setState({ turno: null });
       await carregarHistoricoTurnos();
+    },
+    restaurarDia: async (id: string) => {
+      await restaurarTurnoExcluido(id);
+      await carregarHistoricoTurnos();
+    },
+    deletarDiaPermanente: async (id: string) => {
+      await deletarTurnoPermanente(id);
+      const currentState = useCaixaStore.getState();
+      if (currentState.turno?.id === id) useCaixaStore.setState({ turno: null });
+      await carregarHistoricoTurnos();
+    },
+    // Snapshot manual para o botão de "backup" nas configurações
+    criarSnapshotManual: async () => {
+      await autoSnapshot("manual");
     },
     definirAjusteSobra: async (v: number) => {
       if (!turno) return;
@@ -294,14 +386,17 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
     criarTransacao: async (input: any) => {
       if (!turno) return;
       void scheduleInactivityAlert();
+      await autoSnapshot("Antes de criar transação");
       await adicionarTransacao(turno.id, input);
     },
     excluirTransacao: async (id: string) => {
       if (!turno) return;
+      await autoSnapshot("Antes de excluir transação");
       await removerTransacao(turno.id, id);
     },
     editarLançamento: async (id: string, input: any) => {
       if (!turno) return;
+      await autoSnapshot("Antes de editar transação");
       await editarTransacao(turno.id, id, input);
     },
     alternarConferencia: async (t: Transacao) => {
@@ -334,14 +429,17 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
     },
     criarFantasma: async (input: any) => {
       if (!turno) return;
+      await autoSnapshot("Antes de adicionar nota");
       await adicionarFantasma(turno.id, input);
     },
     editarFantasma: async (id: string, input: any) => {
       if (!turno) return;
+      await autoSnapshot("Antes de editar nota");
       await atualizarFantasmaCompleto(turno.id, id, input);
     },
     excluirFantasma: async (id: string) => {
       if (!turno) return;
+      await autoSnapshot("Antes de excluir nota");
       await removerFantasma(turno.id, id);
     },
     alternarFantasmaResolvido: async (f: LembreteFantasma) => {
@@ -365,14 +463,17 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
     criarRegistroPOS: async (input: any) => {
       if (!turno) return;
       void scheduleInactivityAlert();
+      await autoSnapshot("Antes de adicionar POS");
       await adicionarRegistroPOS(turno.id, input);
     },
     editarRegistroPOS: async (id: string, input: any) => {
       if (!turno) return;
+      await autoSnapshot("Antes de editar POS");
       await editarRegistroPOS(turno.id, id, input);
     },
     excluirRegistroPOS: async (id: string) => {
       if (!turno) return;
+      await autoSnapshot("Antes de excluir POS");
       await removerRegistroPOS(turno.id, id);
     },
     salvarRelatorioPOSTotal: async (valor: number) => {
@@ -382,14 +483,17 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
     criarConvenio: async (input: any) => {
       if (!turno) return;
       void scheduleInactivityAlert();
+      await autoSnapshot("Antes de adicionar Convênio");
       await adicionarConvenio(turno.id, input);
     },
     editarConvenio: async (id: string, input: any) => {
       if (!turno) return;
+      await autoSnapshot("Antes de editar Convênio");
       await editarConvenio(turno.id, id, input);
     },
     excluirConvenio: async (id: string) => {
       if (!turno) return;
+      await autoSnapshot("Antes de excluir Convênio");
       await removerConvenio(turno.id, id);
     },
     vincularRegistros: async (transacaoId: string, fantasmaId: string) => {

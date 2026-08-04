@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 
 const KEY_EMAIL = 'squirrel_auth_email';
 const KEY_PASS = 'squirrel_auth_pass';
+const KEY_UID = 'squirrel_auth_uid';
 
 export async function saveCredentials(email: string, pass: string) {
   if (Platform.OS === 'web') {
@@ -26,12 +27,29 @@ export async function getCredentials() {
   return { email, pass };
 }
 
+export async function saveUid(uid: string) {
+  if (Platform.OS === 'web') {
+    localStorage.setItem(KEY_UID, uid);
+    return;
+  }
+  await SecureStore.setItemAsync(KEY_UID, uid);
+}
+
+export async function getUid(): Promise<string | null> {
+  if (Platform.OS === 'web') {
+    return localStorage.getItem(KEY_UID);
+  }
+  return SecureStore.getItemAsync(KEY_UID);
+}
+
 export async function clearCredentials() {
   if (Platform.OS === 'web') {
     localStorage.removeItem(KEY_EMAIL);
     localStorage.removeItem(KEY_PASS);
+    localStorage.removeItem(KEY_UID);
     return;
   }
   await SecureStore.deleteItemAsync(KEY_EMAIL);
   await SecureStore.deleteItemAsync(KEY_PASS);
+  await SecureStore.deleteItemAsync(KEY_UID);
 }

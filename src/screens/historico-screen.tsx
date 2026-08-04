@@ -24,15 +24,19 @@ interface HistoricoScreenProps {
   onOpen: (turnoId: string) => void;
   onExcluirDia: (turnoId: string) => void;
   onToggleRepasse?: (turnoId: string, repassado: boolean) => void;
+  onRestaurarDia?: (turnoId: string) => void;
+  onDeletarPermanente?: (turnoId: string) => void;
   onVoltar?: () => void;
+  textoVoltar?: string;
 }
 
-export function HistoricoScreen({ turnos, loading, onRefresh, onOpen, onExcluirDia, onToggleRepasse, onVoltar }: HistoricoScreenProps) {
+export function HistoricoScreen({ turnos, loading, onRefresh, onOpen, onExcluirDia, onRestaurarDia, onDeletarPermanente, onToggleRepasse, onVoltar, textoVoltar = "Sair" }: HistoricoScreenProps) {
   const [busca, setBusca] = useState("");
+  const [mostrarLixeira, setMostrarLixeira] = useState(false);
   const [visibleCount, setVisibleCount] = useState(10);
 
   const turnosFiltrados = useMemo(() => {
-    let result = turnos;
+    let result = turnos.filter(t => mostrarLixeira ? t.excluido : !t.excluido);
     if (busca.trim()) {
       const termo = busca.toLowerCase();
       result = turnos.filter(t => 
@@ -43,15 +47,15 @@ export function HistoricoScreen({ turnos, loading, onRefresh, onOpen, onExcluirD
     }
     // Ordena por data (mais recente primeiro)
     return [...result].sort((a, b) => b.dataReferencia.localeCompare(a.dataReferencia));
-  }, [turnos, busca]);
+  }, [turnos, busca, mostrarLixeira]);
 
   const listagemPaginada = useMemo(() => {
     return turnosFiltrados.slice(0, visibleCount);
   }, [turnosFiltrados, visibleCount]);
 
   const chartData = useMemo(() => {
-    // Pega os últimos 7 turnos cronologicamente para o gráfico
-    const last7 = [...turnos]
+    // Pega os últimos 7 turnos cronologicamente para o gráfico (ignora excluídos)
+    const last7 = [...turnos.filter(t => !t.excluido)]
       .sort((a, b) => a.dataReferencia.localeCompare(b.dataReferencia))
       .slice(-7);
     
@@ -85,8 +89,12 @@ export function HistoricoScreen({ turnos, loading, onRefresh, onOpen, onExcluirD
               : 'border-zinc-800 bg-ink-900'
       }`}>
         <View className="p-6">
-          <Pressable className="flex-row items-center justify-between mb-4" onPress={() => onOpen(turno.id)}>
-            <View className="flex-1 flex-row items-center gap-4">
+          <Pressable 
+            className="flex-row items-center justify-between mb-4" 
+            onPress={() => !turno.excluido && onOpen(turno.id)}
+            disabled={turno.excluido}
+          >
+            <View className="flex-1 flex-row items-center gap-4 opacity-100" style={{ opacity: turno.excluido ? 0.5 : 1 }}>
               <View className={`h-12 w-12 items-center justify-center rounded-[18px] border ${
                 temQuebra ? 'bg-red-500/10 border-red-500/20' : temSobra ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-ink-800 border-zinc-800'
               }`}>
@@ -113,13 +121,32 @@ export function HistoricoScreen({ turnos, loading, onRefresh, onOpen, onExcluirD
             </View>
             
             <View className="flex-row items-center gap-2 ml-2">
-              <Pressable 
-                onPress={() => onExcluirDia(turno.id)}
-                hitSlop={10}
-                className="h-10 w-10 items-center justify-center rounded-[14px] bg-red-500/10 border border-red-500/20"
-              >
-                <Trash2 size={16} color="#f87171" />
-              </Pressable>
+              {turno.excluido ? (
+                <>
+                  <Pressable 
+                    onPress={() => onRestaurarDia && onRestaurarDia(turno.id)}
+                    hitSlop={10}
+                    className="h-10 w-10 items-center justify-center rounded-[14px] bg-emerald-500/10 border border-emerald-500/20 mr-2"
+                  >
+                    <RefreshCw size={16} color="#34d399" />
+                  </Pressable>
+                  <Pressable 
+                    onPress={() => onDeletarPermanente && onDeletarPermanente(turno.id)}
+                    hitSlop={10}
+                    className="h-10 w-10 items-center justify-center rounded-[14px] bg-red-500/10 border border-red-500/20"
+                  >
+                    <Trash2 size={16} color="#f87171" />
+                  </Pressable>
+                </>
+              ) : (
+                <Pressable 
+                  onPress={() => onExcluirDia(turno.id)}
+                  hitSlop={10}
+                  className="h-10 w-10 items-center justify-center rounded-[14px] bg-red-500/10 border border-red-500/20"
+                >
+                  <Trash2 size={16} color="#f87171" />
+                </Pressable>
+              )}
             </View>
           </Pressable>
 
@@ -173,7 +200,7 @@ export function HistoricoScreen({ turnos, loading, onRefresh, onOpen, onExcluirD
                     className="px-4 h-10 items-center justify-center rounded-2xl bg-zinc-800 border border-zinc-700" 
                     onPress={onVoltar}
                   >
-                    <Text className="text-[10px] font-black text-zinc-300 uppercase">Sair</Text>
+                    <Text className="text-[10px] font-black text-zinc-300 uppercase">{textoVoltar}</Text>
                   </Pressable>
                 )}
               </View>
@@ -234,7 +261,13 @@ export function HistoricoScreen({ turnos, loading, onRefresh, onOpen, onExcluirD
               </View>
             </View>
             
-            <Text className="ml-2 text-[11px] font-black uppercase tracking-[3px] text-zinc-600">Registros</Text>
+            <View className="flex-row items-center justify-between mt-6 mb-2 px-2">
+              <Text className="text-[11px] font-black uppercase tracking-[3px] text-zinc-600">Registros</Text>
+              <Pressable onPress={() => setMostrarLixeira(!mostrarLixeira)} className="flex-row items-center gap-1.5" hitSlop={10}>
+                <Trash2 size={12} color={mostrarLixeira ? "#f87171" : "#71717a"} />
+                <Text className={`text-[9px] font-black uppercase tracking-[2px] ${mostrarLixeira ? 'text-red-400' : 'text-zinc-500'}`}>{mostrarLixeira ? 'Ocultar Lixeira' : 'Ver Lixeira'}</Text>
+              </Pressable>
+            </View>
           </View>
         }
         ListEmptyComponent={

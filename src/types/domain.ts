@@ -11,11 +11,11 @@ export type CategoriaTransacao =
 
 export type StatusConferencia = "pendente" | "confirmada" | "incorreto";
 
-export type TipoFantasma = 
-  | "pix_recebido_gaveta_saiu" 
-  | "dinheiro_emprestado"      
-  | "destroca_pix_por_nota"    
-  | "lembrete_geral";          
+export type TipoFantasma =
+  | "pix_recebido_gaveta_saiu"
+  | "dinheiro_emprestado"
+  | "destroca_pix_por_nota"
+  | "lembrete_geral";
 
 export type TipoPOS = "cartao" | "pix_loja" | "gas_do_povo";
 
@@ -95,7 +95,7 @@ export interface TotaisTurno {
   gavetaFisico: number;
   especieEnvelope: number;
   pixRepasse: number;
-  pixNoCaixa: number; 
+  pixNoCaixa: number;
   pixDiretoLoja: number;
   totalPOS: number;
   totalConvenio: number;
@@ -139,4 +139,5 @@ export interface Turno {
   observacoesFechamento?: string;
   notaDia?: string;
   posRelatorioTotal?: number;
+  excluido?: boolean;
 }

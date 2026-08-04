@@ -16,11 +16,12 @@ import { POSScreen } from "./pos-screen";
 import { ConvenioScreen } from "./convenio-screen";
 import { CreditsScreen } from "./credits-screen";
 import { RetrospectiveScreen } from "./retrospective-screen";
+import { SnapshotsScreen } from "./snapshots-screen";
 import { AnalyticsModal } from "./analytics-modal";
 import { ChatModal } from "../components/chat/chat-modal";
 import { toBrl } from "../utils/currency";
 
-import { RefreshCw, LayoutDashboard, PlusCircle, CheckSquare, Ghost, History, Share2, Lock, Unlock, CheckCircle2, AlertTriangle, X, AlertCircle, ShieldAlert, MoreHorizontal, Settings, CalendarDays, LogOut, Cloud, CloudOff, Zap, Sparkles, Info, ShieldCheck, Activity, CreditCard, Building2, Store, Search, ChevronDown } from "lucide-react-native";
+import { RefreshCw, LayoutDashboard, PlusCircle, CheckSquare, Ghost, History, Share2, Lock, Unlock, CheckCircle2, AlertTriangle, X, AlertCircle, ShieldAlert, MoreHorizontal, Settings, CalendarDays, LogOut, Cloud, CloudOff, Zap, Sparkles, Info, ShieldCheck, Activity, CreditCard, Building2, Store, Search, ChevronDown, Database } from "lucide-react-native";
 import { getDatabase, ref, onValue } from "firebase/database";
 import { getFirebaseApp } from "../services/firebase/client";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -59,6 +60,7 @@ export function MainScreen() {
   const [modalCreditos, setModalCreditos] = useState(false);
   const [modalRetrospectiva, setModalRetrospectiva] = useState(false);
   const [modalAnalytics, setModalAnalytics] = useState(false);
+  const [modalSnapshots, setModalSnapshots] = useState(false);
   const [isChatVisible, setChatVisible] = useState(false);
   const [bateu, setBateu] = useState<boolean | null>(null);
   const [obs, setObs] = useState("");
@@ -420,23 +422,6 @@ export function MainScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* MODAIS GLOBAIS - Disponíveis em todo o app */}
-      <Modal visible={customAlert.visible} transparent animationType="fade">
-        <View className="flex-1 bg-black/90 items-center justify-center p-6">
-          <View className="w-full max-w-[380px] rounded-[40px] border border-zinc-800 bg-ink-900 p-8 items-center shadow-2xl">
-            <View className={`h-16 w-16 items-center justify-center rounded-3xl mb-6 ${customAlert.destructive ? 'bg-red-500/10' : 'bg-emerald-500/10'}`}>
-              {customAlert.destructive ? <ShieldAlert size={32} color="#f87171" /> : <AlertCircle size={32} color="#34d399" />}
-            </View>
-            <Text className="text-xl font-black text-white uppercase tracking-[2px] mb-3 text-center">{customAlert.title}</Text>
-            <Text className="text-sm font-bold text-zinc-500 uppercase text-center leading-5 mb-8">{customAlert.message}</Text>
-            <View className="flex-row gap-3 w-full">
-              <Pressable onPress={() => setCustomAlert(prev => ({ ...prev, visible: false }))} className="flex-1 py-5 rounded-[24px] bg-zinc-800"><Text className="text-center font-black text-zinc-400 uppercase text-[10px]">Sair</Text></Pressable>
-              <Pressable onPress={() => { customAlert.onConfirm(); setCustomAlert(prev => ({ ...prev, visible: false })); }} className={`flex-[1.5] py-5 rounded-[24px] ${customAlert.destructive ? 'bg-red-500' : 'bg-zinc-100'}`}><Text className={`text-center font-black uppercase text-[10px] ${customAlert.destructive ? 'text-white' : 'text-zinc-950'}`}>Confirmar</Text></Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
       <Modal visible={modalMais} transparent animationType="slide">
         <View className="flex-1 bg-black/60">
           <Pressable className="flex-1" onPress={() => setModalMais(false)} />
@@ -459,11 +444,14 @@ export function MainScreen() {
               <Pressable onPress={() => { setModalMais(false); void exportarBackupLocal(); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
                 <Share2 size={20} color="#34d399" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">Exportar Backup Local</Text>
               </Pressable>
+              <Pressable onPress={() => { setModalMais(false); setModalSnapshots(true); }} className="flex-row items-center gap-4 bg-amber-500/10 p-6 rounded-[24px] border border-amber-500/20">
+                <Database size={20} color="#f59e0b" /><Text className="text-amber-300 font-black uppercase tracking-widest text-xs">Reverter Dados (Backups)</Text>
+              </Pressable>
               <Pressable onPress={() => { setModalMais(false); void compartilharDiagnostico(); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
                 <Info size={20} color="#60a5fa" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">Compartilhar Diagnóstico</Text>
               </Pressable>
 
-              <Pressable onPress={() => { setModalMais(false); mostrarAlerta("SAIR DO DIA", "Deseja voltar para a tela inicial? O dia continuará aberto para edições depois.", () => caixa.sairDoDia()); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
+              <Pressable onPress={() => { setModalMais(false); mostrarAlerta("SAIR DO DIA", "Deseja voltar para a tela inicial? O dia continuará aberto para edições depois.", () => { caixa.sairDoDia(); setSection("painel"); }); }} className="flex-row items-center gap-4 bg-ink-800 p-6 rounded-[24px] border border-zinc-800">
                 <LogOut size={20} color="#f87171" /><Text className="text-zinc-100 font-black uppercase tracking-widest text-xs">Sair deste Dia</Text>
               </Pressable>
               <View className="h-px bg-zinc-800 my-2" />
@@ -498,6 +486,12 @@ export function MainScreen() {
         <RetrospectiveScreen 
           turnos={caixa.historicoTurnos} 
           onClose={() => setModalRetrospectiva(false)} 
+        />
+      )}
+      {modalSnapshots && (
+        <SnapshotsScreen
+          onClose={() => setModalSnapshots(false)}
+          onAlert={mostrarAlerta}
         />
       )}
 
@@ -820,17 +814,19 @@ export function MainScreen() {
           {section === "historico" ? (
             <View className="flex-1">
               <View className="mx-auto flex-1 w-full max-w-[460px]">
-                <HistoricoScreen 
-                  turnos={caixa.historicoTurnos} 
-                  loading={caixa.loading} 
-                  onRefresh={caixa.carregarHistoricoTurnos} 
-                  onOpen={(turnoId) => {
-                    caixa.carregarTurnoExistente(turnoId);
-                    setSection("painel");
-                  }} 
-                  onExcluirDia={(id) => mostrarAlerta("APAGAR DIA", "Deseja deletar?", () => handleExcluirTurno(id), true)} 
-                  onVoltar={() => setSection("painel")}
-                />
+                  <HistoricoScreen 
+                    turnos={caixa.historicoTurnos} 
+                    loading={caixa.loading} 
+                    onRefresh={caixa.carregarHistoricoTurnos} 
+                    onOpen={(turnoId) => {
+                      caixa.carregarTurnoExistente(turnoId);
+                      setSection("painel");
+                    }} 
+                    onExcluirDia={(id) => mostrarAlerta("APAGAR DIA", "Deseja deletar?", () => handleExcluirTurno(id), true)} 
+                    onRestaurarDia={(id) => mostrarAlerta("RESTAURAR DIA", "Tem certeza que deseja recuperar este dia da lixeira?", () => caixa.restaurarDia(id))}
+                    onDeletarPermanente={(id) => mostrarAlerta("EXCLUSÃO PERMANENTE", "Tem certeza? Esta ação não pode ser desfeita.", () => caixa.deletarDiaPermanente(id), true)}
+                    onVoltar={() => setSection("painel")}
+                  />
               </View>
             </View>
           ) : (
@@ -838,7 +834,14 @@ export function MainScreen() {
               loading={caixa.loading} 
               error={caixa.error} 
               onNovoDia={caixa.abrirNovoCaixa} 
-              onContinuar={() => caixa.carregarTurnoExistente(caixa.historicoTurnos[0]?.id)} 
+              onContinuar={() => {
+                const ultimoValido = caixa.historicoTurnos.find(t => !t.excluido);
+                if (ultimoValido) {
+                  caixa.carregarTurnoExistente(ultimoValido.id);
+                } else {
+                  mostrarAlerta("NENHUM DIA", "Não há dias abertos no momento.", () => {});
+                }
+              }} 
               onVerHistorico={() => changeSection("historico")} 
               onAbrirAjustes={() => setModalPreferencias(true)}
             />
@@ -991,14 +994,14 @@ export function MainScreen() {
                       setSection("painel");
                     }} 
                     onExcluirDia={(id) => mostrarAlerta("APAGAR DIA", "Deseja deletar?", () => handleExcluirTurno(id), true)} 
+                    onRestaurarDia={(id) => mostrarAlerta("RESTAURAR DIA", "Tem certeza que deseja recuperar este dia da lixeira?", () => caixa.restaurarDia(id))}
+                    onDeletarPermanente={(id) => mostrarAlerta("EXCLUSÃO PERMANENTE", "Tem certeza? Esta ação não pode ser desfeita.", () => caixa.deletarDiaPermanente(id), true)}
                     onToggleRepasse={(id, state) => caixa.alternarRepasse(id, state)} 
-                    onVoltar={async () => {
-                      const activeId = caixa.historicoTurnos.find(t => t.statusTurno === "aberto")?.id;
-                      if (activeId) {
-                        await caixa.carregarTurnoExistente(activeId);
-                      }
+                    onVoltar={() => {
+                      caixa.sairDoDia();
                       setSection("painel");
                     }}
+                    textoVoltar="Sair do Dia"
                   />
                 )}
               </View>
@@ -1032,6 +1035,25 @@ export function MainScreen() {
       )}
       {/* Chat Modal */}
       <ChatModal visible={isChatVisible} onClose={() => setChatVisible(false)} />
+
+      {/* MODAIS GLOBAIS - Deve ficar no fim para sobrepor tudo */}
+      {customAlert.visible && (
+        <Modal visible transparent animationType="fade">
+          <View className="flex-1 bg-black/90 items-center justify-center p-6">
+            <View className="w-full max-w-[380px] rounded-[40px] border border-zinc-800 bg-ink-900 p-8 items-center shadow-2xl">
+              <View className={`h-16 w-16 items-center justify-center rounded-3xl mb-6 ${customAlert.destructive ? 'bg-red-500/10' : 'bg-emerald-500/10'}`}>
+                {customAlert.destructive ? <ShieldAlert size={32} color="#f87171" /> : <AlertCircle size={32} color="#34d399" />}
+              </View>
+              <Text className="text-xl font-black text-white uppercase tracking-[2px] mb-3 text-center">{customAlert.title}</Text>
+              <Text className="text-sm font-bold text-zinc-500 uppercase text-center leading-5 mb-8">{customAlert.message}</Text>
+              <View className="flex-row gap-3 w-full">
+                <Pressable onPress={() => setCustomAlert(prev => ({ ...prev, visible: false }))} className="flex-1 py-5 rounded-[24px] bg-zinc-800"><Text className="text-center font-black text-zinc-400 uppercase text-[10px]">Sair</Text></Pressable>
+                <Pressable onPress={() => { customAlert.onConfirm(); setCustomAlert(prev => ({ ...prev, visible: false })); }} className={`flex-[1.5] py-5 rounded-[24px] ${customAlert.destructive ? 'bg-red-500' : 'bg-zinc-100'}`}><Text className={`text-center font-black uppercase text-[10px] ${customAlert.destructive ? 'text-white' : 'text-zinc-950'}`}>Confirmar</Text></Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      )}
 
     </SafeAreaView>
   );

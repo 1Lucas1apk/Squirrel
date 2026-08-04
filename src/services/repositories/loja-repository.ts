@@ -29,7 +29,7 @@ export async function criarLoja(codigo: string, nome: string, nomeOperador: stri
   const db = getFirestoreDb();
   const lojaCode = codigo.toUpperCase().trim();
   const lojaRef = doc(db, "lojas", lojaCode);
-  
+
   const snap = await getDoc(lojaRef);
   if (snap.exists()) {
     throw new Error("Já existe uma loja com este código.");
@@ -56,7 +56,7 @@ export async function entrarNaLoja(codigo: string, nomeOperador: string = "Opera
   const db = getFirestoreDb();
   const lojaCode = codigo.toUpperCase().trim();
   const lojaRef = doc(db, "lojas", lojaCode);
-  
+
   const snap = await getDoc(lojaRef);
   if (!snap.exists()) {
     throw new Error("Loja não encontrada com este código.");
@@ -89,7 +89,7 @@ export async function buscarFechamentosPOSDoDia(codigo: string, dataReferencia: 
 
   const db = getFirestoreDb();
   const lojaCode = codigo.toUpperCase().trim();
-  
+
   const q = query(
     collection(db, `lojas/${lojaCode}/pos_fechamentos`),
     where("data_referencia", "==", dataReferencia)
@@ -97,7 +97,7 @@ export async function buscarFechamentosPOSDoDia(codigo: string, dataReferencia: 
 
   const snap = await getDocs(q);
   const fechamentos: FechamentoPOS[] = [];
-  
+
   snap.forEach(doc => {
     const data = doc.data();
     if (data.turnoId !== meuTurnoId) { // Não pega o meu próprio turno
@@ -123,9 +123,9 @@ export async function registrarFechamentoPOS(codigo: string, dataReferencia: str
 
   const db = getFirestoreDb();
   const lojaCode = codigo.toUpperCase().trim();
-  
+
   const fechamentoRef = doc(db, `lojas/${lojaCode}/pos_fechamentos`, `${dataReferencia}_${turnoId}`);
-  
+
   await setDoc(fechamentoRef, {
     data_referencia: dataReferencia,
     turnoId,
@@ -155,12 +155,12 @@ export async function removerFechamentoPOS(codigo: string, dataReferencia: strin
 export async function limparFechamentosPOSDoDia(codigo: string, dataReferencia: string): Promise<void> {
   const db = getFirestoreDb();
   const lojaCode = codigo.toUpperCase().trim();
-  
+
   const q = query(
     collection(db, `lojas/${lojaCode}/pos_fechamentos`),
     where("data_referencia", "==", dataReferencia)
   );
-  
+
   const snap = await getDocs(q);
   const promises: Promise<void>[] = [];
   snap.forEach(d => {
@@ -174,12 +174,12 @@ export function ouvirFechamentosPOSDoDia(codigo: string, dataReferencia: string,
   const uid = auth.currentUser?.uid;
   if (!uid) {
     callback([]);
-    return () => {};
+    return () => { };
   }
 
   const db = getFirestoreDb();
   const lojaCode = codigo.toUpperCase().trim();
-  
+
   const q = query(
     collection(db, `lojas/${lojaCode}/pos_fechamentos`),
     where("data_referencia", "==", dataReferencia)

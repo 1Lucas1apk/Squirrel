@@ -10,6 +10,7 @@ import {
   addDoc,
   onSnapshot,
   query,
+  writeBatch,
 } from "firebase/firestore";
 import {
   DataSnapshot,
@@ -37,6 +38,7 @@ import {
 } from "../../types/domain";
 import { getFirestoreDb, getFirebaseAuth } from "../firebase/client";
 import { getRealtimeDatabase } from "../firebase/realtime";
+import { getUid, saveUid } from "../auth-storage";
 
 export type Unsubscribe = () => void;
 
@@ -48,16 +50,27 @@ export async function getUserIdAsync(): Promise<string> {
   const auth = getFirebaseAuth();
   if (auth.currentUser) return auth.currentUser.uid;
 
+  // Fallback 1: UID salvo no SecureStore (funciona offline)
+  const storedUid = await getUid();
+
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       unsub();
-      reject(new Error("Timeout esperando autenticação"));
-    }, 8000);
+      // Se temos UID salvo, usa ele ao invés de rejeitar (modo offline)
+      if (storedUid) {
+        console.log("[Repository] Timeout de auth, usando UID do cache local (offline).");
+        resolve(storedUid);
+      } else {
+        reject(new Error("Timeout esperando autenticação. Nenhum UID em cache."));
+      }
+    }, 4000); // Reduzido de 8s para 4s — o fallback cobre o resto
 
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user) {
         clearTimeout(timeout);
         unsub();
+        // Atualiza o cache para futuras sessões offline
+        void saveUid(user.uid);
         resolve(user.uid);
       }
     });
@@ -110,6 +123,7 @@ function mapTurno(id: string, data: any): Turno {
     repassado: Boolean(data.repassado),
     notaDia: data.nota_dia ? String(data.nota_dia) : undefined,
     posRelatorioTotal: data.pos_relatorio_total !== undefined ? Number(data.pos_relatorio_total) : undefined,
+    excluido: Boolean(data.excluido),
   };
 }
 
@@ -190,7 +204,7 @@ export async function criarNovoTurno(dataReferencia: string): Promise<Turno> {
   const uid = await getUserIdAsync();
   const db = getFirestoreDb();
   const timestamp = Date.now();
-  
+
   // Caixas NOVOS são criados exclusivamente no Firestore
   const newTurnoRef = doc(collection(db, `users/${uid}/turnos`));
   await setDoc(newTurnoRef, {
@@ -199,7 +213,7 @@ export async function criarNovoTurno(dataReferencia: string): Promise<Turno> {
     ajuste_manual_sobra: 0,
     metadados: { criado_em: timestamp, atualizado_em: timestamp },
   });
-  
+
   return mapTurno(newTurnoRef.id, {
     data_referencia: dataReferencia,
     status_turno: "aberto",
@@ -219,7 +233,7 @@ export async function listarTurnosRecentes(): Promise<Turno[]> {
   const uid = await getUserIdAsync();
   const dbFS = getFirestoreDb();
   const dbRTDB = getRealtimeDatabase();
-  
+
   const allTurnos: Turno[] = [];
 
   // Busca do Firestore (Novos)
@@ -288,7 +302,7 @@ export function ouvirTurno(turnoId: string, onData: (turno: Turno) => void): Uns
       });
     }
   });
-  return () => { 
+  return () => {
     isUnsubscribed = true;
     if (firebaseUnsub) firebaseUnsub();
   };
@@ -316,7 +330,7 @@ export function ouvirTransacoes(turnoId: string, onData: (transacoes: Transacao[
       });
     }
   });
-  return () => { 
+  return () => {
     isUnsubscribed = true;
     if (firebaseUnsub) firebaseUnsub();
   };
@@ -344,7 +358,7 @@ export function ouvirFantasmas(turnoId: string, onData: (fantasmas: LembreteFant
       });
     }
   });
-  return () => { 
+  return () => {
     isUnsubscribed = true;
     if (firebaseUnsub) firebaseUnsub();
   };
@@ -374,7 +388,7 @@ export function ouvirLogsAuditoria(turnoId: string, onData: (logs: LogAlteracao[
       });
     }
   });
-  return () => { 
+  return () => {
     isUnsubscribed = true;
     if (firebaseUnsub) firebaseUnsub();
   };
@@ -403,14 +417,14 @@ export async function salvarNotaDia(turnoId: string, texto: string): Promise<voi
 export async function salvarTotaisTurno(turnoId: string, totais: TotaisTurno): Promise<void> {
   const uid = await getUserIdAsync();
   const tsKey = isLegacy(turnoId) ? "metadados/atualizado_em" : "metadados.atualizado_em";
-  const payload = { 
-    totais: { 
-      sistema: totais.sistema, sobra: totais.sobra, gaveta_fisico: totais.gavetaFisico, 
+  const payload = {
+    totais: {
+      sistema: totais.sistema, sobra: totais.sobra, gaveta_fisico: totais.gavetaFisico,
       especie_envelope: totais.especieEnvelope, pix_repasse: totais.pixRepasse,
       pix_no_caixa: totais.pixNoCaixa, pix_direto_loja: totais.pixDiretoLoja,
       total_pos: totais.totalPOS, total_convenio: totais.totalConvenio
-    }, 
-    [tsKey]: Date.now() 
+    },
+    [tsKey]: Date.now()
   };
   if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), payload);
   else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`), payload);
@@ -558,8 +572,8 @@ export async function registrarLogAlteracao(turnoId: string, transacaoId: string
 }
 
 export async function atualizarStatusTurno(
-  turnoId: string, 
-  status: "aberto" | "fechado", 
+  turnoId: string,
+  status: "aberto" | "fechado",
   extra?: { bateuFisico?: boolean; observacoes?: string }
 ): Promise<void> {
   const uid = await getUserIdAsync();
@@ -589,15 +603,50 @@ export async function atualizarStatusRepasse(turnoId: string, repassado: boolean
 export async function removerTurnoTotal(turnoId: string): Promise<void> {
   const uid = await getUserIdAsync();
   if (isLegacy(turnoId)) {
-    await Promise.all([
-      set(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), null),
-      set(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}`), null),
-      set(ref(getRealtimeDatabase(), `users/${uid}/fantasmas_lembretes/${turnoId}`), null),
-      set(ref(getRealtimeDatabase(), `users/${uid}/logs_auditoria/${turnoId}`), null),
-    ]);
+    await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), { excluido: true });
   } else {
-    // Delete subcollections? No need strictly for testing, but let's delete the doc
-    await deleteDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`));
+    // Soft delete: apenas marca como excluído
+    await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`), { excluido: true });
+  }
+}
+
+export async function deletarTurnoPermanente(turnoId: string): Promise<void> {
+  const uid = await getUserIdAsync();
+  if (isLegacy(turnoId)) {
+    const db = getRealtimeDatabase();
+    await set(ref(db, `users/${uid}/turnos/${turnoId}`), null);
+    await set(ref(db, `users/${uid}/transacoes/${turnoId}`), null);
+    await set(ref(db, `users/${uid}/fantasmas_lembretes/${turnoId}`), null);
+    await set(ref(db, `users/${uid}/registros_pos/${turnoId}`), null);
+    await set(ref(db, `users/${uid}/registros_convenio/${turnoId}`), null);
+  } else {
+    const db = getFirestoreDb();
+
+    // Apaga o documento principal do turno
+    await deleteDoc(doc(db, `users/${uid}/turnos/${turnoId}`));
+
+    // Deleta os documentos das subcoleções (buscando e deletando)
+    const subcollections = ["transacoes", "fantasmas_lembretes", "registros_pos", "registros_convenio"];
+    for (const col of subcollections) {
+      try {
+        const snap = await getDocs(collection(db, `users/${uid}/turnos/${turnoId}/${col}`));
+        const batch = writeBatch(db);
+        snap.forEach(docSnap => batch.delete(docSnap.ref));
+        if (!snap.empty) await batch.commit();
+      } catch (err) {
+        console.warn(`Erro ao limpar subcolecao ${col}:`, err);
+      }
+    }
+  }
+}
+
+
+export async function restaurarTurnoExcluido(turnoId: string): Promise<void> {
+  const uid = await getUserIdAsync();
+  if (isLegacy(turnoId)) {
+    await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`), { excluido: false });
+  } else {
+    await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`), { excluido: false });
   }
 }
 
@@ -669,7 +718,7 @@ export function ouvirRegistrosPOS(turnoId: string, onData: (registros: RegistroP
       });
     }
   });
-  return () => { 
+  return () => {
     isUnsubscribed = true;
     if (firebaseUnsub) firebaseUnsub();
   };
@@ -697,7 +746,7 @@ export function ouvirRegistrosConvenio(turnoId: string, onData: (registros: Regi
       });
     }
   });
-  return () => { 
+  return () => {
     isUnsubscribed = true;
     if (firebaseUnsub) firebaseUnsub();
   };
@@ -777,7 +826,7 @@ export async function removerConvenio(turnoId: string, id: string): Promise<void
   else await deleteDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/registros_convenio/${id}`));
 }
 
-export async function migrarDadosAntigos(): Promise<void> {}
+export async function migrarDadosAntigos(): Promise<void> { }
 
 export async function atualizarTurnoAtivoConta(turnoId: string): Promise<void> {
   try {
@@ -802,8 +851,113 @@ export function ouvirTurnoAtivoConta(callback: (turnoId: string | null) => void)
       }
     });
   }).catch(e => console.error("Erro ao ouvir dia ativo:", e));
-  
+
   return () => {
     if (unsub) unsub();
   };
+}
+
+// ==================== RESTAURAÇÃO (CTRL+Z) ====================
+export async function restaurarSnapshotNuvem(
+  currentState: {
+    turnoId: string,
+    transacoes: Transacao[],
+    fantasmas: LembreteFantasma[],
+    registrosPOS: RegistroPOS[],
+    registrosConvenio: RegistroConvenio[]
+  },
+  snapshot: any
+) {
+  const uid = await getUserIdAsync();
+  const db = getFirestoreDb();
+  const batch = writeBatch(db);
+  const turnoRef = doc(db, `users/${uid}/turnos/${currentState.turnoId}`);
+
+  // 1. Restaura dados principais do turno no formato DTO
+  batch.set(turnoRef, {
+    status_turno: snapshot.turno.statusTurno,
+    data_referencia: snapshot.turno.dataReferencia,
+    ajuste_manual_sobra: snapshot.turno.ajusteManualSobra ?? 0,
+    totais: snapshot.turno.totais,
+    pos_relatorio_total: snapshot.turno.posRelatorioTotal ?? 0,
+    nota_dia: snapshot.turno.notaDia || "",
+    excluido: snapshot.turno.excluido || false,
+    metadados: {
+      criado_em: snapshot.turno.criadoEm,
+      atualizado_em: snapshot.turno.atualizadoEm,
+    }
+  });
+
+  // 2. Helper para diffing: apaga o que foi criado depois e recria o que foi apagado/editado
+  const syncCollection = (
+    colName: string,
+    currentItems: any[],
+    snapshotItems: any[],
+    mapToDTO: (item: any) => any
+  ) => {
+    const snapIds = new Set(snapshotItems.map(x => x.id));
+
+    // Deletar os que existem no estado atual mas não existiam no snapshot
+    for (const item of currentItems) {
+      if (!snapIds.has(item.id)) {
+        batch.delete(doc(db, `users/${uid}/turnos/${currentState.turnoId}/${colName}`, item.id));
+      }
+    }
+
+    // Inserir ou atualizar os que existem no snapshot no formato correto (DTO)
+    for (const item of snapshotItems) {
+      if (item.id) {
+        batch.set(doc(db, `users/${uid}/turnos/${currentState.turnoId}/${colName}`, item.id), mapToDTO(item));
+      }
+    }
+  };
+
+  syncCollection("transacoes", currentState.transacoes, snapshot.transacoes, (t: Transacao) => ({
+    timestamp: t.timestamp,
+    natureza_operacao: t.naturezaOperacao,
+    categoria: t.categoria,
+    descricao: t.descricao || "",
+    valor_sistema: t.valorSistema || 0,
+    valor_recebido_fisico: t.valorRecebidoFisico || 0,
+    troco_sobra: t.trocoSobra || 0,
+    status_conferencia: t.statusConferencia || "pendente",
+    codigo_contrato: t.codigoContrato || null,
+    justificativa_texto: t.justificativaTexto || null,
+    transacao_vinculada_id: t.transacaoVinculadaId || null,
+    client_local_id: t.clientLocalId || null
+  }));
+
+  syncCollection("fantasmas_lembretes", currentState.fantasmas, snapshot.fantasmas, (f: LembreteFantasma) => ({
+    client_local_id: f.clientLocalId || null,
+    timestamp: f.timestamp,
+    tipo: f.tipo || "outro",
+    pessoa: f.pessoa || "",
+    descricao: f.descricao || "",
+    valor_referencia: f.valorReferencia || 0,
+    impacta_pix_repasse: Boolean(f.impactaPixRepasse),
+    destino_pix: f.destinoPix || null,
+    transacao_vinculada_id: f.transacaoVinculadaId || null,
+    resolvido: Boolean(f.resolvido),
+    comprovado_pix: Boolean(f.comprovadoPix)
+  }));
+
+  syncCollection("registros_pos", currentState.registrosPOS, snapshot.registrosPOS || [], (r: RegistroPOS) => ({
+    timestamp: r.timestamp,
+    tipo: r.tipo || "cartao",
+    valor: r.valor || 0,
+    descricao: r.descricao || "",
+    status_conferencia: r.statusConferencia || "pendente"
+  }));
+
+  syncCollection("registros_convenio", currentState.registrosConvenio, snapshot.registrosConvenio || [], (r: RegistroConvenio) => ({
+    timestamp: r.timestamp,
+    cliente_id: r.clienteId || "",
+    nome_cliente: r.nomeCliente || "",
+    valor: r.valor || 0,
+    descricao: r.descricao || "",
+    status_conferencia: r.statusConferencia || "pendente"
+  }));
+
+  // Executa toda a restauração de forma atômica (tudo ou nada)
+  await batch.commit();
 }
