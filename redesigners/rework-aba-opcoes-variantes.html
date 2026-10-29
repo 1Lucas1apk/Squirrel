@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Menu de Opções do Caixa (Com Importar & Exportar JSON)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050508;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 410px;
+      border-radius: 48px;
+      border: 3.5px solid #27272a;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 0 1px #18181b;
+      background-color: #09090c;
+      overflow: hidden;
+      min-height: 800px;
+      position: relative;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .btn-tactile:active {
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-5xl mx-auto pb-32">
+
+  <!-- CABEÇALHO DO PROJETO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      🐿️ SQUIRREL CORE • MENU COMPLETO DE DADOS & GESTÃO
+    </div>
+    <h1 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-white">
+      Menu de Opções do Caixa
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-xl mx-auto font-medium leading-relaxed">
+      Com ciclo completo de dados: <span class="text-emerald-400 font-bold">Exportar JSON</span> e <span class="text-sky-400 font-bold">Importar JSON</span> para total segurança.
+    </p>
+  </div>
+
+  <!-- CONTAINER DE DEMONSTRAÇÃO MOBILE -->
+  <div class="flex flex-col items-center justify-center">
+    
+    <div class="mobile-frame relative flex flex-col justify-end bg-black/90">
+      
+      <!-- BACKGROUND OVERLAY -->
+      <div class="absolute inset-0 bg-[#050508] opacity-95"></div>
+
+      <!-- CORPO PRINCIPAL DO MODAL DE OPÇÕES -->
+      <div class="relative w-full bg-[#0d0d12] rounded-t-[44px] border-t border-zinc-800 shadow-2xl p-4 md:p-5 pt-3 max-h-[94vh] flex flex-col overflow-hidden">
+        
+        <!-- Handle Bar -->
+        <div class="w-12 h-1.5 rounded-full bg-zinc-800 mx-auto mb-3 flex-shrink-0"></div>
+
+        <!-- HEADER LIMPO & ELEGANTE -->
+        <div class="flex items-center justify-between pb-3 mb-3 px-1 border-b border-zinc-900 flex-shrink-0">
+          <div class="flex items-center gap-2.5">
+            <div class="h-7 w-7 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+              <i data-lucide="sliders-horizontal" class="w-4 h-4 stroke-[2.5]"></i>
+            </div>
+            <span class="text-xs font-black uppercase tracking-[2px] text-zinc-200">Opções do Caixa</span>
+          </div>
+          <button class="h-8 w-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- LISTA CONTÍNUA DE ROLAGEM -->
+        <div class="flex-1 overflow-y-auto no-scrollbar space-y-3.5 pb-6">
+
+          <!-- ========================================================================= -->
+          <!-- 1. BOTÃO HERO PRIMÁRIO NO TOPO: SAIR DESTE DIA (AÇÃO FREQUENTE) -->
+          <!-- ========================================================================= -->
+          <button class="btn-tactile w-full h-14 rounded-2xl bg-zinc-100 px-4 flex items-center justify-between active:bg-zinc-200 shadow-xl flex-shrink-0">
+            <div class="flex items-center gap-3.5">
+              <div class="h-9 w-9 rounded-xl bg-zinc-950 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="pause-circle" class="w-5 h-5 text-white stroke-[2.5]"></i>
+              </div>
+              <div class="text-left">
+                <span class="font-black uppercase text-zinc-950 text-xs tracking-wider block leading-tight">Sair Deste Dia</span>
+                <span class="text-[10px] text-zinc-600 font-bold block mt-0.5">Pausar turno para continuar depois</span>
+              </div>
+            </div>
+            <div class="h-7 px-2.5 rounded-lg bg-zinc-200 border border-zinc-300 flex items-center justify-center">
+              <span class="text-[10px] font-black uppercase text-zinc-900 tracking-wider">PAUSAR</span>
+            </div>
+          </button>
+
+          <!-- ========================================================================= -->
+          <!-- 2. CARD: INTELIGÊNCIA & ANÁLISES -->
+          <!-- ========================================================================= -->
+          <div class="bg-[#121216] border border-zinc-800 rounded-[32px] p-4 shadow-xl space-y-2.5">
+            <div class="flex items-center gap-2 px-1 pb-1 border-b border-zinc-800/80">
+              <div class="h-6 w-6 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+              </div>
+              <span class="text-xs font-black uppercase tracking-[1.5px] text-zinc-200">Inteligência & Análises</span>
+            </div>
+
+            <!-- Você Sabia? (Retrospectiva) -->
+            <button class="btn-tactile w-full bg-[#09090c] p-3 px-3.5 rounded-2xl border border-amber-500/30 flex items-center justify-between text-left hover:border-amber-500/50 transition-all">
+              <div class="flex items-center gap-3.5 flex-1 min-w-0 mr-2">
+                <div class="h-10 w-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="sparkles" class="w-5 h-5 text-amber-300"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-black text-white uppercase tracking-wider block leading-tight">Você Sabia? (Retrospectiva)</span>
+                  <span class="text-[10px] text-zinc-400 font-medium block truncate mt-0.5">Recordes, ticket médio e destaques do dia</span>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-lg bg-amber-500/15 border border-amber-500/30 text-[9px] font-black text-amber-300 uppercase">ABRIR</span>
+            </button>
+
+            <!-- Mapa de Movimentação -->
+            <button class="btn-tactile w-full bg-[#09090c] p-3 px-3.5 rounded-2xl border border-blue-500/30 flex items-center justify-between text-left hover:border-blue-500/50 transition-all">
+              <div class="flex items-center gap-3.5 flex-1 min-w-0 mr-2">
+                <div class="h-10 w-10 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="activity" class="w-5 h-5 text-blue-300"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-black text-white uppercase tracking-wider block leading-tight">Mapa de Movimentação</span>
+                  <span class="text-[10px] text-zinc-400 font-medium block truncate mt-0.5">Gráficos de fluxo e horários de pico</span>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-lg bg-blue-500/15 border border-blue-500/30 text-[9px] font-black text-blue-300 uppercase">GRÁFICO</span>
+            </button>
+          </div>
+
+          <!-- ========================================================================= -->
+          <!-- 3. CARD: RELATÓRIOS & DADOS (INCLUINDO IMPORTAÇÃO E EXPORTAÇÃO) -->
+          <!-- ========================================================================= -->
+          <div class="bg-[#121216] border border-zinc-800 rounded-[32px] p-4 shadow-xl space-y-2.5">
+            <div class="flex items-center gap-2 px-1 pb-1 border-b border-zinc-800/80">
+              <div class="h-6 w-6 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                <i data-lucide="database" class="w-3.5 h-3.5"></i>
+              </div>
+              <span class="text-xs font-black uppercase tracking-[1.5px] text-zinc-200">Relatórios & Backups</span>
+            </div>
+
+            <!-- Compartilhar Relatório -->
+            <button class="btn-tactile w-full bg-[#09090c] p-3 px-3.5 rounded-2xl border border-zinc-800 flex items-center justify-between text-left hover:border-purple-500/40 transition-all">
+              <div class="flex items-center gap-3.5 flex-1 min-w-0 mr-2">
+                <div class="h-10 w-10 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="file-text" class="w-5 h-5 text-purple-300"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-black text-zinc-100 uppercase tracking-wider block leading-tight">Compartilhar Relatório</span>
+                  <span class="text-[10px] text-zinc-400 font-medium block truncate mt-0.5">PDF formatado para WhatsApp ou impressão</span>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-lg bg-purple-500/15 text-purple-300 text-[9px] font-black uppercase">PDF</span>
+            </button>
+
+            <!-- Exportar Backup Local -->
+            <button class="btn-tactile w-full bg-[#09090c] p-3 px-3.5 rounded-2xl border border-zinc-800 flex items-center justify-between text-left hover:border-emerald-500/40 transition-all">
+              <div class="flex items-center gap-3.5 flex-1 min-w-0 mr-2">
+                <div class="h-10 w-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="download" class="w-5 h-5 text-emerald-300"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-black text-zinc-100 uppercase tracking-wider block leading-tight">Exportar Backup Local</span>
+                  <span class="text-[10px] text-zinc-400 font-medium block truncate mt-0.5">Gerar e salvar arquivo JSON de segurança</span>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 text-[9px] font-black uppercase">JSON</span>
+            </button>
+
+            <!-- NOVO: Importar / Restaurar Backup JSON -->
+            <button class="btn-tactile w-full bg-[#09090c] p-3 px-3.5 rounded-2xl border border-zinc-800 flex items-center justify-between text-left hover:border-sky-500/40 transition-all">
+              <div class="flex items-center gap-3.5 flex-1 min-w-0 mr-2">
+                <div class="h-10 w-10 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="upload" class="w-5 h-5 text-sky-300"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-black text-zinc-100 uppercase tracking-wider block leading-tight">Importar Backup (JSON)</span>
+                  <span class="text-[10px] text-zinc-400 font-medium block truncate mt-0.5">Carregar arquivo JSON salvo para restaurar</span>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-lg bg-sky-500/15 text-sky-300 text-[9px] font-black uppercase">IMPORT</span>
+            </button>
+
+            <!-- Reverter Snapshots / Histórico -->
+            <button class="btn-tactile w-full bg-[#09090c] p-3 px-3.5 rounded-2xl border border-zinc-800 flex items-center justify-between text-left hover:border-amber-500/40 transition-all">
+              <div class="flex items-center gap-3.5 flex-1 min-w-0 mr-2">
+                <div class="h-10 w-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="history" class="w-5 h-5 text-amber-300"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-black text-zinc-100 uppercase tracking-wider block leading-tight">Reverter Dados (Snapshots)</span>
+                  <span class="text-[10px] text-zinc-400 font-medium block truncate mt-0.5">Restaurar checkpoints de segurança do turno</span>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-300 text-[9px] font-black uppercase">RESTORE</span>
+            </button>
+          </div>
+
+          <!-- ========================================================================= -->
+          <!-- 4. CARD: DIAGNÓSTICO & CONFIGURAÇÕES -->
+          <!-- ========================================================================= -->
+          <div class="bg-[#121216] border border-zinc-800 rounded-[32px] p-4 shadow-xl space-y-2.5">
+            <div class="flex items-center gap-2 px-1 pb-1 border-b border-zinc-800/80">
+              <div class="h-6 w-6 rounded-lg bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-400">
+                <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+              </div>
+              <span class="text-xs font-black uppercase tracking-[1.5px] text-zinc-200">Apoio & Configurações</span>
+            </div>
+
+            <!-- Compartilhar Diagnóstico -->
+            <button class="btn-tactile w-full bg-[#09090c] p-3 px-3.5 rounded-2xl border border-zinc-800 flex items-center justify-between text-left hover:border-cyan-500/40 transition-all">
+              <div class="flex items-center gap-3.5 flex-1 min-w-0 mr-2">
+                <div class="h-10 w-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="terminal" class="w-5 h-5 text-cyan-300"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-black text-zinc-100 uppercase tracking-wider block leading-tight">Compartilhar Diagnóstico</span>
+                  <span class="text-[10px] text-zinc-400 font-medium block truncate mt-0.5">Logs técnicos de rede, banco e sincronização</span>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-500"></i>
+            </button>
+
+            <!-- ID do Caixa/Operador -->
+            <button class="btn-tactile w-full bg-[#09090c] p-3 px-3.5 rounded-2xl border border-zinc-800 flex items-center justify-between text-left hover:border-zinc-700 transition-all">
+              <div class="flex items-center gap-3.5 flex-1 min-w-0 mr-2">
+                <div class="h-10 w-10 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="user" class="w-5 h-5 text-zinc-300"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-black text-zinc-100 uppercase tracking-wider block leading-tight">ID do Caixa / Operador</span>
+                  <span class="text-[10px] text-zinc-400 font-medium block truncate mt-0.5">Identificador do terminal e operador</span>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-500"></i>
+            </button>
+
+            <!-- Configurações do App -->
+            <button class="btn-tactile w-full bg-[#09090c] p-3 px-3.5 rounded-2xl border border-zinc-800 flex items-center justify-between text-left hover:border-purple-500/40 transition-all">
+              <div class="flex items-center gap-3.5 flex-1 min-w-0 mr-2">
+                <div class="h-10 w-10 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="zap" class="w-5 h-5 text-purple-400"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-black text-zinc-100 uppercase tracking-wider block leading-tight">Configurações do App</span>
+                  <span class="text-[10px] text-zinc-400 font-medium block truncate mt-0.5">Tolerâncias, avisos sonoros e preferências</span>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-500"></i>
+            </button>
+
+            <!-- Créditos -->
+            <button class="btn-tactile w-full bg-[#09090c] p-3 px-3.5 rounded-2xl border border-zinc-800 flex items-center justify-between text-left hover:border-pink-500/40 transition-all">
+              <div class="flex items-center gap-3.5 flex-1 min-w-0 mr-2">
+                <div class="h-10 w-10 rounded-xl bg-pink-500/15 border border-pink-500/30 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="heart" class="w-5 h-5 text-pink-400"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-black text-zinc-100 uppercase tracking-wider block leading-tight">Créditos</span>
+                  <span class="text-[10px] text-zinc-400 font-medium block truncate mt-0.5">Sobre o criador & manifesto Eudaimonia</span>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-500"></i>
+            </button>
+          </div>
+
+          <!-- ========================================================================= -->
+          <!-- 5. CARD: SESSÃO / LOGOUT -->
+          <!-- ========================================================================= -->
+          <div class="pt-1 mb-2">
+            <!-- Sair da Conta (Logout) -->
+            <button class="btn-tactile w-full h-12 rounded-2xl bg-red-500/10 border border-red-500/25 items-center justify-center flex items-center gap-2 text-red-400 hover:bg-red-500/20 transition-all">
+              <i data-lucide="log-out" class="w-4 h-4 text-red-400"></i>
+              <span class="font-black uppercase text-xs tracking-wider">
+                Sair da Conta (Logout)
+              </span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

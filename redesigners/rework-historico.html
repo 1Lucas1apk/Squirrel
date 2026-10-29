@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rework Histórico de Turnos - Squirrel DNA</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
+    
+    * {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #09090c;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 4px;
+    }
+
+    .phone-container {
+      width: 100%;
+      max-width: 410px;
+      height: 840px;
+      background: #09090c;
+      border: 8px solid #27272a;
+      border-radius: 44px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 40px rgba(96, 165, 250, 0.1);
+    }
+  </style>
+</head>
+<body class="bg-[#050507] text-zinc-100 min-h-screen flex flex-col items-center justify-center p-4">
+
+  <!-- SELETOR DE PROPOSTAS NO TOPO -->
+  <div class="mb-5 text-center max-w-lg">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold mb-2">
+      <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+      REWORK HISTÓRICO DE TURNOS • SQUIRREL DNA
+    </div>
+    <h1 class="text-xl font-black text-white">Escolha a Proposta de Design</h1>
+    <p class="text-xs text-zinc-400 mt-0.5">Selecione uma opção abaixo para ver aplicada no dispositivo interativo.</p>
+
+    <div class="flex items-center justify-center gap-2 mt-3.5 flex-wrap">
+      <button onclick="setOption(1)" id="btn-opt-1" class="px-3.5 py-1.5 rounded-xl text-xs font-black uppercase transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/20">
+        1. Cockpit Minimal
+      </button>
+      <button onclick="setOption(2)" id="btn-opt-2" class="px-3.5 py-1.5 rounded-xl text-xs font-black uppercase transition-all bg-[#121216] border border-zinc-800 text-zinc-400 hover:text-white">
+        2. Glass Card Pro
+      </button>
+      <button onclick="setOption(3)" id="btn-opt-3" class="px-3.5 py-1.5 rounded-xl text-xs font-black uppercase transition-all bg-[#121216] border border-zinc-800 text-zinc-400 hover:text-white">
+        3. Fintech Feed (Clean)
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER DO CELULAR -->
+  <div class="phone-container relative">
+    
+    <!-- NOTCH / STATUS BAR -->
+    <div class="h-8 bg-[#09090c] flex items-center justify-between px-6 text-[11px] font-bold text-zinc-500 select-none flex-shrink-0 z-20">
+      <span>09:41</span>
+      <div class="flex items-center gap-1.5">
+        <i data-lucide="wifi" class="w-3 h-3"></i>
+        <i data-lucide="battery" class="w-3.5 h-3.5"></i>
+      </div>
+    </div>
+
+    <!-- CONTEÚDO SCROLLÁVEL -->
+    <div class="flex-1 overflow-y-auto px-3.5 pb-24 pt-1 select-none">
+      
+      <!-- ========================================================================= -->
+      <!-- OPÇÃO 1: COCKPIT MINIMAL (ESTILO SQUIRREL PURO) -->
+      <!-- ========================================================================= -->
+      <div id="view-opt1" class="header-view space-y-3.5">
+        
+        <!-- Header da Tela -->
+        <div class="flex items-center justify-between pt-1">
+          <div>
+            <span class="text-[10px] font-black uppercase tracking-[2px] text-zinc-500 block">Arquivo de Fechamentos</span>
+            <h2 class="text-lg font-black text-white tracking-tight">Histórico</h2>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button class="h-9 w-9 rounded-2xl bg-[#121216] border border-zinc-800 flex items-center justify-center text-zinc-400 active:scale-95">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            </button>
+            <button class="h-9 px-3 rounded-2xl bg-zinc-800 border border-zinc-700 text-zinc-200 text-xs font-black uppercase active:scale-95">
+              Sair
+            </button>
+          </div>
+        </div>
+
+        <!-- Banner KPI Slim -->
+        <div class="rounded-3xl bg-[#121216] border border-zinc-800 p-3.5 flex items-center justify-between shadow-xl">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+              <i data-lucide="trending-up" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <span class="text-[9px] font-black uppercase tracking-wider text-zinc-500 block">Total Registrado</span>
+              <span class="text-base font-black text-white">R$ 68.450,20</span>
+            </div>
+          </div>
+          <div class="text-right">
+            <span class="text-[9px] font-black uppercase tracking-wider text-emerald-400 block">Repassados</span>
+            <span class="text-sm font-black text-emerald-400">92%</span>
+          </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="rounded-2xl bg-[#121216] border border-zinc-800 px-3 py-2 flex items-center gap-2">
+          <i data-lucide="search" class="w-4 h-4 text-zinc-500"></i>
+          <input type="text" placeholder="BUSCAR DATA, CX OU OPERADOR..." class="bg-transparent text-xs font-bold text-white placeholder-zinc-600 outline-none w-full uppercase tracking-wider">
+        </div>
+
+        <!-- Filter Pills -->
+        <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+          <button class="px-3 py-1 rounded-xl bg-white text-zinc-950 text-[10px] font-black uppercase flex-shrink-0">
+            Todos (14)
+          </button>
+          <button class="px-3 py-1 rounded-xl bg-[#121216] border border-zinc-800 text-amber-400 text-[10px] font-black uppercase flex-shrink-0">
+            Pendentes (3)
+          </button>
+          <button class="px-3 py-1 rounded-xl bg-[#121216] border border-zinc-800 text-emerald-400 text-[10px] font-black uppercase flex-shrink-0">
+            Repassados (11)
+          </button>
+          <button class="px-3 py-1 rounded-xl bg-[#121216] border border-zinc-800 text-red-400 text-[10px] font-black uppercase flex-shrink-0">
+            Quebras (1)
+          </button>
+        </div>
+
+        <!-- Lista de Cards (Opção 1) -->
+        <div class="space-y-2.5 pt-1">
+          
+          <!-- Card 1: Bateu normal e Repassado -->
+          <div class="rounded-3xl bg-[#121216] border border-zinc-800 p-3.5 shadow-md">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="h-9 w-9 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-blue-400 font-black text-xs">
+                  29
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-sm font-black text-white">29/08/2026</span>
+                    <span class="text-[8px] font-black bg-blue-500/10 border border-blue-500/25 text-blue-400 px-1.5 py-0.2 rounded">CX 01</span>
+                  </div>
+                  <span class="text-[10px] font-bold text-zinc-500 uppercase">Operador: Lucas</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-sm font-black text-white block">R$ 10.856,14</span>
+                <span class="text-[9px] font-black text-emerald-400 uppercase">✔ Repassado</span>
+              </div>
+            </div>
+            
+            <div class="flex items-center justify-between mt-3 pt-2.5 border-t border-zinc-800/80 text-[10px]">
+              <span class="text-zinc-500 font-bold uppercase">Resultado: <strong class="text-zinc-300">Bateu Zerado</strong></span>
+              <button class="text-blue-400 font-black uppercase flex items-center gap-0.5 hover:underline">
+                Ver Detalhes <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Card 2: Quebra de Caixa e Pendente -->
+          <div class="rounded-3xl bg-[#121216] border border-red-500/30 p-3.5 shadow-md relative overflow-hidden">
+            <div class="absolute top-0 left-0 bottom-0 w-1 bg-red-500"></div>
+            <div class="flex items-center justify-between pl-1">
+              <div class="flex items-center gap-2.5">
+                <div class="h-9 w-9 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 font-black text-xs">
+                  28
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-sm font-black text-white">28/08/2026</span>
+                    <span class="text-[8px] font-black bg-zinc-800 text-zinc-400 px-1.5 py-0.2 rounded">CX 01</span>
+                  </div>
+                  <span class="text-[10px] font-bold text-red-400 uppercase font-black">⚠️ Falta R$ 15,00</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-sm font-black text-white block">R$ 8.420,00</span>
+                <span class="text-[9px] font-black text-amber-400 uppercase">⏳ Pendente</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between mt-3 pt-2.5 border-t border-zinc-800/80 text-[10px] pl-1">
+              <span class="text-zinc-400 font-bold uppercase">Malote ainda no cofre</span>
+              <button class="text-blue-400 font-black uppercase flex items-center gap-0.5 hover:underline">
+                Abrir Turno <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Card 3: Sobra de Caixa e Repassado -->
+          <div class="rounded-3xl bg-[#121216] border border-emerald-500/30 p-3.5 shadow-md">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="h-9 w-9 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-black text-xs">
+                  27
+                </div>
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-sm font-black text-white">27/08/2026</span>
+                    <span class="text-[8px] font-black bg-zinc-800 text-zinc-400 px-1.5 py-0.2 rounded">CX 01</span>
+                  </div>
+                  <span class="text-[10px] font-bold text-emerald-400 uppercase font-black">🟢 Sobra +R$ 5,20</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-sm font-black text-white block">R$ 12.190,50</span>
+                <span class="text-[9px] font-black text-emerald-400 uppercase">✔ Repassado</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between mt-3 pt-2.5 border-t border-zinc-800/80 text-[10px]">
+              <span class="text-zinc-500 font-bold uppercase">Fechado por: <strong class="text-zinc-300">Ana Paula</strong></span>
+              <button class="text-blue-400 font-black uppercase flex items-center gap-0.5 hover:underline">
+                Ver Detalhes <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- OPÇÃO 2: GLASS CARD PRO (DESTAQUE VISUAL PARA AUDITORIA) -->
+      <!-- ========================================================================= -->
+      <div id="view-opt2" class="header-view hidden space-y-3.5">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between pt-1">
+          <div>
+            <span class="text-[10px] font-black uppercase tracking-[2px] text-zinc-500 block">Auditoria de Caixas</span>
+            <h2 class="text-lg font-black text-white">Turnos Anteriores</h2>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button class="h-9 w-9 rounded-2xl bg-[#121216] border border-zinc-800 flex items-center justify-center text-zinc-400">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            </button>
+            <button class="h-9 px-3 rounded-2xl bg-zinc-800 border border-zinc-700 text-zinc-200 text-xs font-black uppercase">
+              Sair
+            </button>
+          </div>
+        </div>
+
+        <!-- 2 Big Metric Hero Cards -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="rounded-3xl bg-[#121216] border border-zinc-800 p-3.5">
+            <span class="text-[9px] font-black uppercase text-zinc-500 block">Total em Caixa</span>
+            <span class="text-base font-black text-white block mt-0.5">R$ 68.450</span>
+            <span class="text-[8px] font-bold text-zinc-500 uppercase">14 turnos fechados</span>
+          </div>
+          <div class="rounded-3xl bg-[#121216] border border-emerald-500/30 p-3.5">
+            <span class="text-[9px] font-black uppercase text-emerald-400 block">Repassado</span>
+            <span class="text-base font-black text-emerald-400 block mt-0.5">R$ 62.980</span>
+            <span class="text-[8px] font-bold text-emerald-500/80 uppercase">11 de 14 malotes</span>
+          </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="rounded-2xl bg-[#121216] border border-zinc-800 px-3 py-2 flex items-center gap-2">
+          <i data-lucide="search" class="w-4 h-4 text-zinc-500"></i>
+          <input type="text" placeholder="Filtrar por data, operador..." class="bg-transparent text-xs font-bold text-white placeholder-zinc-600 outline-none w-full">
+        </div>
+
+        <!-- Feed de Cards Grandes Opção 2 -->
+        <div class="space-y-3 pt-1">
+          
+          <div class="rounded-3xl bg-[#121216] border border-zinc-800 p-4 shadow-xl">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-3">
+                <div class="h-11 w-11 rounded-2xl bg-zinc-900 border border-zinc-800 flex flex-col items-center justify-center">
+                  <span class="text-[8px] font-black uppercase text-zinc-500">AGO</span>
+                  <span class="text-sm font-black text-white leading-none">29</span>
+                </div>
+                <div>
+                  <h3 class="text-sm font-black text-white">Sexta-feira • 29/08</h3>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="text-[9px] font-bold text-zinc-400">CX 01 • Lucas</span>
+                  </div>
+                </div>
+              </div>
+
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                ✔ Repassado
+              </span>
+            </div>
+
+            <!-- Valores Destaque -->
+            <div class="mt-3.5 grid grid-cols-2 gap-2 bg-zinc-900/60 p-2.5 rounded-2xl border border-zinc-800/80">
+              <div>
+                <span class="text-[8px] font-black uppercase text-zinc-500 block">Total do Turno</span>
+                <span class="text-sm font-black text-white">R$ 10.856,14</span>
+              </div>
+              <div class="text-right">
+                <span class="text-[8px] font-black uppercase text-zinc-500 block">Diferença</span>
+                <span class="text-sm font-black text-zinc-300">R$ 0,00</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between mt-3 pt-2 border-t border-zinc-800/60">
+              <span class="text-[9.5px] font-bold text-zinc-500">12 lançamentos</span>
+              <button class="px-3 py-1 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-black uppercase flex items-center gap-1">
+                Abrir Turno <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="rounded-3xl bg-[#121216] border border-red-500/30 p-4 shadow-xl">
+            <div class="flex items-start justify-between">
+              <div class="flex items-center gap-3">
+                <div class="h-11 w-11 rounded-2xl bg-red-500/10 border border-red-500/30 flex flex-col items-center justify-center text-red-400">
+                  <span class="text-[8px] font-black uppercase">AGO</span>
+                  <span class="text-sm font-black leading-none">28</span>
+                </div>
+                <div>
+                  <h3 class="text-sm font-black text-white">Quinta-feira • 28/08</h3>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="text-[9px] font-bold text-zinc-400">CX 01 • Lucas</span>
+                  </div>
+                </div>
+              </div>
+
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500/10 border border-amber-500/30 text-amber-400">
+                ⏳ Pendente
+              </span>
+            </div>
+
+            <!-- Valores Destaque -->
+            <div class="mt-3.5 grid grid-cols-2 gap-2 bg-zinc-900/60 p-2.5 rounded-2xl border border-zinc-800/80">
+              <div>
+                <span class="text-[8px] font-black uppercase text-zinc-500 block">Total do Turno</span>
+                <span class="text-sm font-black text-white">R$ 8.420,00</span>
+              </div>
+              <div class="text-right">
+                <span class="text-[8px] font-black uppercase text-red-400 block">Quebra</span>
+                <span class="text-sm font-black text-red-400">-R$ 15,00</span>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between mt-3 pt-2 border-t border-zinc-800/60">
+              <span class="text-[9.5px] font-bold text-red-400">Pendente de Repasse</span>
+              <button class="px-3 py-1 rounded-xl bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-black uppercase flex items-center gap-1">
+                Abrir Turno <i data-lucide="arrow-up-right" class="w-3 h-3"></i>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- OPÇÃO 3: FINTECH FEED (CLEAN, ELEGANTE E ULTRA RÁPIDO) -->
+      <!-- ========================================================================= -->
+      <div id="view-opt3" class="header-view hidden space-y-3">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between pt-1">
+          <div>
+            <h2 class="text-lg font-black text-white">Histórico</h2>
+            <span class="text-[10px] font-bold text-zinc-400">14 fechamentos registrados</span>
+          </div>
+          <button class="h-9 px-3.5 rounded-2xl bg-[#121216] border border-zinc-800 text-zinc-300 text-xs font-black uppercase">
+            Sair
+          </button>
+        </div>
+
+        <!-- Quick Summary Bar -->
+        <div class="rounded-2xl bg-[#121216] border border-zinc-800 p-3 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="h-2 w-2 rounded-full bg-emerald-400"></div>
+            <span class="text-xs font-black text-white">R$ 68.450,20 Total</span>
+          </div>
+          <span class="text-[10px] font-black text-zinc-400 uppercase">11 Repassados</span>
+        </div>
+
+        <!-- Filter Row -->
+        <div class="flex items-center gap-1 overflow-x-auto pb-1">
+          <button class="px-3 py-1 rounded-lg bg-zinc-800 text-white text-[10px] font-black uppercase">
+            Todos
+          </button>
+          <button class="px-3 py-1 rounded-lg bg-[#121216] text-zinc-400 text-[10px] font-black uppercase">
+            Pendentes (3)
+          </button>
+          <button class="px-3 py-1 rounded-lg bg-[#121216] text-zinc-400 text-[10px] font-black uppercase">
+            Quebras (1)
+          </button>
+        </div>
+
+        <!-- Feed Compacto estilo Linear/Nubank -->
+        <div class="space-y-2">
+          
+          <div class="rounded-2xl bg-[#121216] border border-zinc-800/90 p-3 flex items-center justify-between active:bg-zinc-900 transition-all cursor-pointer">
+            <div class="flex items-center gap-3">
+              <div class="h-9 w-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-blue-400 font-black text-xs">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-black text-white">29/08/2026</span>
+                  <span class="text-[8px] font-bold text-zinc-400">CX 01</span>
+                </div>
+                <span class="text-[9.5px] font-bold text-zinc-500">Operador Lucas</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-black text-white block">R$ 10.856,14</span>
+              <span class="text-[8px] font-black text-emerald-400 uppercase">Repassado</span>
+            </div>
+          </div>
+
+          <div class="rounded-2xl bg-[#121216] border border-red-500/30 p-3 flex items-center justify-between active:bg-zinc-900 transition-all cursor-pointer">
+            <div class="flex items-center gap-3">
+              <div class="h-9 w-9 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 font-black text-xs">
+                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-black text-white">28/08/2026</span>
+                  <span class="text-[8px] font-black text-red-400 bg-red-500/15 px-1 py-0.2 rounded">-R$ 15</span>
+                </div>
+                <span class="text-[9.5px] font-bold text-zinc-500">Operador Lucas</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-black text-white block">R$ 8.420,00</span>
+              <span class="text-[8px] font-black text-amber-400 uppercase">Pendente</span>
+            </div>
+          </div>
+
+          <div class="rounded-2xl bg-[#121216] border border-zinc-800/90 p-3 flex items-center justify-between active:bg-zinc-900 transition-all cursor-pointer">
+            <div class="flex items-center gap-3">
+              <div class="h-9 w-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-blue-400 font-black text-xs">
+                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-black text-white">27/08/2026</span>
+                  <span class="text-[8px] font-black text-emerald-400 bg-emerald-500/15 px-1 py-0.2 rounded">+R$ 5,20</span>
+                </div>
+                <span class="text-[9.5px] font-bold text-zinc-500">Operadora Ana Paula</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-black text-white block">R$ 12.190,50</span>
+              <span class="text-[8px] font-black text-emerald-400 uppercase">Repassado</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM BAR MOCKUP -->
+    <div class="h-16 bg-[#09090c] border-t border-zinc-900 px-6 flex items-center justify-between text-zinc-600 flex-shrink-0 z-20">
+      <div class="flex flex-col items-center gap-1 text-zinc-600">
+        <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+        <span class="text-[9px] font-bold">Painel</span>
+      </div>
+      <div class="flex flex-col items-center gap-1 text-zinc-600">
+        <i data-lucide="banknote" class="w-5 h-5"></i>
+        <span class="text-[9px] font-bold">Dinheiro</span>
+      </div>
+      <div class="flex flex-col items-center gap-1 text-zinc-600">
+        <i data-lucide="building-2" class="w-5 h-5"></i>
+        <span class="text-[9px] font-bold">Convênio</span>
+      </div>
+      <div class="flex flex-col items-center gap-1 text-blue-400">
+        <i data-lucide="calendar" class="w-5 h-5"></i>
+        <span class="text-[9px] font-bold">Histórico</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function setOption(optNum) {
+      document.querySelectorAll('.header-view').forEach(el => el.classList.add('hidden'));
+      document.getElementById('view-opt' + optNum).classList.remove('hidden');
+
+      [1, 2, 3].forEach(num => {
+        const btn = document.getElementById('btn-opt-' + num);
+        if (num === optNum) {
+          btn.className = "px-3.5 py-1.5 rounded-xl text-xs font-black uppercase transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/20";
+        } else {
+          btn.className = "px-3.5 py-1.5 rounded-xl text-xs font-black uppercase transition-all bg-[#121216] border border-zinc-800 text-zinc-400 hover:text-white";
+        }
+      });
+
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>

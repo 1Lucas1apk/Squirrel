@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Organização da Pílula Expansível (5 Abas)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 420px;
+      height: 850px;
+      border-radius: 40px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .pixelated {
+      image-rendering: pixelated;
+    }
+
+    /* Transição de expansão do botão */
+    .nav-btn {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-6xl mx-auto pb-28">
+
+  <!-- CABEÇALHO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      🎯 ORGANIZAÇÃO ESTRUTURAL • FORMATO PÍLULA
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      4 Maneiras de Organizar a Pílula
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-2xl mx-auto font-medium">
+      Mantendo a regra oficial: <b>só mostra o nome quando clica</b>, com ícones coerentes com os cards do app e elevação real de 28px:
+    </p>
+
+    <!-- SELETOR DOS 4 MODELOS -->
+    <div class="mt-4 grid grid-cols-1 sm:grid-cols-4 gap-2 bg-[#121216] p-1.5 rounded-2xl border border-zinc-800 max-w-4xl mx-auto">
+      <button onclick="setWay(1)" id="btn-w1" class="py-2.5 rounded-xl text-xs font-black bg-emerald-500 text-zinc-950 shadow transition-all">
+        1. Ícones do Dashboard (Coerente)
+      </button>
+      <button onclick="setWay(2)" id="btn-w2" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        2. Boxes Lapidados (Estilo Header)
+      </button>
+      <button onclick="setWay(3)" id="btn-w3" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        3. Cápsula com Micro-Contador (22)
+      </button>
+      <button onclick="setWay(4)" id="btn-w4" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        4. Pílula Acetinada com Borda Fina
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER DO CELULAR -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- CABEÇALHO DO APP -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="text-base font-black uppercase tracking-tighter text-white">CAIXA</span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span class="text-[11px] font-black text-zinc-400 uppercase">27 AGO</span>
+        </div>
+        <div id="way-tag" class="text-xs font-black text-emerald-400 uppercase bg-emerald-500/10 px-2.5 py-0.5 rounded-xl border border-emerald-500/20">
+          Maneira 1: Ícones do Dashboard
+        </div>
+      </div>
+
+      <!-- CORPO DA TELA (CONTEXTO DO DASHBOARD) -->
+      <div class="flex-1 overflow-y-auto p-3.5 space-y-3 relative pb-36">
+        
+        <!-- CARD DO TOTAL HERO -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-[28px] p-4 shadow-xl">
+          <div class="flex items-center justify-between text-xs font-black uppercase text-zinc-400 mb-1">
+            <span>Total do Caixa</span>
+            <span class="text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/20">-R$ 0,09 Quebra</span>
+          </div>
+          <div class="mono text-[34px] font-black text-white leading-tight">
+            <span class="text-zinc-400 text-lg font-bold">R$</span> 7.340<span class="text-zinc-300 text-2xl font-extrabold">,98</span>
+          </div>
+          <div class="h-1.5 w-full bg-zinc-900 rounded-full flex overflow-hidden my-2.5 p-0.5">
+            <div style="width: 14%" class="bg-amber-400 rounded-full mr-0.5"></div>
+            <div style="width: 86%" class="bg-indigo-400 rounded-full"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <div class="bg-[#09090c] p-2.5 rounded-xl border border-zinc-800/80">
+              <div class="text-[11px] font-bold text-amber-400 uppercase">Dinheiro</div>
+              <div class="mono text-base font-black text-white">R$ 1.051,00</div>
+            </div>
+            <div class="bg-[#09090c] p-2.5 rounded-xl border border-zinc-800/80">
+              <div class="text-[11px] font-bold text-indigo-300 uppercase">Pix Repasse</div>
+              <div class="mono text-base font-black text-indigo-200">R$ 6.289,98</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DOCK DE SAÍDAS -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-3 px-4 flex items-center shadow-lg min-h-[66px]">
+          <div class="flex-1">
+            <div class="text-[11px] font-bold text-zinc-400 uppercase">Saídas</div>
+            <div class="mono text-lg font-black text-white">R$ 0,00</div>
+          </div>
+          <div class="w-px h-8 bg-zinc-800 mx-2"></div>
+          <div class="flex-1">
+            <div class="text-[11px] font-bold text-blue-400 uppercase">Canhotos</div>
+            <div class="mono text-lg font-black text-blue-300">22 de 22</div>
+          </div>
+        </div>
+
+        <!-- AJUSTE DA GAVETA -->
+        <div class="bg-[#121216] p-3 px-3.5 rounded-2xl border border-zinc-800/80 flex items-center justify-between min-h-[66px]">
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+              <i data-lucide="sliders-horizontal" class="w-4.5 h-4.5"></i>
+            </div>
+            <div>
+              <div class="text-[11px] font-bold uppercase text-zinc-400">Ajuste da Gaveta</div>
+              <div class="mono text-lg font-black text-white">R$ 0,00</div>
+            </div>
+          </div>
+          <div class="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-black">
+            + 1,00
+          </div>
+        </div>
+
+        <!-- ESQUILINHO PIXEL FOOTER -->
+        <div class="pt-2 pb-1 flex items-center justify-center opacity-80">
+          <div class="relative w-12 h-12 flex items-center justify-center pixelated">
+            <svg viewBox="0 0 32 32" class="w-full h-full">
+              <rect x="4" y="10" width="6" height="4" fill="#d97706" />
+              <rect x="2" y="14" width="8" height="6" fill="#f59e0b" />
+              <rect x="16" y="10" width="10" height="8" fill="#f59e0b" />
+              <rect x="20" y="12" width="2" height="2" fill="#18181b" />
+              <rect x="12" y="18" width="10" height="8" fill="#d97706" />
+              <rect x="14" y="19" width="6" height="6" fill="#fef3c7" />
+              <rect x="22" y="18" width="4" height="4" fill="#fef08a" />
+              <rect x="0" y="28" width="32" height="2" fill="#27272a" />
+              <rect x="6" y="27" width="2" height="1" fill="#10b981" />
+              <rect x="14" y="27" width="3" height="1" fill="#10b981" />
+            </svg>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- =========================================================================
+           BARRA FLUTUANTE ELEVADA (bottom: 28px - FLUTUAÇÃO REAL)
+           ========================================================================= -->
+      <div id="way-dock-container" class="absolute bottom-7 left-0 right-0 px-3.5 z-50 flex items-center justify-center pointer-events-auto">
+        <!-- Injetado via JS -->
+      </div>
+
+    </div>
+
+    <!-- DESCRIÇÃO DA ESTRUTURA -->
+    <div id="way-description" class="mt-6 max-w-xl text-center bg-[#121216] p-4 rounded-2xl border border-zinc-800 text-xs text-zinc-300">
+      <!-- Injetado via JS -->
+    </div>
+
+  </div>
+
+  <script>
+    let currentWay = 1;
+    let activeTab = 'painel';
+
+    function setWay(n) {
+      currentWay = n;
+
+      for (let i = 1; i <= 4; i++) {
+        const btn = document.getElementById('btn-w' + i);
+        if (i === n) {
+          btn.className = 'py-2.5 rounded-xl text-xs font-black bg-emerald-500 text-zinc-950 shadow transition-all';
+        } else {
+          btn.className = 'py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all';
+        }
+      }
+
+      render();
+    }
+
+    function selectTab(key) {
+      activeTab = key;
+      render();
+    }
+
+    // ÍCONES COERENTES COM OS CARDS DO APP:
+    // Painel = Monitor / LayoutDashboard
+    // Dinheiro = Banknote (igual ao Dinheiro no Saco!)
+    // POS = CreditCard (igual ao POS Cartões!)
+    // Convênio = Building2 (igual aos Convênios!)
+    // Check = CheckSquare (igual aos Canhotos!)
+    const tabsData = [
+      { key: 'painel', label: 'Painel', icon: 'layout-dashboard' },
+      { key: 'dinheiro', label: 'Dinheiro', icon: 'banknote' },
+      { key: 'pos', label: 'POS', icon: 'credit-card' },
+      { key: 'convenio', label: 'Convênio', icon: 'building-2' },
+      { key: 'check', label: 'Check', icon: 'check-square', badge: '22' }
+    ];
+
+    function render() {
+      const container = document.getElementById('way-dock-container');
+      const tag = document.getElementById('way-tag');
+      const desc = document.getElementById('way-description');
+
+      if (currentWay === 1) {
+        // =========================================================
+        // MANEIRA 1: ÍCONES COERENTES COM O DASHBOARD + EXPANSÃO SUAVE
+        // =========================================================
+        tag.innerText = 'Maneira 1: Ícones do Dashboard (Coerente)';
+        tag.className = 'text-xs font-black text-emerald-400 uppercase bg-emerald-500/10 px-2.5 py-0.5 rounded-xl border border-emerald-500/20';
+        desc.innerHTML = `<b>Maneira 1 — Ícones Coerentes com o Dashboard:</b> Substituímos o ícone de '+' pelo <b>Banknote</b> (o mesmo do Dinheiro no Saco). A barra flutua a <b>28px da base</b>, e quando você clica, o botão se expande suavemente com <b>fundo branco acetinado contrastante</b> e texto nítido.`;
+
+        let tabsHtml = tabsData.map(t => {
+          const isActive = activeTab === t.key;
+          if (isActive) {
+            return `
+              <button onclick="selectTab('${t.key}')" class="nav-btn flex items-center gap-2 py-2 px-4 rounded-full bg-white text-zinc-950 shadow-md font-black">
+                <i data-lucide="${t.icon}" class="w-4 h-4 stroke-[2.5]"></i>
+                <span class="text-[11px] uppercase tracking-tight">${t.label}</span>
+              </button>
+            `;
+          } else {
+            return `
+              <button onclick="selectTab('${t.key}')" class="nav-btn h-10 w-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white active:scale-90 transition-all relative">
+                <i data-lucide="${t.icon}" class="w-4 h-4 stroke-[2]"></i>
+                ${t.badge ? '<span class="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-blue-400"></span>' : ''}
+              </button>
+            `;
+          }
+        }).join('');
+
+        container.innerHTML = `
+          <div class="bg-[#18181b]/95 backdrop-blur-2xl border border-zinc-700/80 rounded-full p-1.5 px-2 flex items-center gap-1 shadow-[0_20px_50px_rgba(0,0,0,0.95)]">
+            ${tabsHtml}
+          </div>
+        `;
+      } else if (currentWay === 2) {
+        // =========================================================
+        // MANEIRA 2: BOXES LAPIDADOS (ESTILO HEADER DO APP)
+        // =========================================================
+        tag.innerText = 'Maneira 2: Boxes Lapidados (Estilo Header)';
+        tag.className = 'text-xs font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-0.5 rounded-xl border border-amber-500/20';
+        desc.innerHTML = `<b>Maneira 2 — Boxes Lapidados:</b> Cada botão inativo possui um <b>box sutil com borda interna</b> (idêntico aos botões do cabeçalho oficial do app). Ao clicar, o box se expande suavemente com <b>destaque em ouro âmbar</b>.`;
+
+        let tabsHtml = tabsData.map(t => {
+          const isActive = activeTab === t.key;
+          if (isActive) {
+            return `
+              <button onclick="selectTab('${t.key}')" class="nav-btn flex items-center gap-2 py-2 px-3.5 rounded-2xl bg-amber-400 text-zinc-950 font-black shadow-lg shadow-amber-500/25">
+                <i data-lucide="${t.icon}" class="w-4 h-4 stroke-[2.5]"></i>
+                <span class="text-[10px] uppercase tracking-wider font-mono">${t.label}</span>
+              </button>
+            `;
+          } else {
+            return `
+              <button onclick="selectTab('${t.key}')" class="nav-btn h-9 w-9 rounded-xl bg-zinc-900/90 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white active:scale-95 transition-all relative">
+                <i data-lucide="${t.icon}" class="w-3.5 h-3.5 stroke-[2]"></i>
+                ${t.badge ? '<span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-blue-400 border border-[#09090b]"></span>' : ''}
+              </button>
+            `;
+          }
+        }).join('');
+
+        container.innerHTML = `
+          <div class="bg-[#121216]/95 backdrop-blur-2xl border border-zinc-800 rounded-[28px] p-2 px-2.5 flex items-center gap-2 shadow-[0_25px_50px_rgba(0,0,0,0.95)]">
+            ${tabsHtml}
+          </div>
+        `;
+      } else if (currentWay === 3) {
+        // =========================================================
+        // MANEIRA 3: CÁPSULA COM MICRO-CONTADOR INTEGRADO (22)
+        // =========================================================
+        tag.innerText = 'Maneira 3: Cápsula com Micro-Contador';
+        tag.className = 'text-xs font-black text-blue-400 uppercase bg-blue-500/10 px-2.5 py-0.5 rounded-xl border border-blue-500/20';
+        desc.innerHTML = `<b>Maneira 3 — Cápsula com Micro-Contador:</b> Na aba de Checklist, exibe o <b>número exato de canhotos pendentes (22)</b> dentro de uma mini-badge elegante, mesmo quando a aba não estiver selecionada.`;
+
+        let tabsHtml = tabsData.map(t => {
+          const isActive = activeTab === t.key;
+          if (isActive) {
+            return `
+              <button onclick="selectTab('${t.key}')" class="nav-btn flex items-center gap-2 py-2 px-4 rounded-full bg-zinc-100 text-zinc-950 font-black shadow-md">
+                <i data-lucide="${t.icon}" class="w-4 h-4 stroke-[2.5]"></i>
+                <span class="text-[10.5px] uppercase tracking-tight">${t.label}</span>
+              </button>
+            `;
+          } else {
+            return `
+              <button onclick="selectTab('${t.key}')" class="nav-btn h-10 w-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white active:scale-90 transition-all relative">
+                <i data-lucide="${t.icon}" class="w-4 h-4 stroke-[2]"></i>
+                ${t.badge ? '<span class="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-blue-500 text-[8.5px] font-black text-white">' + t.badge + '</span>' : ''}
+              </button>
+            `;
+          }
+        }).join('');
+
+        container.innerHTML = `
+          <div class="bg-[#141418]/95 backdrop-blur-2xl border border-zinc-700/80 rounded-full p-1.5 px-2 flex items-center gap-1 shadow-[0_20px_50px_rgba(0,0,0,0.95)]">
+            ${tabsHtml}
+          </div>
+        `;
+      } else if (currentWay === 4) {
+        // =========================================================
+        // MANEIRA 4: PÍLULA ACETINADA COM BORDA FINA & TRANSIÇÃO MACIA
+        // =========================================================
+        tag.innerText = 'Maneira 4: Pílula Acetinada com Borda Fina';
+        tag.className = 'text-xs font-black text-purple-400 uppercase bg-purple-500/10 px-2.5 py-0.5 rounded-xl border border-purple-500/20';
+        desc.innerHTML = `<b>Maneira 4 — Pílula Acetinada:</b> Design limpo com <b>borda fina em titânio</b> e botões com espaçamento uniforme. A aba ativa se expande com fundo cinza platina e texto preto, mantendo máxima discrição e elegância.`;
+
+        let tabsHtml = tabsData.map(t => {
+          const isActive = activeTab === t.key;
+          if (isActive) {
+            return `
+              <button onclick="selectTab('${t.key}')" class="nav-btn flex items-center gap-1.5 py-2 px-3.5 rounded-full bg-zinc-200 text-zinc-950 font-black shadow-sm">
+                <i data-lucide="${t.icon}" class="w-4 h-4 stroke-[2.5]"></i>
+                <span class="text-[10px] uppercase tracking-wider">${t.label}</span>
+              </button>
+            `;
+          } else {
+            return `
+              <button onclick="selectTab('${t.key}')" class="nav-btn h-9 w-9 rounded-full flex items-center justify-center text-zinc-500 hover:text-zinc-200 active:scale-95 transition-all">
+                <i data-lucide="${t.icon}" class="w-4 h-4 stroke-[1.75]"></i>
+              </button>
+            `;
+          }
+        }).join('');
+
+        container.innerHTML = `
+          <div class="bg-[#121216]/95 backdrop-blur-2xl border border-zinc-800 rounded-full p-1.5 px-2 flex items-center gap-1 shadow-[0_25px_50px_rgba(0,0,0,0.95)]">
+            ${tabsHtml}
+          </div>
+        `;
+      }
+
+      lucide.createIcons();
+    }
+
+    render();
+  </script>
+</body>
+</html>

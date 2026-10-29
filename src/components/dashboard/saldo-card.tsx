@@ -38,11 +38,7 @@ export function SaldoCard({ label, value, tone = "default", icon }: SaldoCardPro
         </Text>
       </View>
       <Text 
-        className={`text-[26px] font-black tracking-tighter ${toneTextClass[tone]}`}
-        numberOfLines={1}
-        adjustsFontSizeToFit
-        minimumFontScale={0.4}
-        ellipsizeMode="clip"
+        className={`text-[24px] font-black tracking-tighter ${toneTextClass[tone]}`}
       >
         {value}
       </Text>

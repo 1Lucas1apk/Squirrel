@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Rework Mapa de Movimentação (DNA Oficial)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050508;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 412px;
+      border-radius: 46px;
+      border: 3.5px solid #27272a;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 0 1px #18181b;
+      background-color: #09090c;
+      overflow: hidden;
+      min-height: 860px;
+      max-height: 860px;
+      position: relative;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-6xl mx-auto pb-32">
+
+  <!-- CABEÇALHO DO PROJETO -->
+  <div class="mb-8 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-black uppercase tracking-widest mb-3 shadow-sm">
+      🐿️ SQUIRREL SYSTEM • REWORK MAPA DE MOVIMENTAÇÃO
+    </div>
+    <h1 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-white">
+      Mapa de Movimentação & Fluxo do Caixa
+    </h1>
+    <p class="text-zinc-400 text-sm mt-2 max-w-2xl mx-auto font-medium leading-relaxed">
+      Visualização gráfica do comportamento do dinheiro ao longo do dia com o mesmo DNA visual de <span class="text-zinc-200 font-bold">Painel</span> e <span class="text-zinc-200 font-bold">Transações</span>: curvas de saldo em tempo real, picos de atendimento e estatísticas de giro.
+    </p>
+
+    <!-- SELETOR DE CONCEITOS -->
+    <div class="flex items-center justify-center gap-2.5 mt-6 flex-wrap">
+      <button onclick="switchConcept('modelo-1')" id="btn-m1" class="concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-blue-500 text-white border-blue-400 shadow-xl">
+        ⭐ 1. Radar Tático (Trilha & Picos)
+      </button>
+      <button onclick="switchConcept('modelo-2')" id="btn-m2" class="concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] text-zinc-400 border-zinc-800 hover:border-zinc-700">
+        ⏱️ 2. Linha do Tempo por Períodos
+      </button>
+      <button onclick="switchConcept('modelo-3')" id="btn-m3" class="concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] text-zinc-400 border-zinc-800 hover:border-zinc-700">
+        🔥 3. Heatmap de Atendimento
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER DE PREVIEWS -->
+  <div class="flex justify-center items-start gap-8">
+
+    <!-- ========================================================================= -->
+    <!-- MODELO 1: RADAR TÁTICO (TRILHA & PICOS COM DNA OFICIAL) -->
+    <!-- ========================================================================= -->
+    <div id="modelo-1" class="mobile-frame flex flex-col">
+      <!-- Status Bar Simulado -->
+      <div class="px-7 pt-3.5 pb-2 flex justify-between items-center text-[11px] font-bold text-zinc-500 border-b border-zinc-900/60 bg-[#09090c]">
+        <span class="mono">20:20</span>
+        <div class="flex items-center gap-1.5 text-zinc-400">
+          <i data-lucide="activity" class="w-3.5 h-3.5 text-blue-400"></i>
+          <i data-lucide="battery" class="w-4 h-4 text-blue-400"></i>
+        </div>
+      </div>
+
+      <!-- Header Top -->
+      <div class="p-4 pb-3 bg-[#09090c] border-b border-zinc-900 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center">
+            <i data-lucide="activity" class="w-5 h-5 text-blue-400"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-black uppercase tracking-[2px] text-zinc-500">Expediente</span>
+              <span class="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 text-[8px] font-black">HOJE</span>
+            </div>
+            <h2 class="text-base font-black uppercase text-zinc-100">Mapa de Movimentação</h2>
+          </div>
+        </div>
+        <button class="h-9 w-9 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800 hover:bg-zinc-800 transition">
+          <i data-lucide="x" class="w-4 h-4 text-zinc-400"></i>
+        </button>
+      </div>
+
+      <!-- Seletor de Sub-Abas do Mapa -->
+      <div class="p-3 bg-[#09090c] border-b border-zinc-900">
+        <div class="bg-[#121216] p-1 rounded-2xl border border-zinc-800 flex gap-1">
+          <button onclick="setMapTab('trilha')" id="tab-map-trilha" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition bg-blue-500 text-white shadow">
+            Trilha da Gaveta
+          </button>
+          <button onclick="setMapTab('picos')" id="tab-map-picos" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition text-zinc-400 hover:text-white">
+            Picos por Hora
+          </button>
+        </div>
+      </div>
+
+      <!-- Scroll Content -->
+      <div class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-3.5 pb-8">
+
+        <!-- STATS RÁPIDOS 2 COLUNAS -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="bg-[#121216] p-3.5 rounded-2xl border border-zinc-800/80">
+            <span class="text-[8px] font-black uppercase tracking-wider text-zinc-400 block mb-1">Pico Máximo de Saldo</span>
+            <span class="text-sm font-black mono text-emerald-400">R$ 1.840,50</span>
+            <span class="text-[8px] text-zinc-500 block mt-0.5">Às 14:35 da tarde</span>
+          </div>
+          <div class="bg-[#121216] p-3.5 rounded-2xl border border-zinc-800/80">
+            <span class="text-[8px] font-black uppercase tracking-wider text-zinc-400 block mb-1">Saldo Atual em Mãos</span>
+            <span class="text-sm font-black mono text-blue-300">R$ 610,26</span>
+            <span class="text-[8px] text-zinc-500 block mt-0.5">Na gaveta física</span>
+          </div>
+        </div>
+
+        <!-- ABA 1: TRILHA GRÁFICA DA GAVETA -->
+        <div id="content-trilha" class="space-y-3.5">
+          <div class="bg-[#121216] p-4 rounded-[28px] border border-zinc-800/80 shadow-md">
+            <div class="flex items-center justify-between pb-2 border-b border-zinc-800/60 mb-3">
+              <div class="flex items-center gap-2">
+                <div class="h-7 w-7 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center">
+                  <i data-lucide="trending-up" class="w-3.5 h-3.5 text-blue-400"></i>
+                </div>
+                <span class="text-xs font-black uppercase text-zinc-200">Evolução do Saldo Físico</span>
+              </div>
+              <span class="text-[8px] font-mono text-blue-400 font-bold bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">AO VIVO</span>
+            </div>
+
+            <!-- Gráfico Simulado SVG -->
+            <div class="bg-[#09090c] p-3 rounded-2xl border border-zinc-800/80 mb-2">
+              <svg viewBox="0 0 300 120" class="w-full h-32">
+                <defs>
+                  <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.35"/>
+                    <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,100 Q40,90 70,60 T140,40 T210,20 T280,75 L300,70 L300,120 L0,120 Z" fill="url(#grad)"/>
+                <path d="M0,100 Q40,90 70,60 T140,40 T210,20 T280,75 L300,70" fill="none" stroke="#60a5fa" stroke-width="3.5" stroke-linecap="round"/>
+                <!-- Pontos de Sangria / Pico -->
+                <circle cx="210" cy="20" r="4.5" fill="#38bdf8" stroke="#ffffff" stroke-width="2"/>
+                <circle cx="280" cy="75" r="4.5" fill="#f87171" stroke="#ffffff" stroke-width="2"/>
+              </svg>
+              <div class="flex justify-between items-center text-[8px] font-mono text-zinc-500 pt-1">
+                <span>08:00 (Abertura)</span>
+                <span class="text-amber-400 font-bold">14:35 (Pico)</span>
+                <span>Agora</span>
+              </div>
+            </div>
+
+            <p class="text-[9px] text-zinc-400 font-medium leading-relaxed">
+              O gráfico reflete entradas de dinheiro em espécie e quedas causadas por retiradas / sangrias realizadas no turno.
+            </p>
+          </div>
+
+          <!-- RESUMO DE ENTRADAS VS SAÍDAS -->
+          <div class="bg-[#121216] p-4 rounded-[28px] border border-zinc-800/80 shadow-md">
+            <span class="text-[10px] font-black uppercase tracking-wider text-zinc-400 block mb-3">Composição do Fluxo</span>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="bg-[#09090c] p-3 rounded-2xl border border-emerald-500/20">
+                <span class="text-[8px] font-black uppercase text-emerald-400 block mb-0.5">Total Recebido</span>
+                <span class="text-xs font-black mono text-emerald-300">R$ 2.450,00</span>
+                <span class="text-[8px] text-zinc-500 block mt-0.5">18 vendas no caixa</span>
+              </div>
+              <div class="bg-[#09090c] p-3 rounded-2xl border border-red-500/20">
+                <span class="text-[8px] font-black uppercase text-red-400 block mb-0.5">Total Retirado</span>
+                <span class="text-xs font-black mono text-red-300">R$ 1.839,74</span>
+                <span class="text-[8px] text-zinc-500 block mt-0.5">Sangrias + Pix</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ABA 2: PICOS POR HORA -->
+        <div id="content-picos" class="space-y-3.5 hidden">
+          <!-- CARD DO HORÁRIO MAIS QUENTE -->
+          <div class="bg-gradient-to-r from-amber-500/15 via-[#121216] to-[#121216] p-4 rounded-[28px] border border-amber-500/30">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+                <i data-lucide="flame" class="w-5 h-5 text-amber-400"></i>
+              </div>
+              <div>
+                <span class="text-[9px] font-black uppercase text-amber-400 tracking-wider block">Horário Mais Movimentado</span>
+                <h4 class="text-sm font-black text-white uppercase">11:00 às 12:00 (7 Vendas)</h4>
+                <span class="text-[9px] text-zinc-400 font-mono">Volume de R$ 680,00 registrado</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- BARRAS POR HORA -->
+          <div class="bg-[#121216] p-4 rounded-[28px] border border-zinc-800/80 shadow-md">
+            <span class="text-[10px] font-black uppercase tracking-wider text-zinc-400 block mb-3">Giro de Caixa por Hora</span>
+            
+            <div class="flex items-end justify-between h-36 pt-4 pb-2 px-1 bg-[#09090c] rounded-2xl border border-zinc-800/80 gap-1.5">
+              <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                <span class="text-[7px] text-zinc-500 font-mono">1x</span>
+                <div class="w-full bg-blue-500/40 rounded-t h-[20%]"></div>
+                <span class="text-[8px] text-zinc-500 font-mono">08h</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                <span class="text-[7px] text-zinc-500 font-mono">3x</span>
+                <div class="w-full bg-blue-500/60 rounded-t h-[45%]"></div>
+                <span class="text-[8px] text-zinc-500 font-mono">09h</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                <span class="text-[7px] text-zinc-500 font-mono">4x</span>
+                <div class="w-full bg-blue-500/80 rounded-t h-[60%]"></div>
+                <span class="text-[8px] text-zinc-500 font-mono">10h</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                <span class="text-[7px] text-amber-400 font-bold font-mono">7x</span>
+                <div class="w-full bg-amber-400 rounded-t h-[95%] shadow-lg"></div>
+                <span class="text-[8px] text-amber-400 font-bold font-mono">11h</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                <span class="text-[7px] text-zinc-500 font-mono">5x</span>
+                <div class="w-full bg-blue-500/70 rounded-t h-[70%]"></div>
+                <span class="text-[8px] text-zinc-500 font-mono">12h</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                <span class="text-[7px] text-zinc-500 font-mono">2x</span>
+                <div class="w-full bg-blue-500/40 rounded-t h-[30%]"></div>
+                <span class="text-[8px] text-zinc-500 font-mono">13h</span>
+              </div>
+              <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                <span class="text-[7px] text-zinc-500 font-mono">6x</span>
+                <div class="w-full bg-blue-500/80 rounded-t h-[80%]"></div>
+                <span class="text-[8px] text-zinc-500 font-mono">14h</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTÃO FECHAR -->
+        <button class="w-full py-4 rounded-2xl bg-zinc-100 text-black font-black uppercase tracking-wider text-xs shadow-xl active:scale-[0.98] transition">
+          Fechar Mapa
+        </button>
+
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODELO 2: LINHA DO TEMPO POR PERÍODOS -->
+    <!-- ========================================================================= -->
+    <div id="modelo-2" class="mobile-frame flex flex-col hidden">
+      <div class="px-7 pt-3.5 pb-2 flex justify-between items-center text-[11px] font-bold text-zinc-500 border-b border-zinc-900/60 bg-[#09090c]">
+        <span class="mono">20:20</span>
+        <div class="flex items-center gap-1.5 text-zinc-400">
+          <i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>
+        </div>
+      </div>
+      <div class="p-4 pb-3 bg-[#09090c] border-b border-zinc-900 flex items-center justify-between">
+        <h2 class="text-sm font-black uppercase text-zinc-100">Blocos de Turno</h2>
+        <button class="h-8 w-8 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-800"><i data-lucide="x" class="w-3.5 h-3.5 text-zinc-400"></i></button>
+      </div>
+      <div class="p-4 space-y-3">
+        <div class="bg-[#121216] p-4 rounded-3xl border border-zinc-800">
+          <span class="text-xs font-black uppercase text-amber-400 block mb-1">🌅 Manhã (08h - 12h)</span>
+          <span class="text-lg font-black mono text-white">R$ 1.420,00</span>
+          <span class="text-[9px] text-zinc-500 block">12 lançamentos</span>
+        </div>
+        <div class="bg-[#121216] p-4 rounded-3xl border border-zinc-800">
+          <span class="text-xs font-black uppercase text-blue-400 block mb-1">☀️ Tarde (12h - 18h)</span>
+          <span class="text-lg font-black mono text-white">R$ 1.030,00</span>
+          <span class="text-[9px] text-zinc-500 block">8 lançamentos</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODELO 3: HEATMAP DE ATENDIMENTO -->
+    <!-- ========================================================================= -->
+    <div id="modelo-3" class="mobile-frame flex flex-col hidden">
+      <div class="px-7 pt-3.5 pb-2 flex justify-between items-center text-[11px] font-bold text-zinc-500 border-b border-zinc-900/60 bg-[#09090c]">
+        <span class="mono">20:20</span>
+      </div>
+      <div class="p-4 pb-3 bg-[#09090c] border-b border-zinc-900 flex items-center justify-between">
+        <h2 class="text-sm font-black uppercase text-zinc-100">Intensidade de Caixa</h2>
+        <button class="h-8 w-8 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-800"><i data-lucide="x" class="w-3.5 h-3.5 text-zinc-400"></i></button>
+      </div>
+      <div class="p-4">
+        <div class="grid grid-cols-4 gap-2">
+          <div class="bg-blue-500/20 p-3 rounded-2xl border border-blue-500/30 text-center"><span class="text-[9px] font-bold text-blue-300">08h</span><span class="block text-xs font-black text-white">1x</span></div>
+          <div class="bg-blue-500/40 p-3 rounded-2xl border border-blue-500/50 text-center"><span class="text-[9px] font-bold text-blue-300">09h</span><span class="block text-xs font-black text-white">3x</span></div>
+          <div class="bg-blue-500/60 p-3 rounded-2xl border border-blue-500/70 text-center"><span class="text-[9px] font-bold text-blue-300">10h</span><span class="block text-xs font-black text-white">4x</span></div>
+          <div class="bg-amber-500 p-3 rounded-2xl border border-amber-400 text-center text-black"><span class="text-[9px] font-bold text-black">11h</span><span class="block text-xs font-black">7x 🔥</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function switchConcept(id) {
+      document.getElementById('modelo-1').classList.add('hidden');
+      document.getElementById('modelo-2').classList.add('hidden');
+      document.getElementById('modelo-3').classList.add('hidden');
+
+      document.getElementById(id).classList.remove('hidden');
+
+      const btns = ['btn-m1', 'btn-m2', 'btn-m3'];
+      btns.forEach(b => {
+        const el = document.getElementById(b);
+        el.className = "concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] text-zinc-400 border-zinc-800 hover:border-zinc-700";
+      });
+
+      const activeBtn = id === 'modelo-1' ? 'btn-m1' : (id === 'modelo-2' ? 'btn-m2' : 'btn-m3');
+      const activeColor = id === 'modelo-1' ? 'bg-blue-500 text-white border-blue-400' : (id === 'modelo-2' ? 'bg-cyan-500 text-black border-cyan-400' : 'bg-amber-500 text-black border-amber-400');
+      document.getElementById(activeBtn).className = `concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all ${activeColor} shadow-xl`;
+    }
+
+    function setMapTab(tab) {
+      const trilha = document.getElementById('content-trilha');
+      const picos = document.getElementById('content-picos');
+      const tabTrilha = document.getElementById('tab-map-trilha');
+      const tabPicos = document.getElementById('tab-map-picos');
+
+      if (tab === 'trilha') {
+        trilha.classList.remove('hidden');
+        picos.classList.add('hidden');
+        tabTrilha.className = "flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition bg-blue-500 text-white shadow";
+        tabPicos.className = "flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition text-zinc-400 hover:text-white";
+      } else {
+        picos.classList.remove('hidden');
+        trilha.classList.add('hidden');
+        tabPicos.className = "flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition bg-blue-500 text-white shadow";
+        tabTrilha.className = "flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition text-zinc-400 hover:text-white";
+      }
+    }
+  </script>
+</body>
+</html>

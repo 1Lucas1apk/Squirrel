@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Rework do Cabeçalho Superior (Header & Caixa)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #060608;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 410px;
+      border-radius: 44px;
+      border: 3.5px solid #27272a;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 0 1px #18181b;
+      background-color: #09090c;
+      overflow: hidden;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .pulse-amber {
+      animation: pulseAmber 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulseAmber {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .7; transform: scale(1.1); }
+    }
+    .blur-value {
+      filter: blur(8px);
+      transition: filter 0.2s ease;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-6xl mx-auto pb-28">
+
+  <!-- TOPO HEADER DE SELEÇÃO -->
+  <div class="mb-8 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs font-black uppercase tracking-widest mb-3 shadow-sm">
+      ✨ REWORK DO CABEÇALHO SUPERIOR (HEADER)
+    </div>
+    <h1 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-white">
+      Propostas Visuais de Cabeçalho & Caixa
+    </h1>
+    <p class="text-zinc-400 text-sm mt-2 max-w-xl mx-auto font-medium">
+      Explore abaixo 4 variações interativas com ícones, hierarquia refinada, modo discreto, badges de pendências e status do turno.
+    </p>
+
+    <!-- SELETOR DE MODELOS -->
+    <div class="flex flex-wrap items-center justify-center gap-2.5 mt-6 max-w-3xl mx-auto">
+      <button onclick="selectOption('opt1')" id="btn-opt1" class="px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20">
+        1. Cockpit Pro (Recomendado)
+      </button>
+      <button onclick="selectOption('opt2')" id="btn-opt2" class="px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] border-zinc-800 text-zinc-400 hover:text-white">
+        2. Dynamic Island (Alertas Centrais)
+      </button>
+      <button onclick="selectOption('opt3')" id="btn-opt3" class="px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] border-zinc-800 text-zinc-400 hover:text-white">
+        3. Floating Glass Card
+      </button>
+      <button onclick="selectOption('opt4')" id="btn-opt4" class="px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] border-zinc-800 text-zinc-400 hover:text-white">
+        4. Ultra Compact (44px)
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER PRINCIPAL DO CELULAR INTERATIVO -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- STATUS BAR SIMULADA -->
+      <div class="px-7 pt-3 pb-1 flex items-center justify-between text-zinc-400 text-xs font-semibold bg-[#09090c]">
+        <span>09:41</span>
+        <div class="flex items-center gap-1.5">
+          <i data-lucide="signal" class="w-3.5 h-3.5"></i>
+          <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+          <i data-lucide="battery-charging" class="w-4 h-4 text-emerald-400"></i>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- OPÇÃO 1: COCKPIT PRO (RECOMENDADO) -->
+      <!-- ========================================================================= -->
+      <div id="view-opt1" class="header-view">
+        <div class="border-b border-zinc-800/80 bg-[#0e0e12] px-4 py-3">
+          <div class="flex items-center justify-between gap-2">
+            
+            <!-- Lado Esquerdo: Badge do Caixa + Título + Olho Discreto -->
+            <div class="flex items-center gap-2.5 flex-1 min-w-0">
+              <div class="h-10 w-10 rounded-2xl bg-zinc-900 border border-zinc-700/80 flex items-center justify-center flex-shrink-0 relative shadow-sm">
+                <i data-lucide="vault" class="w-5 h-5 text-blue-400"></i>
+                <span class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-[#0e0e12]"></span>
+              </div>
+
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-sm font-black uppercase tracking-wider text-white">CAIXA 01</span>
+                  <!-- Botão de Modo Discreto (Olho) -->
+                  <button onclick="toggleDiscreto()" class="p-1 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 transition-colors" title="Modo Discreto">
+                    <i data-lucide="eye" id="icon-eye-opt1" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <span class="text-[10px] font-black uppercase tracking-wider text-zinc-400">29/08 • Lucas</span>
+                  <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-[8.5px] font-black uppercase text-emerald-400">
+                    <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Online
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Lado Direito: 4 Ações Rápidas (40x40) -->
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <!-- Fantasmas com badge -->
+              <button onclick="togglePendingGhost()" class="h-9 w-9 items-center justify-center rounded-2xl border border-zinc-800 bg-[#121216] active:scale-95 transition-all relative flex" title="Notas Fantasmas">
+                <i data-lucide="ghost" class="w-4 h-4 text-zinc-300"></i>
+                <span id="ghost-badge-opt1" class="absolute -top-1 -right-1 h-3.5 w-3.5 rounded-full bg-amber-500 border-2 border-[#09090c] text-[8px] font-black text-black flex items-center justify-center">2</span>
+              </button>
+
+              <!-- Histórico -->
+              <button class="h-9 w-9 items-center justify-center rounded-2xl border border-zinc-800 bg-[#121216] active:scale-95 transition-all text-zinc-300 flex" title="Histórico de Dias">
+                <i data-lucide="calendar-days" class="w-4 h-4"></i>
+              </button>
+
+              <!-- Fechar Turno / Aberto -->
+              <button onclick="toggleFechado()" id="lock-btn-opt1" class="h-9 px-2.5 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 active:scale-95 transition-all flex gap-1 text-emerald-400" title="Status do Caixa">
+                <i data-lucide="unlock" class="w-3.5 h-3.5"></i>
+                <span class="text-[9.5px] font-black uppercase tracking-wider">Aberto</span>
+              </button>
+
+              <!-- Mais Opções -->
+              <button class="h-9 w-9 items-center justify-center rounded-2xl border border-zinc-800 bg-[#121216] active:scale-95 transition-all text-zinc-400 flex" title="Mais Opções">
+                <i data-lucide="more-horizontal" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- OPÇÃO 2: DYNAMIC ISLAND HUB (ALERTAS CENTRAIS) -->
+      <!-- ========================================================================= -->
+      <div id="view-opt2" class="header-view hidden">
+        <div class="border-b border-zinc-800/80 bg-[#0e0e12] px-4 py-2.5">
+          <div class="flex items-center justify-between gap-2">
+            
+            <!-- Lado Esquerdo -->
+            <div class="flex items-center gap-2 min-w-0">
+              <div class="h-8 w-8 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="layout-grid" class="w-4 h-4 text-blue-400"></i>
+              </div>
+              <div>
+                <span class="text-xs font-black uppercase tracking-wider text-white block leading-none">CAIXA 01</span>
+                <span class="text-[9px] font-bold text-zinc-500 uppercase mt-0.5 block">29 AGOSTO</span>
+              </div>
+            </div>
+
+            <!-- Centro: Dynamic Chip de Alerta -->
+            <div class="flex-1 flex justify-center min-w-0">
+              <button onclick="togglePendingGhost()" class="px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/35 flex items-center gap-1.5 pulse-amber active:scale-95 transition-transform max-w-full">
+                <i data-lucide="alert-triangle" class="w-3 h-3 text-amber-400 flex-shrink-0"></i>
+                <span class="text-[9.5px] font-black uppercase text-amber-300 tracking-wider truncate">2 Valados Pendentes</span>
+              </button>
+            </div>
+
+            <!-- Lado Direito -->
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <button onclick="toggleDiscreto()" class="h-8 w-8 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 active:scale-95">
+                <i data-lucide="eye" id="icon-eye-opt2" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="toggleFechado()" id="lock-btn-opt2" class="h-8 px-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center gap-1 active:scale-95">
+                <i data-lucide="unlock" class="w-3 h-3"></i>
+                <span class="text-[9px] font-black uppercase">Turno</span>
+              </button>
+              <button class="h-8 w-8 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 active:scale-95">
+                <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- OPÇÃO 3: FLOATING GLASS CARD (SQUIRREL DNA COM GLOW DINÂMICO & MENU ...) -->
+      <!-- ========================================================================= -->
+      <div id="view-opt3" class="header-view hidden">
+        <div class="p-2.5 bg-[#09090c]">
+          <div id="floating-card-opt3" class="rounded-3xl bg-[#121216] border border-zinc-800 p-2.5 px-3 shadow-xl flex items-center justify-between gap-2.5 transition-all duration-500">
+            
+            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+              <div class="h-9 w-9 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center flex-shrink-0 relative shadow-sm">
+                <i data-lucide="store" class="w-4 h-4 text-blue-400"></i>
+                <span class="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 border-2 border-[#121216]"></span>
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs font-black uppercase tracking-wider text-white">CAIXA 01</span>
+                  <button onclick="toggleDiscreto()" class="p-0.5 text-zinc-400 hover:text-zinc-200">
+                    <i data-lucide="eye" id="icon-eye-opt3" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <span class="text-[10px] font-black uppercase tracking-wider text-zinc-400">29/08/2026</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <button onclick="togglePendingGhost()" class="h-8 w-8 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 active:scale-95 relative">
+                <i data-lucide="ghost" class="w-3.5 h-3.5"></i>
+                <span class="absolute -top-1 -right-1 h-3.5 min-w-[14px] px-0.5 rounded-full bg-amber-500 text-black text-[7.5px] font-black flex items-center justify-center">2</span>
+              </button>
+              <button class="h-8 w-8 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 active:scale-95">
+                <i data-lucide="calendar-days" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="toggleFechado()" id="lock-btn-opt3" class="h-8 px-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center gap-1 active:scale-95">
+                <i data-lucide="unlock" class="w-3 h-3"></i>
+                <span class="text-[9px] font-black uppercase">Aberto</span>
+              </button>
+              <button class="h-8 w-8 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 active:scale-95" title="Menu e Ajustes">
+                <i data-lucide="more-horizontal" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- BOTÃO PARA TESTAR O GLOW DE SINCRONISMO AO VIVO -->
+          <div class="text-center mt-2">
+            <button onclick="simulateSyncGlow()" class="text-[10px] font-black uppercase text-blue-400 bg-blue-500/10 border border-blue-500/30 px-3 py-1 rounded-full hover:bg-blue-500/20 active:scale-95 transition-all">
+              ⚡ Testar Glow de Verificação (Verde → Azul → Normal)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- OPÇÃO 4: ULTRA COMPACT (44PX) -->
+      <!-- ========================================================================= -->
+      <div id="view-opt4" class="header-view hidden">
+        <div class="border-b border-zinc-800/80 bg-[#0e0e12] px-3.5 py-2 flex items-center justify-between">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+            <span class="text-xs font-black uppercase tracking-wider text-white">CAIXA 01</span>
+            <span class="text-[10px] font-bold text-zinc-500">• 29/08</span>
+          </div>
+
+          <div class="flex items-center gap-1 flex-shrink-0">
+            <button onclick="toggleDiscreto()" class="h-7 w-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+              <i data-lucide="eye" id="icon-eye-opt4" class="w-3 h-3"></i>
+            </button>
+            <button class="h-7 w-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 relative">
+              <i data-lucide="ghost" class="w-3 h-3"></i>
+              <span class="absolute top-0 right-0 h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+            </button>
+            <button class="h-7 w-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+              <i data-lucide="calendar-days" class="w-3 h-3"></i>
+            </button>
+            <button onclick="toggleFechado()" id="lock-btn-opt4" class="h-7 px-2 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center gap-1">
+              <i data-lucide="unlock" class="w-2.5 h-2.5"></i>
+              <span class="text-[8.5px] font-black uppercase">OK</span>
+            </button>
+            <button class="h-7 w-7 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+              <i data-lucide="more-horizontal" class="w-3 h-3"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- CORPO SIMULADO DO APP (PAINEL & TRANSAÇÕES) -->
+      <!-- ========================================================================= -->
+      <div class="p-4 space-y-3.5 bg-[#09090c] min-h-[460px]">
+        
+        <!-- CARD DE TOTAL DA GAVETA (HERO) -->
+        <div class="bg-[#121216] border border-zinc-800 rounded-3xl p-4 shadow-xl">
+          <div class="flex items-center justify-between text-zinc-400 mb-1">
+            <span class="text-[10px] font-black uppercase tracking-widest text-zinc-500">Saldo Atual em Dinheiro</span>
+            <span class="text-[10px] font-black text-emerald-400 uppercase bg-emerald-500/10 px-2 py-0.5 rounded-full">✓ Bateu</span>
+          </div>
+          <div class="mono text-2xl font-black text-white tracking-tight money-value">
+            R$ 4.850,00
+          </div>
+          <div class="flex items-center justify-between mt-2 pt-2 border-t border-zinc-800/80 text-[10px] font-bold text-zinc-400">
+            <span>Sistema: R$ 4.850,00</span>
+            <span class="text-zinc-500">Diferença: R$ 0,00</span>
+          </div>
+        </div>
+
+        <!-- CARD DE PROGRESSO DA CONFERÊNCIA (APRIMORADO) -->
+        <div class="bg-[#121216] border border-blue-500/30 rounded-3xl p-3.5 px-4 shadow-xl space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <div class="h-5 w-5 rounded-md bg-blue-500/15 border border-blue-500/30 flex items-center justify-center">
+                <i data-lucide="target" class="w-3 h-3 text-blue-400"></i>
+              </div>
+              <span class="text-[10.5px] font-black uppercase tracking-wider text-blue-300">Progresso da Conferência</span>
+            </div>
+            <span class="text-xs font-black mono text-blue-400 bg-blue-500/10 border border-blue-500/30 px-2 py-0.5 rounded-lg">85%</span>
+          </div>
+
+          <div class="flex items-baseline justify-between pt-0.5">
+            <div class="flex items-baseline gap-1">
+              <span class="text-zinc-500 text-xs font-bold">R$</span>
+              <span class="text-2xl font-black mono text-blue-400 money-value">4.122,50</span>
+            </div>
+            <span class="text-xs font-bold mono text-zinc-400 money-value">de R$ 4.850,00</span>
+          </div>
+
+          <div class="h-1.5 w-full bg-zinc-800 rounded-full overflow-hidden">
+            <div class="h-full bg-blue-500 rounded-full w-[85%]"></div>
+          </div>
+        </div>
+
+        <!-- LISTA RÁPIDA DE TRANSAÇÕES -->
+        <div class="space-y-2 pt-1">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-[10.5px] font-black uppercase tracking-widest text-zinc-400">Últimos Lançamentos</span>
+            <span class="text-[10px] font-bold text-zinc-500">14 canhotos</span>
+          </div>
+
+          <!-- Item 1: Entrada Prestação -->
+          <div class="rounded-[24px] bg-[#121216] p-3.5 border border-zinc-800 flex items-center justify-between">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="h-10 w-10 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="arrow-down-circle" class="w-5 h-5 text-blue-400"></i>
+              </div>
+              <div class="min-w-0">
+                <span class="text-[9.5px] font-black uppercase tracking-widest text-blue-400 block">09:32 • ENTRADA PRESTAÇÃO</span>
+                <span class="text-base font-black mono text-white tracking-tight money-value">+ R$ 350,00</span>
+              </div>
+            </div>
+            <div class="h-9 w-9 rounded-xl bg-emerald-500 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="check" class="w-4 h-4 text-emerald-950 font-black"></i>
+            </div>
+          </div>
+
+          <!-- Item 2: Convênio -->
+          <div class="rounded-[24px] bg-[#121216] p-3.5 border border-zinc-800 flex items-center justify-between">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="h-10 w-10 rounded-2xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="building-2" class="w-5 h-5 text-purple-400"></i>
+              </div>
+              <div class="min-w-0">
+                <span class="text-[9.5px] font-black uppercase tracking-widest text-purple-400 block">09:18 • UME PARCEIRO</span>
+                <span class="text-base font-black mono text-purple-300 tracking-tight money-value">+ R$ 850,00</span>
+              </div>
+            </div>
+            <div class="h-9 w-9 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center flex-shrink-0">
+              <i data-lucide="circle" class="w-4 h-4 text-zinc-500"></i>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- FOOTER SIMULADO -->
+      <div class="border-t border-zinc-800 bg-[#0e0e12] p-2 px-4 flex items-center justify-around">
+        <div class="flex flex-col items-center gap-1 text-zinc-500 text-[10px] font-black uppercase">
+          <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+          <span>Painel</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 text-emerald-400 text-[10px] font-black uppercase">
+          <i data-lucide="banknote" class="w-5 h-5"></i>
+          <span>Dinheiro</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 text-zinc-500 text-[10px] font-black uppercase">
+          <i data-lucide="building-2" class="w-5 h-5"></i>
+          <span>Convênio</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 text-zinc-500 text-[10px] font-black uppercase">
+          <i data-lucide="check-square" class="w-5 h-5"></i>
+          <span>Check</span>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- TABELA COMPARATIVA DOS MODELOS -->
+  <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto">
+    
+    <div class="bg-[#121216] border border-blue-500/30 rounded-3xl p-5 shadow-lg">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="h-2 w-2 rounded-full bg-blue-400"></span>
+        <h3 class="text-sm font-black uppercase tracking-wider text-white">Opção 1: Cockpit Pro (Recomendado)</h3>
+      </div>
+      <ul class="text-xs text-zinc-400 space-y-1.5 font-medium list-disc list-inside">
+        <li><strong>Badge 38x38:</strong> Ícone de cofre com indicador LED verde de caixa ativo.</li>
+        <li><strong>Modo Discreto Integrado:</strong> Botão de olho direto ao lado do nome para ocultar valores instantaneamente.</li>
+        <li><strong>Ações Ergonômicas:</strong> Botões de 40x40 com cantos arredondados e contador de fantasmas em destaque.</li>
+        <li><strong>Pill de Turno:</strong> Exibe <span class="text-emerald-400">"🔓 Aberto"</span> ou <span class="text-red-400">"🔒 Fechado"</span> com clique rápido.</li>
+      </ul>
+    </div>
+
+    <div class="bg-[#121216] border border-zinc-800 rounded-3xl p-5 shadow-lg">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="h-2 w-2 rounded-full bg-amber-400"></span>
+        <h3 class="text-sm font-black uppercase tracking-wider text-white">Opção 2: Dynamic Island Hub</h3>
+      </div>
+      <ul class="text-xs text-zinc-400 space-y-1.5 font-medium list-disc list-inside">
+        <li><strong>Chip Central Inteligente:</strong> Se houver pendências (fantasmas/divergências), surge um chip pulsante no centro.</li>
+        <li><strong>Acesso Direto:</strong> Clicar no chip central pula diretamente para a tela de resolução.</li>
+        <li><strong>Layout Focado:</strong> Limpo e com forte hierarquia visual.</li>
+      </ul>
+    </div>
+
+    <div class="bg-[#121216] border border-zinc-800 rounded-3xl p-5 shadow-lg">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="h-2 w-2 rounded-full bg-purple-400"></span>
+        <h3 class="text-sm font-black uppercase tracking-wider text-white">Opção 3: Floating Glass Card</h3>
+      </div>
+      <ul class="text-xs text-zinc-400 space-y-1.5 font-medium list-disc list-inside">
+        <li><strong>Card Flutuante:</strong> O header fica em formato de cápsula arredondada com sombra suave.</li>
+        <li><strong>Estética Premium:</strong> Visual inspirado em interfaces modernas de iPad e Mac.</li>
+      </ul>
+    </div>
+
+    <div class="bg-[#121216] border border-zinc-800 rounded-3xl p-5 shadow-lg">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="h-2 w-2 rounded-full bg-zinc-400"></span>
+        <h3 class="text-sm font-black uppercase tracking-wider text-white">Opção 4: Ultra Compact (44px)</h3>
+      </div>
+      <ul class="text-xs text-zinc-400 space-y-1.5 font-medium list-disc list-inside">
+        <li><strong>Altura Mínima:</strong> Apenas 44px de altura, liberando o máximo de espaço para o conteúdo.</li>
+        <li><strong>Ideal para Telas Menores:</strong> Economiza cada milímetro na vertical.</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    let isDiscreto = false;
+    let isFechado = false;
+    let hasGhosts = true;
+
+    function selectOption(optId) {
+      document.querySelectorAll('.header-view').forEach(v => v.classList.add('hidden'));
+      document.getElementById('view-' + optId).classList.remove('hidden');
+
+      const buttons = ['opt1', 'opt2', 'opt3', 'opt4'];
+      buttons.forEach(id => {
+        const btn = document.getElementById('btn-' + id);
+        if (id === optId) {
+          btn.className = "px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20";
+        } else {
+          btn.className = "px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] border-zinc-800 text-zinc-400 hover:text-white";
+        }
+      });
+      lucide.createIcons();
+    }
+
+    function toggleDiscreto() {
+      isDiscreto = !isDiscreto;
+      document.querySelectorAll('.money-value').forEach(el => {
+        if (isDiscreto) {
+          el.classList.add('blur-value');
+        } else {
+          el.classList.remove('blur-value');
+        }
+      });
+
+      ['opt1', 'opt2', 'opt3', 'opt4'].forEach(id => {
+        const icon = document.getElementById('icon-eye-' + id);
+        if (icon) {
+          icon.setAttribute('data-lucide', isDiscreto ? 'eye-off' : 'eye');
+        }
+      });
+      lucide.createIcons();
+    }
+
+    function toggleFechado() {
+      isFechado = !isFechado;
+      const opt1 = document.getElementById('lock-btn-opt1');
+      if (opt1) {
+        if (isFechado) {
+          opt1.className = "h-9 px-2.5 items-center justify-center rounded-2xl border border-red-500/30 bg-red-500/10 active:scale-95 transition-all flex gap-1 text-red-400";
+          opt1.innerHTML = '<i data-lucide="lock" class="w-3.5 h-3.5"></i><span class="text-[9.5px] font-black uppercase tracking-wider">Fechado</span>';
+        } else {
+          opt1.className = "h-9 px-2.5 items-center justify-center rounded-2xl border border-emerald-500/30 bg-emerald-500/10 active:scale-95 transition-all flex gap-1 text-emerald-400";
+          opt1.innerHTML = '<i data-lucide="unlock" class="w-3.5 h-3.5"></i><span class="text-[9.5px] font-black uppercase tracking-wider">Aberto</span>';
+        }
+      }
+      lucide.createIcons();
+    }
+
+    function togglePendingGhost() {
+      hasGhosts = !hasGhosts;
+      const badge = document.getElementById('ghost-badge-opt1');
+      if (badge) {
+        badge.style.display = hasGhosts ? 'flex' : 'none';
+      }
+    }
+
+    function simulateSyncGlow() {
+      const card = document.getElementById('floating-card-opt3');
+      if (!card) return;
+      
+      // 1. Levemente verde (sincronizando)
+      card.style.borderColor = '#10b981';
+      card.style.backgroundColor = '#0b1a13';
+      card.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.25)';
+
+      // 2. Transita para azul (verificado)
+      setTimeout(() => {
+        card.style.borderColor = '#3b82f6';
+        card.style.backgroundColor = '#0c1626';
+        card.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.25)';
+      }, 450);
+
+      // 3. Volta ao normal suavemente
+      setTimeout(() => {
+        card.style.borderColor = '#27272a';
+        card.style.backgroundColor = '#121216';
+        card.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.5)';
+      }, 1200);
+    }
+  </script>
+</body>
+</html>

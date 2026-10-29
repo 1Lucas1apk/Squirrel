@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Transações (Padronização Visual Completa)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 390px;
+      border-radius: 40px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="p-2 md:p-8 max-w-5xl mx-auto pb-28">
+
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      📐 PADRONIZAÇÃO VISUAL DE CAMPOS & ÁREAS DE TEXTO
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      Alinhamento Visual Proporcional
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-xl mx-auto font-medium">
+      Todos os campos de dinheiro com tipografia idêntica (20px mono), altura padrão (60px) e caixas de texto confortáveis.
+    </p>
+  </div>
+
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- CABEÇALHO -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-4 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2 flex-1 min-w-0 mr-2">
+          <div>
+            <div class="text-lg font-black uppercase tracking-tighter text-white">DINHEIRO</div>
+            <div class="text-[11px] font-black uppercase tracking-[2px] text-zinc-400">27 AGO • CAIXA 2701</div>
+          </div>
+          <div class="h-6 px-2.5 flex items-center justify-center rounded-full gap-1.5 bg-emerald-500/15 border border-emerald-500/30">
+            <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-400"></i>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <button class="h-10 w-10 rounded-2xl border border-zinc-800 bg-[#121216] flex items-center justify-center">
+            <i data-lucide="ghost" class="w-4.5 h-4.5 text-zinc-300"></i>
+          </button>
+          <button class="h-10 w-10 rounded-2xl border border-emerald-500/30 bg-emerald-500/15 flex items-center justify-center">
+            <i data-lucide="unlock" class="w-4.5 h-4.5 text-emerald-400"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- CORPO -->
+      <div class="p-3.5 space-y-3 pb-32">
+        
+        <!-- DOCK SUPERIOR ULTRA SIMPLES & COMPACTO (ZERO OVERLAP) -->
+        <div class="bg-[#121216] border border-zinc-800/90 rounded-2xl p-2.5 px-3.5 shadow-sm space-y-1.5">
+          <div class="flex items-center justify-between">
+            <!-- Lado Esquerdo: Dinheiro na Gaveta -->
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <i data-lucide="banknote" class="w-4 h-4 text-emerald-400"></i>
+              <span class="mono font-black text-xs text-emerald-400">R$ 4.103,50</span>
+            </div>
+
+            <!-- Centro: Sobra Acumulada -->
+            <div class="flex items-center gap-1 bg-[#09090c] border border-zinc-800/80 px-2 py-0.5 rounded-full flex-shrink-0">
+              <i data-lucide="coins" class="w-2.5 h-2.5 text-emerald-400"></i>
+              <span class="mono font-black text-[10px] text-emerald-400">+R$ 2,39</span>
+            </div>
+
+            <!-- Lado Direito: Pix Repasse -->
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <i data-lucide="smartphone" class="w-4 h-4 text-indigo-400"></i>
+              <span class="mono font-black text-xs text-indigo-300">R$ 7.340,00</span>
+            </div>
+          </div>
+
+          <!-- Micro Barra de Proporção Slim (1.5px) -->
+          <div class="h-1 w-full bg-[#09090c] rounded-full flex overflow-hidden border border-zinc-800/60">
+            <div style="width: 35.8%" class="bg-emerald-400 rounded-full"></div>
+            <div style="width: 64.2%" class="bg-indigo-400 rounded-full"></div>
+          </div>
+        </div>
+
+        <!-- FORMULÁRIO PRINCIPAL -->
+        <div id="card-formulario" class="bg-[#121216] border border-emerald-500/40 rounded-[32px] p-3.5 shadow-2xl space-y-3 transition-all">
+          
+          <!-- Topo do Card -->
+          <div class="flex items-center justify-between pb-1 border-b border-zinc-800/80">
+            <div class="flex items-center gap-2 flex-1 min-w-0 mr-2">
+              <div id="form-card-icon-box" class="h-6 w-6 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                <i id="form-card-icon" data-lucide="plus" class="w-3.5 h-3.5 stroke-[3]"></i>
+              </div>
+              <span id="form-card-title" class="text-xs font-black uppercase tracking-[1.5px] text-zinc-200">Novo Lançamento</span>
+            </div>
+
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              <button onclick="toggleTroco()" id="btn-troco" class="px-2.5 py-1 rounded-xl bg-[#09090c] border border-zinc-800 text-[11px] font-black uppercase text-zinc-300 flex items-center gap-1 transition-all active:scale-95">
+                <i data-lucide="calculator" class="w-3 h-3 text-zinc-400"></i>
+                <span>Troco</span>
+              </button>
+
+              <button onclick="toggleMulti()" id="btn-multi" class="px-2.5 py-1 rounded-xl bg-[#09090c] border border-zinc-800 text-[11px] font-black uppercase text-zinc-400 hover:text-amber-300 flex items-center gap-1 transition-all active:scale-95">
+                <i data-lucide="layers" class="w-3 h-3 text-amber-300"></i>
+                <span>Multi</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SELETOR DE CATEGORIAS -->
+          <div class="space-y-2">
+            <div class="grid grid-cols-3 gap-2">
+              <button onclick="setCategory('dinheiro')" id="cat-dinheiro" class="cat-card py-2.5 px-1 rounded-2xl border transition-all flex flex-col items-center justify-center gap-1 bg-[#09090c] border-emerald-500/50 shadow-sm min-h-[72px]">
+                <div class="h-8 w-8 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400" id="cat-icon-box-dinheiro">
+                  <i data-lucide="banknote" class="w-4.5 h-4.5"></i>
+                </div>
+                <span class="text-[11px] font-black uppercase tracking-wider text-emerald-400" id="cat-txt-dinheiro">Dinheiro</span>
+              </button>
+
+              <button onclick="setCategory('prestacao')" id="cat-prestacao" class="cat-card py-2.5 px-1 rounded-2xl border transition-all flex flex-col items-center justify-center gap-1 bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-white min-h-[72px]">
+                <div class="h-8 w-8 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400" id="cat-icon-box-prestacao">
+                  <i data-lucide="arrow-down-circle" class="w-4.5 h-4.5"></i>
+                </div>
+                <span class="text-[11px] font-black uppercase tracking-wider text-zinc-400" id="cat-txt-prestacao">Entrada</span>
+              </button>
+
+              <button onclick="setCategory('misto')" id="cat-misto" class="cat-card py-2.5 px-1 rounded-2xl border transition-all flex flex-col items-center justify-center gap-1 bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-white min-h-[72px]">
+                <div class="h-8 w-8 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400" id="cat-icon-box-misto">
+                  <i data-lucide="split" class="w-4.5 h-4.5"></i>
+                </div>
+                <span class="text-[11px] font-black uppercase tracking-wider text-zinc-400" id="cat-txt-misto">Misto</span>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2">
+              <button onclick="setCategory('compra_vista')" id="cat-compra_vista" class="cat-card py-2 px-1 rounded-xl border transition-all flex items-center justify-center gap-1.5 bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-white min-h-[40px]">
+                <i data-lucide="shopping-cart" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <span class="text-[10.5px] font-black uppercase tracking-wider text-zinc-400" id="cat-txt-compra_vista">À Vista</span>
+              </button>
+
+              <button onclick="setCategory('sangria')" id="cat-sangria" class="cat-card py-2 px-1 rounded-xl border transition-all flex items-center justify-center gap-1.5 bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-red-400 min-h-[40px]">
+                <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <span class="text-[10.5px] font-black uppercase tracking-wider text-zinc-400" id="cat-txt-sangria">Sangria</span>
+              </button>
+
+              <button onclick="setCategory('cancelamento')" id="cat-cancelamento" class="cat-card py-2 px-1 rounded-xl border transition-all flex items-center justify-center gap-1.5 bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-red-400 min-h-[40px]">
+                <i data-lucide="x-circle" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <span class="text-[10.5px] font-black uppercase tracking-wider text-zinc-400" id="cat-txt-cancelamento">Estorno</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SUB-TIPOS DE ENTRADA -->
+          <div id="subtipo-row" class="hidden bg-[#090d16] p-3 rounded-2xl border border-blue-500/30 space-y-2">
+            <div class="flex items-center justify-between px-1">
+              <span class="text-xs font-black uppercase tracking-[1.5px] text-blue-400 flex items-center gap-1.5">
+                <i data-lucide="tag" class="w-3.5 h-3.5 text-blue-400"></i>
+                Tipo de Entrada
+              </span>
+            </div>
+
+            <div class="grid grid-cols-3 gap-1.5 bg-[#05070c] p-1.5 rounded-xl border border-blue-500/20">
+              <button onclick="setSub('Renegociação')" id="sub-reneg" class="py-2 px-1 rounded-lg text-[10.5px] font-black uppercase transition-all flex items-center justify-center text-zinc-400 hover:text-white">
+                <span>Renegociação</span>
+              </button>
+              <button onclick="setSub('Quitação')" id="sub-quit" class="py-2 px-1 rounded-lg text-[10.5px] font-black uppercase transition-all flex items-center justify-center text-zinc-400 hover:text-white">
+                <span>Quitação</span>
+              </button>
+              <button onclick="setSub('Entrada (Compra)')" id="sub-ent" class="py-2 px-1 rounded-lg text-[10.5px] font-black uppercase transition-all flex items-center justify-center bg-blue-500 text-white shadow-md">
+                <span>Entrada Compra</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- BOTÃO DE PIX DINÂMICO -->
+          <div id="box-card-pix" class="bg-[#09090c] border border-zinc-800 rounded-2xl transition-all overflow-hidden">
+            <div onclick="togglePixHabilitar()" class="p-3.5 px-4 flex items-center justify-between cursor-pointer select-none active:bg-zinc-900/50 transition-all min-h-[54px]">
+              <div class="flex items-center gap-3 min-w-0 flex-1 mr-2">
+                <div id="pix-bolinha" class="w-5 h-5 rounded-full border-2 border-zinc-700 bg-[#121216] flex items-center justify-center transition-all flex-shrink-0">
+                  <div id="pix-bolinha-core" class="w-2.5 h-2.5 rounded-full bg-transparent transition-all"></div>
+                </div>
+
+                <div class="flex items-center gap-2 min-w-0">
+                  <div id="pix-icon-box" class="h-6 w-6 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 transition-all flex-shrink-0">
+                    <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+                  </div>
+                  <span id="pix-btn-texto" class="text-xs font-black uppercase tracking-wider text-zinc-200 transition-all truncate">
+                    Recebido via Pix
+                  </span>
+                </div>
+              </div>
+
+              <div id="pix-pill-status" class="hidden flex-shrink-0">
+                <span id="txt-pix-status-badge" class="text-[10px] font-mono font-black px-2 py-0.5 rounded-lg bg-purple-500/20 border border-purple-500/40 text-purple-300 uppercase">
+                  Pix 100%
+                </span>
+              </div>
+            </div>
+
+            <!-- OPÇÕES AVANÇADAS DO PIX -->
+            <div id="pix-opcoes-expandidas" class="hidden p-3.5 pt-0 space-y-3 border-t border-purple-500/20 mt-1">
+              <div class="space-y-1.5 pt-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-black text-purple-300 uppercase tracking-wider">QUEM:</span>
+                  <div class="flex items-center gap-1 bg-[#121216] p-1 rounded-xl border border-zinc-800">
+                    <button type="button" onclick="setPixDestino('meu_pix')" id="btn-pix-meu" class="px-3 py-1 rounded-lg text-[11px] font-black uppercase bg-purple-600 text-white shadow-sm transition-all flex items-center justify-center gap-1.5">
+                      <i data-lucide="user" class="w-3.5 h-3.5"></i>
+                      <span>Meu Pix</span>
+                    </button>
+                    <button type="button" onclick="setPixDestino('outros')" id="btn-pix-outros" class="px-3 py-1 rounded-lg text-[11px] font-black uppercase text-zinc-400 hover:text-white transition-all flex items-center justify-center gap-1.5">
+                      <i data-lucide="users" class="w-3.5 h-3.5"></i>
+                      <span>Outro</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div id="box-pix-nome-outro" class="hidden bg-[#121216] p-3 rounded-xl border border-purple-500/30">
+                <label class="block text-[10.5px] font-bold text-purple-300 uppercase tracking-wider mb-1">Nome de quem recebeu o Pix:</label>
+                <input type="text" id="ipt-pix-nome" placeholder="Digite o nome (ex: Vendedor, Gerente...)" class="w-full bg-transparent text-sm text-white font-bold focus:outline-none placeholder-zinc-600" />
+              </div>
+
+              <!-- Campo Valor no Pix (Padronizado 20px) -->
+              <div class="bg-[#121216] p-3.5 px-4 rounded-2xl border border-purple-500/30 space-y-2">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-black uppercase text-purple-300 tracking-wider flex items-center gap-1.5">
+                    <i data-lucide="coins" class="w-3.5 h-3.5 text-purple-400"></i>
+                    Valor no Pix
+                  </span>
+                  
+                  <button type="button" onclick="setPixTotal()" class="px-2.5 py-1 rounded-lg bg-purple-500/20 border border-purple-500/40 text-[10px] font-black uppercase text-purple-200 hover:bg-purple-500/30 active:scale-95 transition-all">
+                    Preencher 100%
+                  </button>
+                </div>
+
+                <div class="flex items-baseline font-black mono tracking-tight">
+                  <span class="text-purple-400 text-sm font-bold mr-1.5">R$</span>
+                  <input type="text" id="ipt-pix-valor-transferido" value="2.000,00" oninput="recalcPixParcial()" class="w-full bg-transparent text-xl font-black text-purple-200 mono focus:outline-none tracking-tight leading-none" />
+                </div>
+
+                <div id="txt-pix-parcial-aviso" class="hidden text-xs text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 p-2 rounded-xl flex items-center gap-1.5">
+                  <i data-lucide="banknote" class="w-3.5 h-3.5 text-emerald-400"></i>
+                  <span id="txt-pix-parcial-content">Restante de R$ 0,00 na Gaveta Física em dinheiro</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SEPARADOR ENTRE PIX E VALOR DO SISTEMA -->
+          <div class="h-[1px] bg-zinc-800/80 my-1"></div>
+
+          <!-- =================================================================== -->
+          <!-- CAMPOS DE VALOR COM ALTURA E TIPOGRAFIA 100% PADRONIZADAS (60px / 20px) -->
+          <!-- =================================================================== -->
+          <div id="box-valores-container" class="space-y-2.5">
+            
+            <!-- 1. VALOR DO SISTEMA (DESTAQUE VISUAL PRINCIPAL - MAIOR E MAIS NÍTIDO) -->
+            <div class="bg-[#0d0d12] p-4 px-4.5 rounded-[22px] border border-zinc-700/90 shadow-md focus-within:border-emerald-500/60 transition-all flex items-center justify-between min-h-[72px]">
+              <div class="flex items-center gap-3.5 flex-1 min-w-0">
+                <div class="h-11 w-11 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center flex-shrink-0" id="icon-box-valor">
+                  <i data-lucide="banknote" class="w-5 h-5 text-emerald-400" id="icon-valor"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-black uppercase tracking-wider text-zinc-200 leading-none mb-1" id="lbl-valor">Valor do Sistema</div>
+                  <div class="flex items-baseline font-black mono tracking-tight">
+                    <span class="text-zinc-500 text-sm font-bold mr-1.5">R$</span>
+                    <input type="text" id="ipt-valor" value="2.000,00" oninput="recalc()" class="w-full bg-transparent text-2xl font-black text-white mono focus:outline-none tracking-tight leading-none" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- SEPARADOR ENTRE VALOR DO SISTEMA E NOTAS ENTREGUES -->
+            <div class="h-[1px] bg-zinc-800/80 my-0.5"></div>
+
+            <!-- 2. VALOR RECEBIDO COM BANDEJA ACOPLADA DE CONFERÊNCIA -->
+            <div id="col-recebido" class="bg-[#09090c] border border-zinc-800 focus-within:border-emerald-500/60 rounded-2xl overflow-hidden transition-all shadow-sm">
+              
+              <div class="p-3.5 px-4 flex items-center justify-between min-h-[60px]">
+                <div class="flex items-center gap-3 flex-1 min-w-0">
+                  <div class="h-9 w-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="arrow-down-left" class="w-4.5 h-4.5 text-emerald-400"></i>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="text-[10.5px] font-bold uppercase tracking-wider text-emerald-400 leading-none mb-1 truncate" id="lbl-recebido">Notas Entregues (Gaveta)</div>
+                    <div class="flex items-baseline font-black mono tracking-tight">
+                      <span class="text-zinc-500 text-sm font-bold mr-1.5">R$</span>
+                      <input type="text" id="ipt-entregue" value="2.000,00" oninput="recalc()" class="w-full bg-transparent text-xl font-black text-emerald-300 mono focus:outline-none tracking-tight leading-none" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- BANDEJA ACOPLADA DE CONFERÊNCIA -->
+              <div id="badge-sobra-layer" class="bg-[#121216] border-t border-zinc-800/90 py-2 px-4 flex items-center justify-between transition-all">
+                <div class="flex items-center gap-1.5">
+                  <div id="badge-sobra-icon-box" class="h-5 w-5 rounded-md bg-blue-500/20 flex items-center justify-center text-blue-400">
+                    <i data-lucide="check" class="w-3.5 h-3.5" id="badge-sobra-icon"></i>
+                  </div>
+                  <span id="badge-sobra-title" class="text-[11px] font-bold uppercase tracking-wider text-zinc-300">Conferência de Notas:</span>
+                </div>
+                <span id="txt-badge-sobra" class="font-mono font-black text-xs text-blue-400">R$ 0,00 Exato</span>
+              </div>
+
+            </div>
+
+            <!-- 3. CAMPO DE TROCO DEVOLVIDO (PADRONIZADO 60px / 20px) -->
+            <div id="box-troco-container" class="hidden bg-[#09090c] p-3.5 px-4 rounded-2xl border border-zinc-800 flex items-center justify-between min-h-[60px]">
+              <div class="flex items-center gap-3 flex-1 min-w-0">
+                <div class="h-9 w-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 flex-shrink-0">
+                  <i data-lucide="arrow-up-right" class="w-4.5 h-4.5"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[10.5px] font-bold uppercase tracking-wider text-zinc-400 leading-none mb-1 truncate">Troco Devolvido ao Cliente</div>
+                  <div class="flex items-baseline font-black mono tracking-tight">
+                    <span class="text-zinc-500 text-sm font-bold mr-1.5">R$</span>
+                    <input type="text" id="ipt-devolvido" value="0,00" oninput="recalc()" class="w-full bg-transparent text-xl font-black text-white mono focus:outline-none tracking-tight leading-none" />
+                  </div>
+                </div>
+              </div>
+              <button onclick="toggleTroco()" class="text-zinc-400 hover:text-white text-base px-2">✕</button>
+            </div>
+
+          </div>
+
+          <!-- =================================================================== -->
+          <!-- CAMPOS DE TEXTO (CLIENTE & CONTRATO) -->
+          <!-- =================================================================== -->
+          <div class="space-y-2" id="row-cliente-contrato">
+            
+            <div class="bg-[#09090c] p-3.5 px-4 rounded-2xl border border-zinc-800 focus-within:border-zinc-500 transition-all min-h-[58px] flex flex-col justify-center" id="col-desc">
+              <label class="block text-[11px] font-bold text-zinc-400 uppercase tracking-wider mb-0.5" id="lbl-desc">Cliente / Descrição</label>
+              <input type="text" id="ipt-desc" value="Dilone de Albuquerque Costa" placeholder="Ex: Digite o nome completo do cliente..." class="w-full bg-transparent text-sm font-bold text-white focus:outline-none placeholder-zinc-600 leading-normal" />
+            </div>
+
+            <div class="bg-[#09090c] p-3 px-4 rounded-2xl border border-zinc-800 flex items-center justify-between min-h-[50px]" id="col-contrato">
+              <label class="text-[11px] font-bold text-zinc-400 uppercase tracking-wider" id="lbl-contrato">Nº Contrato</label>
+              <input type="text" id="ipt-contrato" value="#4092" placeholder="#0000" class="w-32 bg-transparent text-sm text-right text-zinc-200 font-black uppercase focus:outline-none" />
+            </div>
+
+          </div>
+
+          <!-- BOTÃO SALVAR / EDITAR -->
+          <div id="row-acoes-salvar" class="flex items-center gap-2">
+            <button type="button" onclick="cancelarEdicao()" id="btn-cancelar" class="hidden px-5 h-12 rounded-2xl bg-zinc-900 border border-zinc-800 text-zinc-300 font-black text-xs uppercase tracking-wider items-center justify-center gap-1.5 active:scale-95 transition-all">
+              <i data-lucide="x" class="w-4 h-4 text-zinc-400"></i>
+              <span>Cancelar</span>
+            </button>
+            <button type="button" onclick="salvar()" id="btn-salvar" class="flex-1 h-12 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all">
+              <i data-lucide="check" class="w-4 h-4 stroke-[3]"></i>
+              <span id="txt-salvar">Registrar Lançamento</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- LISTA DE HISTÓRICO DE LANÇAMENTOS -->
+        <div class="space-y-2 pt-2">
+          <div class="flex items-center justify-between px-1">
+            <span class="text-xs font-black uppercase tracking-[1.5px] text-zinc-400">Histórico do Caixa</span>
+            <span class="text-[11px] font-bold text-zinc-500">3 lançamentos</span>
+          </div>
+
+          <!-- Item 1: Entrada Normal -->
+          <div class="rounded-[28px] bg-[#121216] p-4 border border-zinc-800 shadow-md flex items-center justify-between gap-3.5">
+            <div class="flex items-center gap-3.5 flex-1 min-w-0">
+              <div class="h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/15 border border-blue-500/30 flex text-blue-400 flex-shrink-0">
+                <i data-lucide="arrow-down-circle" class="w-5 h-5"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <!-- Linha 1: Hora • Categoria + Contrato -->
+                <div class="flex items-center gap-1.5 flex-wrap mb-1">
+                  <span class="text-[10px] font-black uppercase tracking-widest text-blue-400">14:22:05 • Entrada</span>
+                  <span class="bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700 text-[9px] font-black text-zinc-300">#4092</span>
+                </div>
+                <!-- Linha 2: Valor Hero -->
+                <div class="mono font-black text-white text-xl tracking-tight leading-tight">
+                  + R$ 2.000,00
+                </div>
+                <!-- Linha 3: Descrição -->
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-[11.5px] font-bold text-zinc-400 truncate">Dilone de Albuquerque Costa</span>
+                </div>
+              </div>
+            </div>
+            <!-- Botões de Ação Grandes -->
+            <div class="flex items-center gap-2 ml-3 flex-shrink-0">
+              <button type="button" onclick="editarItem('prestacao', 'Dilone de Albuquerque Costa', '2.000,00', '2.000,00', '0,00', '0,00')" class="h-10 w-10 items-center justify-center rounded-2xl bg-zinc-900 border border-zinc-800 text-zinc-300 hover:bg-zinc-800 flex transition-all active:scale-95" title="Editar">
+                <i data-lucide="edit-3" class="w-4 h-4 text-zinc-400"></i>
+              </button>
+              <button type="button" onclick="alert('Excluir lançamento')" class="h-10 w-10 items-center justify-center rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/30 flex transition-all active:scale-95" title="Excluir">
+                <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Item 2: Misto com Sobra -->
+          <div class="rounded-[28px] bg-[#121216] p-4 border border-orange-500/30 shadow-md flex items-center justify-between gap-3.5">
+            <div class="flex items-center gap-3.5 flex-1 min-w-0">
+              <div class="h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/15 border border-orange-500/30 flex text-orange-400 flex-shrink-0">
+                <i data-lucide="split" class="w-5 h-5"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <!-- Linha 1: Hora • Categoria + Contrato -->
+                <div class="flex items-center gap-1.5 flex-wrap mb-1">
+                  <span class="text-[10px] font-black uppercase tracking-widest text-orange-400">13:10:44 • Misto</span>
+                  <span class="bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700 text-[9px] font-black text-zinc-300">#8102</span>
+                </div>
+                <!-- Linha 2: Valor Hero -->
+                <div class="mono font-black text-orange-300 text-xl tracking-tight leading-tight">
+                  + R$ 2.000,00
+                </div>
+                <!-- Linha 3: Sobra + Breakdown + Nome -->
+                <div class="flex items-center gap-2 mt-1 flex-wrap">
+                  <div class="flex items-center gap-1 px-1.5 py-0.5 rounded border bg-emerald-500/15 border-emerald-500/30 text-emerald-400 text-[9.5px] font-black font-mono">
+                    <i data-lucide="coins" class="w-2.5 h-2.5"></i> +R$ 2,39 Sobra
+                  </div>
+                  <div class="flex items-center gap-1.5 bg-[#09090c] border border-zinc-800 rounded-lg px-2 py-0.5">
+                    <span class="flex items-center gap-1 text-[10px] font-black text-emerald-400 font-mono">
+                      <i data-lucide="banknote" class="w-3 h-3"></i> 500,00
+                    </span>
+                    <span class="text-[9px] font-black text-zinc-600">+</span>
+                    <span class="flex items-center gap-1 text-[10px] font-black text-purple-300 font-mono">
+                      <i data-lucide="smartphone" class="w-3 h-3"></i> 1.500,00
+                    </span>
+                  </div>
+                  <span class="text-[11.5px] font-bold text-zinc-400 truncate">Maria Clara Silveira</span>
+                </div>
+              </div>
+            </div>
+            <!-- Botões de Ação Grandes -->
+            <div class="flex items-center gap-2 ml-3 flex-shrink-0">
+              <button type="button" onclick="editarItem('misto', 'Maria Clara Silveira', '2.000,00', '502,39', '0,00', '1.500,00')" class="h-10 w-10 items-center justify-center rounded-2xl bg-zinc-900 border border-zinc-800 text-zinc-300 hover:bg-zinc-800 flex transition-all active:scale-95" title="Editar">
+                <i data-lucide="edit-3" class="w-4 h-4 text-zinc-400"></i>
+              </button>
+              <button type="button" onclick="alert('Excluir lançamento')" class="h-10 w-10 items-center justify-center rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/30 flex transition-all active:scale-95" title="Excluir">
+                <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Item 3: Sangria -->
+          <div class="rounded-[28px] bg-[#121216] p-4 border border-zinc-800 shadow-md flex items-center justify-between gap-3.5">
+            <div class="flex items-center gap-3.5 flex-1 min-w-0">
+              <div class="h-12 w-12 items-center justify-center rounded-2xl bg-red-500/15 border border-red-500/30 flex text-red-400 flex-shrink-0">
+                <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <!-- Linha 1: Hora • Categoria -->
+                <div class="flex items-center gap-1.5 flex-wrap mb-1">
+                  <span class="text-[10px] font-black uppercase tracking-widest text-red-400">11:05:12 • Sangria</span>
+                </div>
+                <!-- Linha 2: Valor Hero -->
+                <div class="mono font-black text-red-400 text-xl tracking-tight leading-tight">
+                  - R$ 1.500,00
+                </div>
+                <!-- Linha 3: Descrição -->
+                <div class="flex items-center gap-2 mt-1">
+                  <span class="text-[11.5px] font-bold text-zinc-400 truncate">Sangria para Cofre Central</span>
+                </div>
+              </div>
+            </div>
+            <!-- Botões de Ação Grandes -->
+            <div class="flex items-center gap-2 ml-3 flex-shrink-0">
+              <button type="button" onclick="editarItem('sangria', 'Sangria para Cofre Central', '1.500,00', '0,00', '0,00', '0,00')" class="h-10 w-10 items-center justify-center rounded-2xl bg-zinc-900 border border-zinc-800 text-zinc-300 hover:bg-zinc-800 flex transition-all active:scale-95" title="Editar">
+                <i data-lucide="edit-3" class="w-4 h-4 text-zinc-400"></i>
+              </button>
+              <button type="button" onclick="alert('Excluir lançamento')" class="h-10 w-10 items-center justify-center rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/30 flex transition-all active:scale-95" title="Excluir">
+                <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    let mode = 'dinheiro';
+    let isTrocoOpen = false;
+    let isMultiOpen = false;
+    let isPixAtivo = false;
+    let pixDestino = 'meu_pix';
+
+    function setCategory(cat) {
+      mode = cat;
+      const subtipo = document.getElementById('subtipo-row');
+      const boxValores = document.getElementById('box-valores-container');
+      const boxCardPix = document.getElementById('box-card-pix');
+      const colRecebido = document.getElementById('col-recebido');
+      const colContrato = document.getElementById('col-contrato');
+      const colDesc = document.getElementById('col-desc');
+      const lblDesc = document.getElementById('lbl-desc');
+      const lblValor = document.getElementById('lbl-valor');
+      const lblRecebido = document.getElementById('lbl-recebido');
+      const btnTroco = document.getElementById('btn-troco');
+      const btnSalvar = document.getElementById('btn-salvar');
+      const txtSalvar = document.getElementById('txt-salvar');
+      const card = document.getElementById('card-formulario');
+      const rowClienteContrato = document.getElementById('row-cliente-contrato');
+
+      ['dinheiro', 'prestacao', 'misto', 'compra_vista', 'sangria', 'cancelamento'].forEach(c => {
+        const btn = document.getElementById('cat-' + c);
+        const iconBox = document.getElementById('cat-icon-box-' + c);
+        const txt = document.getElementById('cat-txt-' + c);
+
+        if (c === 'compra_vista' || c === 'sangria' || c === 'cancelamento') {
+          btn.className = 'cat-card py-2 px-1 rounded-xl border transition-all flex items-center justify-center gap-1.5 bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-white min-h-[40px]';
+        } else {
+          btn.className = 'cat-card py-2.5 px-1 rounded-2xl border transition-all flex flex-col items-center justify-center gap-1 bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-white min-h-[72px]';
+          iconBox.className = 'h-8 w-8 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400';
+          txt.className = 'text-[11px] font-black uppercase tracking-wider text-zinc-400';
+        }
+      });
+
+      const sel = document.getElementById('cat-' + cat);
+      const selIconBox = document.getElementById('cat-icon-box-' + cat);
+      const selTxt = document.getElementById('cat-txt-' + cat);
+
+      if (cat === 'dinheiro') {
+        sel.className = 'cat-card py-2.5 px-1 rounded-2xl border transition-all flex flex-col items-center justify-center gap-1 bg-[#09090c] border-emerald-500/50 shadow-sm min-h-[72px]';
+        selIconBox.className = 'h-8 w-8 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400';
+        selTxt.className = 'text-[11px] font-black uppercase tracking-wider text-emerald-400';
+
+        card.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+        lblValor.innerText = 'Valor do Sistema';
+        lblRecebido.innerText = 'Notas Entregues (Gaveta)';
+        btnSalvar.className = 'w-full h-12 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all';
+        txtSalvar.innerText = 'Registrar Lançamento';
+        lblDesc.innerText = 'Cliente / Descrição';
+        subtipo.classList.add('hidden');
+        boxValores.classList.remove('hidden');
+        boxCardPix.classList.remove('hidden');
+        colRecebido.classList.remove('hidden');
+        btnTroco.classList.remove('hidden');
+        if (!isMultiOpen) rowClienteContrato.classList.remove('hidden');
+        colContrato.classList.remove('hidden');
+      } else if (cat === 'prestacao') {
+        sel.className = 'cat-card py-2.5 px-1 rounded-2xl border transition-all flex flex-col items-center justify-center gap-1 bg-[#09090c] border-blue-500/50 shadow-sm min-h-[72px]';
+        selIconBox.className = 'h-8 w-8 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400';
+        selTxt.className = 'text-[11px] font-black uppercase tracking-wider text-blue-400';
+
+        card.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+        lblValor.innerText = 'Valor do Sistema';
+        lblRecebido.innerText = 'Notas Entregues (Gaveta)';
+        btnSalvar.className = 'w-full h-12 rounded-2xl bg-blue-500 hover:bg-blue-400 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all';
+        txtSalvar.innerText = 'Registrar Entrada';
+        lblDesc.innerText = 'Cliente / Descrição';
+        subtipo.classList.remove('hidden');
+        boxValores.classList.remove('hidden');
+        boxCardPix.classList.remove('hidden');
+        colRecebido.classList.remove('hidden');
+        btnTroco.classList.remove('hidden');
+        if (!isMultiOpen) rowClienteContrato.classList.remove('hidden');
+        colContrato.classList.remove('hidden');
+      } else if (cat === 'misto') {
+        sel.className = 'cat-card py-2.5 px-1 rounded-2xl border transition-all flex flex-col items-center justify-center gap-1 bg-[#09090c] border-orange-500/50 shadow-sm min-h-[72px]';
+        selIconBox.className = 'h-8 w-8 rounded-xl bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400';
+        selTxt.className = 'text-[11px] font-black uppercase tracking-wider text-orange-400';
+
+        card.style.borderColor = 'rgba(249, 115, 22, 0.4)';
+        lblValor.innerText = 'Valor do Sistema';
+        lblRecebido.innerText = 'Notas Entregues (Gaveta)';
+        btnSalvar.className = 'w-full h-12 rounded-2xl bg-orange-500 hover:bg-orange-400 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all';
+        txtSalvar.innerText = 'Registrar Misto';
+        lblDesc.innerText = 'Cliente / Descrição';
+        subtipo.classList.add('hidden');
+        boxValores.classList.remove('hidden');
+        boxCardPix.classList.remove('hidden');
+        colRecebido.classList.remove('hidden');
+        btnTroco.classList.remove('hidden');
+        if (!isMultiOpen) rowClienteContrato.classList.remove('hidden');
+        colContrato.classList.remove('hidden');
+
+        if (!isPixAtivo) {
+          togglePixHabilitar();
+        }
+      }
+    }
+
+    function setSub(s) {
+      document.getElementById('ipt-desc').value = s + ' / ';
+      const buttons = {
+        'Renegociação': document.getElementById('sub-reneg'),
+        'Quitação': document.getElementById('sub-quit'),
+        'Entrada (Compra)': document.getElementById('sub-ent')
+      };
+
+      Object.keys(buttons).forEach(key => {
+        if (key === s) {
+          buttons[key].className = 'py-2 px-1 rounded-lg text-[10.5px] font-black uppercase transition-all flex items-center justify-center bg-blue-500 text-white shadow-md';
+        } else {
+          buttons[key].className = 'py-2 px-1 rounded-lg text-[10.5px] font-black uppercase transition-all flex items-center justify-center text-zinc-400 hover:text-white';
+        }
+      });
+    }
+
+    function togglePixHabilitar() {
+      isPixAtivo = !isPixAtivo;
+      const card = document.getElementById('box-card-pix');
+      const bolinha = document.getElementById('pix-bolinha');
+      const core = document.getElementById('pix-bolinha-core');
+      const iconBox = document.getElementById('pix-icon-box');
+      const texto = document.getElementById('pix-btn-texto');
+      const pill = document.getElementById('pix-pill-status');
+      const opcoes = document.getElementById('pix-opcoes-expandidas');
+      const iptVal = document.getElementById('ipt-valor');
+      const iptPix = document.getElementById('ipt-pix-valor-transferido');
+
+      if (isPixAtivo) {
+        card.className = 'bg-[#120e1e] border border-purple-500/50 rounded-2xl shadow-lg transition-all overflow-hidden';
+        bolinha.className = 'w-5 h-5 rounded-full border-2 border-purple-400 bg-purple-950 flex items-center justify-center shadow-[0_0_10px_rgba(168,85,247,0.5)] transition-all flex-shrink-0';
+        core.className = 'w-2.5 h-2.5 rounded-full bg-purple-400 transition-all';
+        iconBox.className = 'h-6 w-6 rounded-lg bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 transition-all flex-shrink-0';
+        texto.className = 'text-xs font-black uppercase tracking-wider text-purple-200 transition-all';
+        pill.classList.remove('hidden');
+        opcoes.classList.remove('hidden');
+        iptPix.value = iptVal.value;
+        recalcPixParcial();
+      } else {
+        card.className = 'bg-[#09090c] border border-zinc-800 rounded-2xl transition-all overflow-hidden';
+        bolinha.className = 'w-5 h-5 rounded-full border-2 border-zinc-700 bg-[#121216] flex items-center justify-center transition-all flex-shrink-0';
+        core.className = 'w-2.5 h-2.5 rounded-full bg-transparent transition-all';
+        iconBox.className = 'h-6 w-6 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 transition-all flex-shrink-0';
+        texto.className = 'text-xs font-black uppercase tracking-wider text-zinc-200 transition-all';
+        pill.classList.add('hidden');
+        opcoes.classList.add('hidden');
+        document.getElementById('box-pix-nome-outro').classList.add('hidden');
+        recalc();
+      }
+    }
+
+    function setPixTotal() {
+      const vTot = document.getElementById('ipt-valor').value;
+      document.getElementById('ipt-pix-valor-transferido').value = vTot;
+      document.getElementById('ipt-entregue').value = '0,00';
+      recalcPixParcial();
+    }
+
+    function recalcPixParcial() {
+      const vTot = parseFloat(document.getElementById('ipt-valor').value.replace('.', '').replace(',', '.')) || 0;
+      const vPix = parseFloat(document.getElementById('ipt-pix-valor-transferido').value.replace('.', '').replace(',', '.')) || 0;
+      const vFisicoRestante = Math.max(0, vTot - vPix);
+
+      const aviso = document.getElementById('txt-pix-parcial-aviso');
+      const content = document.getElementById('txt-pix-parcial-content');
+      const badge = document.getElementById('txt-pix-status-badge');
+
+      if (vPix < vTot && vPix > 0) {
+        aviso.classList.remove('hidden');
+        content.innerText = 'Restante de R$ ' + vFisicoRestante.toFixed(2).replace('.', ',') + ' na Gaveta Física em dinheiro';
+        badge.innerText = 'Pix Parcial (' + vPix.toFixed(2).replace('.', ',') + ')';
+        document.getElementById('ipt-entregue').value = vFisicoRestante.toFixed(2).replace('.', ',');
+      } else {
+        aviso.classList.add('hidden');
+        badge.innerText = 'Pix 100%';
+      }
+      recalc();
+    }
+
+    function setPixDestino(tipo) {
+      pixDestino = tipo;
+      const btnMeu = document.getElementById('btn-pix-meu');
+      const btnOutros = document.getElementById('btn-pix-outros');
+      const boxNome = document.getElementById('box-pix-nome-outro');
+
+      if (tipo === 'meu_pix') {
+        btnMeu.className = 'py-1.5 rounded-lg text-xs font-black uppercase bg-purple-600 text-white shadow-sm transition-all flex items-center justify-center gap-1.5';
+        btnOutros.className = 'py-1.5 rounded-lg text-xs font-black uppercase text-zinc-400 hover:text-white transition-all flex items-center justify-center gap-1.5';
+        boxNome.classList.add('hidden');
+      } else {
+        btnOutros.className = 'py-1.5 rounded-lg text-xs font-black uppercase bg-purple-600 text-white shadow-sm transition-all flex items-center justify-center gap-1.5';
+        btnMeu.className = 'py-1.5 rounded-lg text-xs font-black uppercase text-zinc-400 hover:text-white transition-all flex items-center justify-center gap-1.5';
+        boxNome.classList.remove('hidden');
+      }
+    }
+
+    function toggleTroco() {
+      isTrocoOpen = !isTrocoOpen;
+      const box = document.getElementById('box-troco-container');
+      const btn = document.getElementById('btn-troco');
+
+      if (isTrocoOpen) {
+        box.classList.remove('hidden');
+        btn.className = 'px-2.5 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-[11px] font-black uppercase text-emerald-300 flex items-center gap-1 transition-all';
+      } else {
+        box.classList.add('hidden');
+        btn.className = 'px-2.5 py-1 rounded-xl bg-[#09090c] border border-zinc-800 text-[11px] font-black uppercase text-zinc-400 hover:text-emerald-300 flex items-center gap-1 transition-all';
+      }
+    }
+
+    function recalc() {
+      const vTot = parseFloat(document.getElementById('ipt-valor').value.replace('.', '').replace(',', '.')) || 0;
+      const vPix = isPixAtivo ? (parseFloat(document.getElementById('ipt-pix-valor-transferido').value.replace('.', '').replace(',', '.')) || 0) : 0;
+      const vEsperadoGaveta = isPixAtivo ? Math.max(0, vTot - vPix) : vTot;
+
+      const vEnt = parseFloat(document.getElementById('ipt-entregue').value.replace('.', '').replace(',', '.')) || 0;
+      const vDev = parseFloat(document.getElementById('ipt-devolvido').value.replace('.', '').replace(',', '.')) || 0;
+
+      const ficou = vEnt - vDev;
+      const sobra = ficou - vEsperadoGaveta;
+
+      const layer = document.getElementById('badge-sobra-layer');
+      const iconBox = document.getElementById('badge-sobra-icon-box');
+      const txt = document.getElementById('txt-badge-sobra');
+
+      if (isPixAtivo && vPix >= vTot && ficou === 0) {
+        layer.className = 'bg-[#121216] border-t border-purple-500/40 py-2 px-4 flex items-center justify-between transition-all';
+        iconBox.className = 'h-5 w-5 rounded-md bg-purple-500/20 flex items-center justify-center text-purple-400';
+        txt.className = 'font-mono font-black text-xs text-purple-300';
+        txt.innerText = '100% Pix • Gaveta Zerada';
+      } else if (sobra > 0.001) {
+        layer.className = 'bg-[#121216] border-t border-emerald-500/40 py-2 px-4 flex items-center justify-between transition-all';
+        iconBox.className = 'h-5 w-5 rounded-md bg-emerald-500/20 flex items-center justify-center text-emerald-400';
+        txt.className = 'font-mono font-black text-xs text-emerald-400';
+        txt.innerText = '+R$ ' + sobra.toFixed(2).replace('.', ',') + ' Sobra';
+      } else if (sobra < -0.001) {
+        layer.className = 'bg-[#121216] border-t border-red-500/40 py-2 px-4 flex items-center justify-between transition-all';
+        iconBox.className = 'h-5 w-5 rounded-md bg-red-500/20 flex items-center justify-center text-red-400';
+        txt.className = 'font-mono font-black text-xs text-red-400';
+        txt.innerText = '-R$ ' + Math.abs(sobra).toFixed(2).replace('.', ',') + ' Falta';
+      } else {
+        layer.className = 'bg-[#121216] border-t border-zinc-800/90 py-2 px-4 flex items-center justify-between transition-all';
+        iconBox.className = 'h-5 w-5 rounded-md bg-blue-500/20 flex items-center justify-center text-blue-400';
+        txt.className = 'font-mono font-black text-xs text-blue-400';
+        txt.innerText = 'R$ 0,00 Exato';
+      }
+    }
+
+    let isEditing = false;
+
+    function editarItem(tipo, desc, val, rec, dev, pixVal) {
+      isEditing = true;
+      setCategory(tipo);
+      document.getElementById('ipt-desc').value = desc;
+      document.getElementById('ipt-valor').value = val;
+      document.getElementById('ipt-entregue').value = rec;
+      if (dev && dev !== '0,00') {
+        if (!isTrocoOpen) toggleTroco();
+        document.getElementById('ipt-devolvido').value = dev;
+      }
+      if (pixVal && pixVal !== '0,00') {
+        if (!isPixAtivo) togglePixHabilitar();
+        document.getElementById('ipt-pix-valor-transferido').value = pixVal;
+      }
+
+      document.getElementById('form-card-title').innerText = 'Editar Lançamento';
+      document.getElementById('form-card-title').className = 'text-xs font-black uppercase tracking-[1.5px] text-blue-300';
+      document.getElementById('form-card-icon-box').className = 'h-6 w-6 rounded-lg bg-blue-500/20 border border-blue-500/40 flex items-center justify-center flex-shrink-0 text-blue-400';
+      document.getElementById('form-card-icon').setAttribute('data-lucide', 'edit-3');
+
+      document.getElementById('btn-cancelar').classList.remove('hidden');
+      document.getElementById('btn-cancelar').classList.add('flex');
+      document.getElementById('btn-salvar').className = 'flex-1 h-12 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-md active:scale-[0.98] transition-all';
+      document.getElementById('txt-salvar').innerText = 'Salvar Edição';
+
+      lucide.createIcons();
+      recalc();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelarEdicao() {
+      isEditing = false;
+      document.getElementById('form-card-title').innerText = 'Novo Lançamento';
+      document.getElementById('form-card-title').className = 'text-xs font-black uppercase tracking-[1.5px] text-zinc-200';
+      document.getElementById('form-card-icon-box').className = 'h-6 w-6 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center flex-shrink-0 text-emerald-400';
+      document.getElementById('form-card-icon').setAttribute('data-lucide', 'plus');
+
+      document.getElementById('btn-cancelar').classList.add('hidden');
+      document.getElementById('btn-cancelar').classList.remove('flex');
+      setCategory(mode);
+
+      lucide.createIcons();
+      recalc();
+    }
+
+    function salvar() {
+      const vTot = document.getElementById('ipt-valor').value;
+      if (isEditing) {
+        alert('✅ Sucesso! Alterações salvas com sucesso!');
+        cancelarEdicao();
+      } else {
+        alert('✅ Sucesso! Lançamento de R$ ' + vTot + ' registrado com sucesso!');
+      }
+    }
+
+    lucide.createIcons();
+    recalc();
+  </script>
+</body>
+</html>

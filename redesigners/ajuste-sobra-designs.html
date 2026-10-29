@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Laboratório de Design: Ajuste de Quebra & Sobra</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      border-radius: 36px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8 max-w-6xl mx-auto pb-24">
+
+  <!-- CABEÇALHO -->
+  <div class="mb-8 text-center">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-black uppercase tracking-widest mb-2">
+      🧪 LABORATÓRIO DE AJUSTE & QUEBRA
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      4 Propostas de Design para o Ajuste de Quebra
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-2xl mx-auto">
+      Resolvendo a praticidade no balcão e a <b>responsividade total da Sobra/Quebra</b> (mesmo em telas pequenas ou com quebras de valores altos).
+    </p>
+
+    <!-- TESTE DE CENÁRIOS DE QUEBRA AO VIVO -->
+    <div class="mt-5 flex flex-wrap items-center justify-center gap-2">
+      <span class="text-xs font-bold text-zinc-500 px-2">Simular Caixa:</span>
+      <button onclick="setScenario('quebra-pequena')" id="btn-scen-1" class="px-3 py-1 rounded-xl text-xs font-black bg-amber-500 text-black shadow transition-all">
+        ⚠️ Quebra Centavos (-R$ 0,09)
+      </button>
+      <button onclick="setScenario('quebra-grande')" id="btn-scen-2" class="px-3 py-1 rounded-xl text-xs font-bold text-zinc-400 bg-[#121216] border border-zinc-800 hover:text-white transition-all">
+        🚨 Quebra Grande (-R$ 150,00)
+      </button>
+      <button onclick="setScenario('sobra')" id="btn-scen-3" class="px-3 py-1 rounded-xl text-xs font-bold text-zinc-400 bg-[#121216] border border-zinc-800 hover:text-white transition-all">
+        ✨ Sobra (+R$ 0,50)
+      </button>
+      <button onclick="setScenario('perfeito')" id="btn-scen-4" class="px-3 py-1 rounded-xl text-xs font-bold text-zinc-400 bg-[#121216] border border-zinc-800 hover:text-white transition-all">
+        🎯 Perfeito (R$ 0,00)
+      </button>
+    </div>
+  </div>
+
+  <!-- GRID COM AS 4 PROPOSTAS DE DESIGN -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+    <!-- ========================================================================= -->
+    <!-- DESIGN 1: O "AUTO-BATER CAIXA" COM 1 TOQUE (O MAIS RÁPIDO DO MUNDO) -->
+    <!-- ========================================================================= -->
+    <div class="bg-[#0f0f14] border border-zinc-800 rounded-3xl p-5 shadow-2xl flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20">
+            Design 1 • Auto-Bater Caixa (Inteligente)
+          </span>
+          <span class="text-[11px] font-bold text-zinc-500">1 Toque Mágico</span>
+        </div>
+        <h2 class="text-lg font-black text-white mb-1">Botão Mágico de Auto-Compensação</h2>
+        <p class="text-zinc-400 text-xs mb-4">
+          Se o caixa estiver com <b>-R$ 0,09 de quebra</b>, ele mostra um botão direto: <b>[ ⚡ Compensar -R$ 0,09 ]</b>. Em 1 clique o caixa fica zerado!
+        </p>
+
+        <!-- CARD DO AJUSTE INTERATIVO -->
+        <div class="bg-[#14141c] p-3.5 rounded-2xl border border-amber-500/30">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-1.5 text-amber-400">
+              <i data-lucide="sliders-horizontal" class="w-4 h-4 text-amber-400"></i>
+              <span class="text-xs font-black uppercase tracking-wider">Ajuste de Quebra</span>
+            </div>
+            <span id="d1-badge-status" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400">
+              Diferença: -R$ 0,09
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between gap-2 pt-2 border-t border-zinc-800">
+            <div>
+              <div class="text-[10px] text-zinc-500 font-bold uppercase">Ajuste Manual Aplicado</div>
+              <div id="d1-value" class="text-base font-black text-amber-300 mono">R$ 0,00</div>
+            </div>
+
+            <!-- Botão de 1 toque inteligente -->
+            <button onclick="applyAutoFix()" id="btn-auto-fix" class="px-3 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 active:scale-95 text-amber-950 text-xs font-black flex items-center gap-1.5 shadow transition-all">
+              <i data-lucide="zap" class="w-3.5 h-3.5 fill-amber-950"></i>
+              <span id="btn-auto-fix-text">Compensar -R$ 0,09</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-zinc-800/80 text-[11px] text-zinc-500">
+        💡 <b>Vantagem:</b> Zero digitação. O próprio app calcula o centavo exato que falta e você bate o caixa em 1 segundo.
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- DESIGN 2: STEPPER TÁTIL DIRETO NO CARD (+/- DIRETO NA TELA) -->
+    <!-- ========================================================================= -->
+    <div class="bg-[#0f0f14] border border-zinc-800 rounded-3xl p-5 shadow-2xl flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-black uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/20">
+            Design 2 • Stepper Tátil Direto
+          </span>
+          <span class="text-[11px] font-bold text-zinc-500">Sem Abrir Modal</span>
+        </div>
+        <h2 class="text-lg font-black text-white mb-1">Micro-Ajuste com Botões [-] e [+]</h2>
+        <p class="text-zinc-400 text-xs mb-4">
+          O próprio card tem os botões de <b>-0,05</b> e <b>+0,05</b>. Você ajusta o troco na hora sem abrir nenhuma janela extra.
+        </p>
+
+        <!-- CARD DO STEPPER -->
+        <div class="bg-[#14141c] p-3.5 rounded-2xl border border-zinc-800">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-1.5 text-zinc-400">
+              <i data-lucide="plus-circle" class="w-4 h-4 text-amber-400"></i>
+              <span class="text-xs font-black uppercase tracking-wider text-zinc-300">Ajuste Rápido</span>
+            </div>
+            <span class="text-[10px] text-zinc-500 font-bold uppercase">Passo: R$ 0,05</span>
+          </div>
+
+          <div class="flex items-center justify-between gap-2 pt-1">
+            <button onclick="stepAjuste(-0.05)" class="h-9 w-10 rounded-xl bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 active:scale-90 text-red-400 font-black text-sm flex items-center justify-center shadow">
+              -5¢
+            </button>
+
+            <div class="flex-1 text-center">
+              <div id="d2-value" class="text-lg font-black text-zinc-100 mono">R$ 0,00</div>
+              <div class="text-[9px] text-zinc-500 font-bold">Toque no número p/ digitar</div>
+            </div>
+
+            <button onclick="stepAjuste(+0.05)" class="h-9 w-10 rounded-xl bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 active:scale-90 text-emerald-400 font-black text-sm flex items-center justify-center shadow">
+              +5¢
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-zinc-800/80 text-[11px] text-zinc-500">
+        💡 <b>Vantagem:</b> Perfeito para quando o cliente diz "deixa os 5 centavos" ou quando você dá uma moeda de 10 centavos a mais.
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- DESIGN 3: DRAWER DESLIZANTE COM AS MOEDAS BRASILEIRAS (TÁTIL & REAL) -->
+    <!-- ========================================================================= -->
+    <div class="bg-[#0f0f14] border border-zinc-800 rounded-3xl p-5 shadow-2xl flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded-full border border-purple-500/20">
+            Design 3 • Bandeja de Moedas
+          </span>
+          <span class="text-[11px] font-bold text-zinc-500">Visual Moedas Físicas</span>
+        </div>
+        <h2 class="text-lg font-black text-white mb-1">Bandeja com 5¢, 10¢, 25¢, 50¢ e R$ 1</h2>
+        <p class="text-zinc-400 text-xs mb-4">
+          Ao tocar no card, abre uma gavetinha com as moedas reais do Brasil para você adicionar ou subtrair como se estivesse pegando na gaveta.
+        </p>
+
+        <!-- BANDEJA DE MOEDAS -->
+        <div class="bg-[#14141c] p-3.5 rounded-2xl border border-zinc-800">
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-black text-zinc-300 uppercase">Ajuste Atual: <span id="d3-value" class="text-amber-400 mono">R$ 0,00</span></span>
+            <button onclick="setCoinAjuste(0)" class="text-[10px] text-red-400 font-bold hover:underline">Zerar</button>
+          </div>
+
+          <div class="grid grid-cols-5 gap-1 pt-1">
+            <button onclick="addCoin(0.05)" class="py-2 rounded-xl bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 active:scale-90 text-[11px] font-black text-zinc-200 text-center">
+              +5¢
+            </button>
+            <button onclick="addCoin(0.10)" class="py-2 rounded-xl bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 active:scale-90 text-[11px] font-black text-zinc-200 text-center">
+              +10¢
+            </button>
+            <button onclick="addCoin(0.25)" class="py-2 rounded-xl bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 active:scale-90 text-[11px] font-black text-zinc-200 text-center">
+              +25¢
+            </button>
+            <button onclick="addCoin(0.50)" class="py-2 rounded-xl bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 active:scale-90 text-[11px] font-black text-zinc-200 text-center">
+              +50¢
+            </button>
+            <button onclick="addCoin(1.00)" class="py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 active:scale-90 text-[11px] font-black text-amber-300 text-center">
+              +R$1
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-zinc-800/80 text-[11px] text-zinc-500">
+        💡 <b>Vantagem:</b> Mapeia exatamente a física do dinheiro da gaveta.
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- DESIGN 4: PÍLULA ULTRA-COMPACTA INTEGRADA (O ATUAL REFINADO) -->
+    <!-- ========================================================================= -->
+    <div class="bg-[#0f0f14] border border-zinc-800 rounded-3xl p-5 shadow-2xl flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+            Design 4 • Pílula Inteligente Dinâmica
+          </span>
+          <span class="text-[11px] font-bold text-zinc-500">Harmonia com a Trinca</span>
+        </div>
+        <h2 class="text-lg font-black text-white mb-1">Card com Estado Dinâmico de Cor</h2>
+        <p class="text-zinc-400 text-xs mb-4">
+          Fica na trinca de cards perfeitamente alinhado com Saídas e Canhotos. Se houver quebra ou ajuste, ele muda de cor para avisar o operador.
+        </p>
+
+        <!-- CARD DA TRINCA REFINADO -->
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div class="bg-[#121216] py-2 px-1 rounded-2xl border border-zinc-800 flex flex-col justify-center h-[68px]">
+            <div class="text-[10px] font-bold text-zinc-500 uppercase flex items-center justify-center gap-1">
+              <i data-lucide="arrow-up-right" class="w-3 h-3 text-red-400"></i> Saídas
+            </div>
+            <div class="text-[13px] font-black text-zinc-200 mono mt-0.5">R$ 0,00</div>
+            <div class="text-[10px] text-zinc-600 font-medium">0 retiradas</div>
+          </div>
+
+          <div class="bg-[#121216] py-2 px-1 rounded-2xl border border-blue-500/30 flex flex-col justify-center text-center h-[68px]">
+            <div class="text-[10px] font-bold text-blue-400 uppercase flex items-center justify-center gap-1">
+              <i data-lucide="check-square" class="w-3 h-3 text-blue-400"></i> Canhotos
+            </div>
+            <div class="text-[13px] font-black text-blue-300 mono mt-0.5">22 de 22</div>
+            <div class="text-[10px] text-blue-400/70 font-medium">Conferidos</div>
+          </div>
+
+          <!-- Card de Ajuste Dinâmico -->
+          <div id="d4-card" class="bg-[#14141c] py-2 px-1 rounded-2xl border border-amber-500/40 flex flex-col justify-center text-center h-[68px] transition-all">
+            <div class="text-[10px] font-bold text-amber-400 uppercase flex items-center justify-center gap-1">
+              <i data-lucide="sliders-horizontal" class="w-3 h-3 text-amber-400"></i> Ajuste
+            </div>
+            <div id="d4-value" class="text-[13px] font-black text-amber-300 mono mt-0.5">R$ 0,00</div>
+            <div id="d4-sub" class="text-[10px] text-amber-400/80 font-medium">Toque p/ editar</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-zinc-800/80 text-[11px] text-zinc-500">
+        💡 <b>Vantagem:</b> Mantém o layout limpo e encaixa perfeito na régua de 3 cards sem ocupar espaço vertical extra.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- SEÇÃO 2: RESPONSIVIDADE COMPLETA DO BADGE DE SOBRA / QUEBRA -->
+  <!-- ========================================================================= -->
+  <div class="mt-12 bg-[#0f0f14] border border-zinc-800 rounded-3xl p-6 shadow-2xl">
+    <div class="flex items-center gap-2 mb-2">
+      <div class="h-8 w-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+        <i data-lucide="smartphone" class="w-4 h-4 text-indigo-400"></i>
+      </div>
+      <div>
+        <h3 class="text-lg font-black text-white uppercase tracking-tight">Responsividade Total do Badge de Sobra/Quebra</h3>
+        <p class="text-xs text-zinc-400">Como o Badge de Quebra se adapta de forma 100% elástica para nunca vazar nem esmagar a palavra "Total":</p>
+      </div>
+    </div>
+
+    <!-- DEMONSTRAÇÃO DO HEADER DO CARD PRINCIPAL EM DIFERENTES LARGURAS -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+      
+      <!-- Telas Pequenas (340px) -->
+      <div class="bg-[#121216] border border-zinc-800 p-3.5 rounded-2xl">
+        <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">📱 Tela Compacta (340px)</div>
+        <div class="flex items-center justify-between gap-1">
+          <div class="flex items-center gap-1 text-zinc-400">
+            <i data-lucide="monitor" class="w-3.5 h-3.5 text-zinc-400"></i>
+            <span class="text-[11px] font-black uppercase tracking-wider text-zinc-300">Total</span>
+          </div>
+          <!-- Badge compacto responsivo -->
+          <span class="text-[10px] font-black px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 flex items-center gap-1 truncate">
+            <i data-lucide="alert-triangle" class="w-3 h-3 text-red-400 flex-shrink-0"></i>
+            <span class="truncate">-R$ 0,09</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Telas Médias (390px) -->
+      <div class="bg-[#121216] border border-zinc-800 p-3.5 rounded-2xl">
+        <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">📱 Tela Padrão (390px)</div>
+        <div class="flex items-center justify-between gap-1">
+          <div class="flex items-center gap-1.5 text-zinc-400">
+            <i data-lucide="monitor" class="w-3.5 h-3.5 text-zinc-400"></i>
+            <span class="text-[12px] font-black uppercase tracking-[2px] text-zinc-300">Total</span>
+          </div>
+          <span class="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 flex items-center gap-1">
+            <i data-lucide="alert-triangle" class="w-3 h-3 text-red-400"></i>
+            -R$ 0,09 Quebra
+          </span>
+        </div>
+      </div>
+
+      <!-- Quebra Grande com Valor Alto (-R$ 150,00) -->
+      <div class="bg-[#121216] border border-zinc-800 p-3.5 rounded-2xl">
+        <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider mb-2">🚨 Quebra Alta (-R$ 150,00)</div>
+        <div class="flex items-center justify-between gap-1">
+          <div class="flex items-center gap-1.5 text-zinc-400">
+            <i data-lucide="monitor" class="w-3.5 h-3.5 text-zinc-400"></i>
+            <span class="text-[12px] font-black uppercase tracking-[2px] text-zinc-300">Total</span>
+          </div>
+          <span class="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-300 flex items-center gap-1">
+            <i data-lucide="alert-triangle" class="w-3 h-3 text-red-400"></i>
+            -R$ 150,00 Falta
+          </span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    let currentQuebra = -0.09;
+    let ajusteManual = 0.00;
+
+    function setScenario(type) {
+      const b1 = document.getElementById('btn-scen-1');
+      const b2 = document.getElementById('btn-scen-2');
+      const b3 = document.getElementById('btn-scen-3');
+      const b4 = document.getElementById('btn-scen-4');
+
+      [b1, b2, b3, b4].forEach(b => {
+        b.className = 'px-3 py-1 rounded-xl text-xs font-bold text-zinc-400 bg-[#121216] border border-zinc-800 hover:text-white transition-all';
+      });
+
+      if (type === 'quebra-pequena') {
+        b1.className = 'px-3 py-1 rounded-xl text-xs font-black bg-amber-500 text-black shadow transition-all';
+        currentQuebra = -0.09;
+      } else if (type === 'quebra-grande') {
+        b2.className = 'px-3 py-1 rounded-xl text-xs font-black bg-red-500 text-white shadow transition-all';
+        currentQuebra = -150.00;
+      } else if (type === 'sobra') {
+        b3.className = 'px-3 py-1 rounded-xl text-xs font-black bg-emerald-500 text-black shadow transition-all';
+        currentQuebra = +0.50;
+      } else {
+        b4.className = 'px-3 py-1 rounded-xl text-xs font-black bg-cyan-500 text-black shadow transition-all';
+        currentQuebra = 0.00;
+      }
+
+      updateUI();
+    }
+
+    function updateUI() {
+      // D1
+      const d1Badge = document.getElementById('d1-badge-status');
+      const d1Btn = document.getElementById('btn-auto-fix-text');
+      const d1Val = document.getElementById('d1-value');
+      
+      const diff = currentQuebra + ajusteManual;
+      if (Math.abs(diff) < 0.005) {
+        d1Badge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400';
+        d1Badge.innerText = 'Caixa Perfeito (R$ 0,00)';
+        d1Btn.innerText = 'Caixa Zerado ✓';
+      } else if (diff < 0) {
+        d1Badge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400';
+        d1Badge.innerText = `Falta: R$ ${Math.abs(diff).toFixed(2)}`;
+        d1Btn.innerText = `Compensar +R$ ${Math.abs(diff).toFixed(2)}`;
+      } else {
+        d1Badge.className = 'text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400';
+        d1Badge.innerText = `Sobra: +R$ ${diff.toFixed(2)}`;
+        d1Btn.innerText = `Ajustar -R$ ${diff.toFixed(2)}`;
+      }
+      d1Val.innerText = `R$ ${ajusteManual.toFixed(2)}`;
+
+      // D2
+      document.getElementById('d2-value').innerText = `R$ ${ajusteManual.toFixed(2)}`;
+
+      // D3
+      document.getElementById('d3-value').innerText = `R$ ${ajusteManual.toFixed(2)}`;
+
+      // D4
+      document.getElementById('d4-value').innerText = `R$ ${ajusteManual.toFixed(2)}`;
+    }
+
+    function applyAutoFix() {
+      ajusteManual = -currentQuebra;
+      updateUI();
+    }
+
+    function stepAjuste(val) {
+      ajusteManual = Math.round((ajusteManual + val) * 100) / 100;
+      updateUI();
+    }
+
+    function addCoin(val) {
+      ajusteManual = Math.round((ajusteManual + val) * 100) / 100;
+      updateUI();
+    }
+
+    function setCoinAjuste(val) {
+      ajusteManual = val;
+      updateUI();
+    }
+  </script>
+</body>
+</html>

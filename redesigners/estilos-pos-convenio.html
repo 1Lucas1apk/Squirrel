@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Refinamento de POS & Convênios</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 420px;
+      border-radius: 40px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-5xl mx-auto pb-28">
+
+  <!-- CABEÇALHO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      💳 REFINAMENTO VISUAL: POS & CONVÊNIOS
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      Deixando Cartões e Convênios Impecáveis
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-xl mx-auto font-medium">
+      Veja como deixá-los com o mesmo acabamento nobre do restante do painel:
+    </p>
+
+    <!-- SELETOR -->
+    <div class="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 bg-[#121216] p-1.5 rounded-2xl border border-zinc-800 max-w-2xl mx-auto">
+      <button onclick="setPosStyle(1)" id="btn-pos1" class="py-2.5 rounded-xl text-xs font-black bg-blue-500 text-white shadow transition-all">
+        1. Grid Premium 36px
+      </button>
+      <button onclick="setPosStyle(2)" id="btn-pos2" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        2. Dock Duplo 74px
+      </button>
+      <button onclick="setPosStyle(3)" id="btn-pos3" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        3. Glow Cards
+      </button>
+      <button onclick="setPosStyle(4)" id="btn-pos4" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        4. Linhas Nobres
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER CENTRAL -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- CABEÇALHO DO APP -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-4 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-lg font-black uppercase tracking-tighter text-white">CAIXA</span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span class="text-[11px] font-black text-zinc-400 uppercase">27 AGO</span>
+        </div>
+        <div id="pos-tag" class="text-xs font-black text-blue-400 uppercase bg-blue-500/10 px-2.5 py-1 rounded-xl border border-blue-500/20">
+          Estilo 1: Grid Premium 36px
+        </div>
+      </div>
+
+      <!-- CORPO COM A ESCALA COMPLETA DA TELA -->
+      <div class="p-3.5 space-y-3">
+        
+        <!-- CARD AJUSTE DA GAVETA (CONTEXTO) -->
+        <div class="bg-[#121216] p-3 px-4 rounded-2xl border border-zinc-800/80 flex items-center justify-between min-h-[70px] opacity-70">
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+              <i data-lucide="sliders-horizontal" class="w-4.5 h-4.5"></i>
+            </div>
+            <div>
+              <div class="text-[11px] font-bold uppercase text-zinc-400">Ajuste da Gaveta</div>
+              <div class="text-[20px] font-black text-white mono">R$ 0,00</div>
+            </div>
+          </div>
+          <div class="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-black">
+            + 1,00
+          </div>
+        </div>
+
+        <!-- DIVISOR -->
+        <div class="flex items-center gap-2 px-1 pt-1">
+          <i data-lucide="credit-card" class="w-3.5 h-3.5 text-blue-400"></i>
+          <span class="text-[11px] font-black uppercase tracking-[2px] text-blue-400">Outros Recebimentos</span>
+          <div class="flex-1 h-px bg-zinc-800"></div>
+        </div>
+
+        <!-- CONTAINER DINÂMICO DOS CARTÕES & CONVÊNIOS -->
+        <div id="pos-container">
+          <!-- Renderizado via JS -->
+        </div>
+
+        <!-- BATE-PAPO (CONTEXTO ABAIXO) -->
+        <div class="bg-[#121216] border border-indigo-500/30 rounded-2xl p-3.5 flex items-center justify-between min-h-[76px] opacity-70">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-indigo-500/15 flex items-center justify-center text-indigo-400">
+              <i data-lucide="message-square" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="text-[11px] font-black uppercase text-indigo-300">Bate-papo da Equipe</div>
+              <p class="text-xs text-white font-bold truncate">Maria: "Fulano vem buscar o troco..."</p>
+            </div>
+          </div>
+          <span class="text-xs font-bold text-indigo-400">Abrir ›</span>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- DESCRIÇÃO -->
+    <div id="pos-description" class="mt-6 max-w-xl text-center bg-[#121216] p-4 rounded-2xl border border-zinc-800 text-xs text-zinc-300">
+      <!-- Injetado via JS -->
+    </div>
+
+  </div>
+
+  <script>
+    let currentPos = 1;
+
+    function setPosStyle(n) {
+      currentPos = n;
+
+      for (let i = 1; i <= 4; i++) {
+        const btn = document.getElementById('btn-pos' + i);
+        if (i === n) {
+          btn.className = 'py-2.5 rounded-xl text-xs font-black bg-blue-500 text-white shadow transition-all';
+        } else {
+          btn.className = 'py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all';
+        }
+      }
+
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById('pos-container');
+      const tag = document.getElementById('pos-tag');
+      const desc = document.getElementById('pos-description');
+
+      if (currentPos === 1) {
+        // ESTILO 1: GRID PREMIUM 36px (Ícones elegantes, bordas nobres, R$ alinhado)
+        tag.innerText = 'Estilo 1: Grid Premium 36px';
+        tag.className = 'text-xs font-black text-blue-400 uppercase bg-blue-500/10 px-2.5 py-1 rounded-xl border border-blue-500/20';
+        desc.innerHTML = `<b>Estilo 1 — Grid Premium 36px:</b> Cards espaçosos com ícone de <b>36px</b> (`+`h-9 w-9`), fundo rico `#121216`, bordas em azul cobalto e roxo ametista, e valores com centavos em alto contraste.`;
+
+        container.innerHTML = `
+          <div class="grid grid-cols-2 gap-2.5">
+            
+            <!-- Card POS Cartões -->
+            <button class="bg-[#121216] border border-blue-500/30 hover:border-blue-500/50 rounded-2xl p-3.5 text-left flex flex-col justify-between min-h-[96px] shadow-lg active:scale-98 transition-all">
+              <div class="flex items-center gap-2.5">
+                <div class="h-9 w-9 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400 flex-shrink-0">
+                  <i data-lucide="credit-card" class="w-4.5 h-4.5"></i>
+                </div>
+                <div>
+                  <div class="text-[11.5px] font-black uppercase text-blue-400 tracking-wider">POS Cartões</div>
+                  <div class="text-[10px] text-zinc-500 font-medium">8 comprovantes</div>
+                </div>
+              </div>
+
+              <div class="mt-2">
+                <div class="flex items-baseline font-black mono tracking-tight">
+                  <span class="text-blue-400/80 text-xs font-bold mr-0.5">R$</span>
+                  <span class="text-[20px] text-white font-black">1.840</span>
+                  <span class="text-zinc-300 text-xs font-bold">,50</span>
+                </div>
+              </div>
+            </button>
+
+            <!-- Card Convênios -->
+            <button class="bg-[#121216] border border-purple-500/30 hover:border-purple-500/50 rounded-2xl p-3.5 text-left flex flex-col justify-between min-h-[96px] shadow-lg active:scale-98 transition-all">
+              <div class="flex items-center gap-2.5">
+                <div class="h-9 w-9 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400 flex-shrink-0">
+                  <i data-lucide="building-2" class="w-4.5 h-4.5"></i>
+                </div>
+                <div>
+                  <div class="text-[11.5px] font-black uppercase text-purple-400 tracking-wider">Convênios</div>
+                  <div class="text-[10px] text-zinc-500 font-medium">3 clientes</div>
+                </div>
+              </div>
+
+              <div class="mt-2">
+                <div class="flex items-baseline font-black mono tracking-tight">
+                  <span class="text-purple-400/80 text-xs font-bold mr-0.5">R$</span>
+                  <span class="text-[20px] text-white font-black">650</span>
+                  <span class="text-zinc-300 text-xs font-bold">,00</span>
+                </div>
+              </div>
+            </button>
+
+          </div>
+        `;
+      } else if (currentPos === 2) {
+        // ESTILO 2: DOCK DUPLO 74px (UNIFICADO COM DIVISOR CENTRAL)
+        tag.innerText = 'Estilo 2: Dock Duplo 74px';
+        tag.className = 'text-xs font-black text-indigo-400 uppercase bg-indigo-500/10 px-2.5 py-1 rounded-xl border border-indigo-500/20';
+        desc.innerHTML = `<b>Estilo 2 — Dock Duplo 74px:</b> Uma única barra horizontal nobre, dividida ao meio por uma linha vertical. O lado esquerdo é POS Cartões e o lado direito é Convênios.`;
+
+        container.innerHTML = `
+          <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-3 px-4 flex items-center shadow-lg min-h-[74px]">
+            
+            <!-- Lado 1: POS Cartões -->
+            <button class="flex-1 px-1 text-left active:scale-95 transition-all">
+              <div class="text-[11.5px] font-black text-blue-400 uppercase flex items-center gap-1.5">
+                <i data-lucide="credit-card" class="w-3.5 h-3.5"></i> POS Cartões
+              </div>
+              <div class="flex items-baseline font-black mono tracking-tight mt-0.5">
+                <span class="text-blue-400/80 text-xs font-bold mr-0.5">R$</span>
+                <span class="text-[20px] text-white font-black">1.840</span>
+                <span class="text-zinc-300 text-xs font-bold">,50</span>
+              </div>
+              <div class="text-[10px] text-zinc-500 font-medium">8 comprovantes</div>
+            </button>
+            
+            <!-- Divisor -->
+            <div class="w-[1px] h-12 bg-zinc-800 self-center mx-2.5"></div>
+            
+            <!-- Lado 2: Convênios -->
+            <button class="flex-1 px-1 text-left active:scale-95 transition-all">
+              <div class="text-[11.5px] font-black text-purple-400 uppercase flex items-center gap-1.5">
+                <i data-lucide="building-2" class="w-3.5 h-3.5"></i> Convênios
+              </div>
+              <div class="flex items-baseline font-black mono tracking-tight mt-0.5">
+                <span class="text-purple-400/80 text-xs font-bold mr-0.5">R$</span>
+                <span class="text-[20px] text-white font-black">650</span>
+                <span class="text-zinc-300 text-xs font-bold">,00</span>
+              </div>
+              <div class="text-[10px] text-zinc-500 font-medium">3 clientes</div>
+            </button>
+
+          </div>
+        `;
+      } else if (currentPos === 3) {
+        // ESTILO 3: GLOW CARDS COM FUNDO PERSONALIZADO
+        tag.innerText = 'Estilo 3: Glow Cards';
+        tag.className = 'text-xs font-black text-cyan-400 uppercase bg-cyan-500/10 px-2.5 py-1 rounded-xl border border-cyan-500/20';
+        desc.innerHTML = `<b>Estilo 3 — Glow Cards:</b> Fundo levemente azulado e arroxeado (`+`#0e1320` e `#170e20`) com bordas iluminadas e tags flutuantes.`;
+
+        container.innerHTML = `
+          <div class="grid grid-cols-2 gap-2.5">
+            
+            <!-- Card 1 -->
+            <div class="bg-[#0e1320] border border-blue-500/40 rounded-2xl p-3.5 shadow-lg shadow-blue-500/5 flex flex-col justify-between min-h-[96px]">
+              <div class="flex justify-between items-center">
+                <div class="h-8 w-8 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-400">
+                  <i data-lucide="credit-card" class="w-4 h-4"></i>
+                </div>
+                <span class="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-bold">8 comp.</span>
+              </div>
+              <div class="mt-2">
+                <div class="text-[11px] font-black uppercase text-blue-300">POS Cartões</div>
+                <div class="mono text-[19px] font-black text-white leading-tight">R$ 1.840,50</div>
+              </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="bg-[#170e20] border border-purple-500/40 rounded-2xl p-3.5 shadow-lg shadow-purple-500/5 flex flex-col justify-between min-h-[96px]">
+              <div class="flex justify-between items-center">
+                <div class="h-8 w-8 rounded-xl bg-purple-500/20 flex items-center justify-center text-purple-400">
+                  <i data-lucide="building-2" class="w-4 h-4"></i>
+                </div>
+                <span class="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 text-[10px] font-bold">3 clie.</span>
+              </div>
+              <div class="mt-2">
+                <div class="text-[11px] font-black uppercase text-purple-300">Convênios</div>
+                <div class="mono text-[19px] font-black text-white leading-tight">R$ 650,00</div>
+              </div>
+            </div>
+
+          </div>
+        `;
+      } else if (currentPos === 4) {
+        // ESTILO 4: LINHAS NOBRES (HORIZONTAL FULL-WIDTH)
+        tag.innerText = 'Estilo 4: Linhas Nobres';
+        tag.className = 'text-xs font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20';
+        desc.innerHTML = `<b>Estilo 4 — Linhas Nobres:</b> 2 barras horizontais completas de `+`min-h-[58px]`, com ícone à esquerda, valor à direita e atalho para a conferência.`;
+
+        container.innerHTML = `
+          <div class="space-y-2">
+            
+            <!-- Linha 1: POS -->
+            <div class="bg-[#121216] border border-blue-500/30 rounded-2xl p-3 px-3.5 flex items-center justify-between shadow">
+              <div class="flex items-center gap-3">
+                <div class="h-8 w-8 rounded-xl bg-blue-500/15 flex items-center justify-center text-blue-400">
+                  <i data-lucide="credit-card" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <div class="text-[12px] font-black uppercase text-blue-400">POS Cartões</div>
+                  <div class="text-[10px] text-zinc-500 font-medium">8 comprovantes registrados</div>
+                </div>
+              </div>
+              <div class="mono text-[17px] font-black text-white">R$ 1.840,50</div>
+            </div>
+
+            <!-- Linha 2: Convênios -->
+            <div class="bg-[#121216] border border-purple-500/30 rounded-2xl p-3 px-3.5 flex items-center justify-between shadow">
+              <div class="flex items-center gap-3">
+                <div class="h-8 w-8 rounded-xl bg-purple-500/15 flex items-center justify-center text-purple-400">
+                  <i data-lucide="building-2" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <div class="text-[12px] font-black uppercase text-purple-400">Convênios</div>
+                  <div class="text-[10px] text-zinc-500 font-medium">3 clientes registrados</div>
+                </div>
+              </div>
+              <div class="mono text-[17px] font-black text-white">R$ 650,00</div>
+            </div>
+
+          </div>
+        `;
+      }
+
+      lucide.createIcons();
+    }
+
+    render();
+  </script>
+</body>
+</html>

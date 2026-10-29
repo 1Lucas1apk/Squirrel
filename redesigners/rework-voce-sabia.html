@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Rework "Você Sabia?" (Retrospectiva de Performance)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050508;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 412px;
+      border-radius: 46px;
+      border: 3.5px solid #27272a;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 0 1px #18181b;
+      background-color: #09090c;
+      overflow: hidden;
+      min-height: 860px;
+      max-height: 860px;
+      position: relative;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-6xl mx-auto pb-32">
+
+  <!-- CABEÇALHO DO PROJETO -->
+  <div class="mb-8 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-black uppercase tracking-widest mb-3 shadow-sm">
+      🐿️ SQUIRREL SYSTEM • REWORK VOCÊ SABIA?
+    </div>
+    <h1 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-white">
+      Retrospectiva & Insights de Performance
+    </h1>
+    <p class="text-zinc-400 text-sm mt-2 max-w-2xl mx-auto font-medium leading-relaxed">
+      Transformação da tela de estatísticas em um painel tático com o mesmo DNA visual de <span class="text-zinc-200 font-bold">Painel</span>, <span class="text-zinc-200 font-bold">Histórico</span> e <span class="text-zinc-200 font-bold">Transações</span>: patentes operacionais, recordes históricos, precisão de fechamento e raio-x de sobras/quebras.
+    </p>
+
+    <!-- SELETOR DE CONCEITOS -->
+    <div class="flex items-center justify-center gap-2.5 mt-6 flex-wrap">
+      <button onclick="switchConcept('modelo-1')" id="btn-m1" class="concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-amber-500 text-black border-amber-400 shadow-xl">
+        ⭐ 1. Dashboard Tático (Patente & Cards)
+      </button>
+      <button onclick="switchConcept('modelo-2')" id="btn-m2" class="concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] text-zinc-400 border-zinc-800 hover:border-zinc-700">
+        ✨ 2. Stories de Conquistas (Highlights)
+      </button>
+      <button onclick="switchConcept('modelo-3')" id="btn-m3" class="concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] text-zinc-400 border-zinc-800 hover:border-zinc-700">
+        📊 3. Auditoria & Raio-X Financeiro
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER DE PREVIEWS -->
+  <div class="flex justify-center items-start gap-8">
+
+    <!-- ========================================================================= -->
+    <!-- MODELO 1: DASHBOARD TÁTICO (PATENTE & CARDS COM DNA OFICIAL) -->
+    <!-- ========================================================================= -->
+    <div id="modelo-1" class="mobile-frame flex flex-col">
+      <!-- Status Bar Simulado -->
+      <div class="px-7 pt-3.5 pb-2 flex justify-between items-center text-[11px] font-bold text-zinc-500 border-b border-zinc-900/60 bg-[#09090c]">
+        <span class="mono">20:15</span>
+        <div class="flex items-center gap-1.5 text-zinc-400">
+          <i data-lucide="wifi" class="w-3.5 h-3.5 text-amber-400"></i>
+          <i data-lucide="battery" class="w-4 h-4 text-amber-400"></i>
+        </div>
+      </div>
+
+      <!-- Header Top -->
+      <div class="p-4 pb-3 bg-[#09090c] border-b border-zinc-900 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center">
+            <i data-lucide="sparkles" class="w-5 h-5 text-amber-400"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-black uppercase tracking-[2px] text-zinc-500">Histórico</span>
+              <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[8px] font-black">28 TURNOS</span>
+            </div>
+            <h2 class="text-base font-black uppercase text-zinc-100">Você Sabia?</h2>
+          </div>
+        </div>
+        <button class="h-9 w-9 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800 hover:bg-zinc-800 transition">
+          <i data-lucide="x" class="w-4 h-4 text-zinc-400"></i>
+        </button>
+      </div>
+
+      <!-- Scroll Content -->
+      <div class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-3.5 pb-8">
+
+        <!-- PATENTE DO OPERADOR -->
+        <div class="bg-gradient-to-b from-[#181820] to-[#121216] p-5 rounded-[28px] border border-amber-500/30 relative overflow-hidden shadow-lg">
+          <div class="absolute -right-6 -bottom-6 opacity-10">
+            <i data-lucide="award" class="w-36 h-36 text-amber-400"></i>
+          </div>
+
+          <div class="flex items-center gap-3.5 mb-3.5">
+            <div class="h-14 w-14 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shadow-inner">
+              <i data-lucide="crown" class="w-7 h-7 text-amber-400"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 mb-0.5">
+                <span class="text-[9px] font-black uppercase tracking-widest text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                  NÍVEL ELITE • 92% PRECISÃO
+                </span>
+              </div>
+              <h3 class="text-xl font-black uppercase tracking-tight text-white">Mestre da Gaveta</h3>
+              <p class="text-[10px] text-zinc-400 font-medium">Precisão cirúrgica no fechamento de turnos.</p>
+            </div>
+          </div>
+
+          <!-- Barra de Progresso / Precisão -->
+          <div class="space-y-1.5 pt-2 border-t border-zinc-800/80">
+            <div class="flex justify-between items-center text-[10px] font-black uppercase">
+              <span class="text-zinc-400">Taxa de Caixas Perfeitos</span>
+              <span class="text-emerald-400 mono">26 / 28 Dias (92.8%)</span>
+            </div>
+            <div class="w-full h-2 bg-[#09090c] rounded-full overflow-hidden p-0.5 border border-zinc-800">
+              <div class="h-full bg-gradient-to-r from-emerald-500 to-amber-400 rounded-full w-[92.8%]"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- GRID 2x2 DE MÉTRICAS PRINCIPAIS -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <!-- Volume Total -->
+          <div class="bg-[#121216] p-3.5 rounded-2xl border border-zinc-800/80 flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-2">
+              <div class="h-8 w-8 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center">
+                <i data-lucide="trending-up" class="w-4 h-4 text-purple-400"></i>
+              </div>
+              <span class="text-[8px] font-mono font-bold text-zinc-500">TOTAL</span>
+            </div>
+            <div>
+              <span class="text-[9px] font-black uppercase text-zinc-400 block mb-0.5">Volume Movimentado</span>
+              <span class="text-sm font-black mono text-purple-300">R$ 148.920,40</span>
+              <span class="text-[8px] text-zinc-500 block mt-0.5">Acumulado dos 28 turnos</span>
+            </div>
+          </div>
+
+          <!-- Média Diária -->
+          <div class="bg-[#121216] p-3.5 rounded-2xl border border-zinc-800/80 flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-2">
+              <div class="h-8 w-8 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center">
+                <i data-lucide="calendar" class="w-4 h-4 text-blue-400"></i>
+              </div>
+              <span class="text-[8px] font-mono font-bold text-zinc-500">MÉDIA</span>
+            </div>
+            <div>
+              <span class="text-[9px] font-black uppercase text-zinc-400 block mb-0.5">Média por Turno</span>
+              <span class="text-sm font-black mono text-blue-300">R$ 5.318,58</span>
+              <span class="text-[8px] text-zinc-500 block mt-0.5">Por dia trabalhado</span>
+            </div>
+          </div>
+
+          <!-- Dinheiro Físico / Malote -->
+          <div class="bg-[#121216] p-3.5 rounded-2xl border border-zinc-800/80 flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-2">
+              <div class="h-8 w-8 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+                <i data-lucide="banknote" class="w-4 h-4 text-emerald-400"></i>
+              </div>
+              <span class="text-[8px] font-mono font-bold text-emerald-400">MALOTE</span>
+            </div>
+            <div>
+              <span class="text-[9px] font-black uppercase text-zinc-400 block mb-0.5">Dinheiro em Espécie</span>
+              <span class="text-sm font-black mono text-emerald-400">R$ 84.150,00</span>
+              <span class="text-[8px] text-zinc-500 block mt-0.5">Enviado em sacos físicos</span>
+            </div>
+          </div>
+
+          <!-- Repasse Pix -->
+          <div class="bg-[#121216] p-3.5 rounded-2xl border border-zinc-800/80 flex flex-col justify-between">
+            <div class="flex items-center justify-between mb-2">
+              <div class="h-8 w-8 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center">
+                <i data-lucide="arrow-up-right" class="w-4 h-4 text-cyan-400"></i>
+              </div>
+              <span class="text-[8px] font-mono font-bold text-cyan-400">PIX</span>
+            </div>
+            <div>
+              <span class="text-[9px] font-black uppercase text-zinc-400 block mb-0.5">Repasses Pix</span>
+              <span class="text-sm font-black mono text-cyan-400">R$ 64.770,40</span>
+              <span class="text-[8px] text-zinc-500 block mt-0.5">Transferências digitais</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- DESTAQUES: DIA DE OURO & MAIOR DESAFIO -->
+        <div class="bg-[#121216] p-4 rounded-[28px] border border-zinc-800/80 shadow-md space-y-3">
+          <div class="flex items-center gap-2 pb-2 border-b border-zinc-800/60">
+            <div class="h-7 w-7 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center">
+              <i data-lucide="trophy" class="w-3.5 h-3.5 text-amber-400"></i>
+            </div>
+            <span class="text-xs font-black uppercase text-zinc-200">Extremos & Recordes</span>
+          </div>
+
+          <!-- Dia de Ouro -->
+          <div class="bg-[#09090c] p-3 rounded-2xl border border-amber-500/20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="h-9 w-9 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+                <i data-lucide="award" class="w-5 h-5 text-amber-400"></i>
+              </div>
+              <div>
+                <span class="text-[9px] font-black uppercase text-amber-400 block">Dia de Ouro (Recorde)</span>
+                <span class="text-xs font-black text-zinc-200 font-mono">14/08/2026</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-sm font-black mono text-amber-400">R$ 9.420,10</span>
+              <span class="text-[8px] text-zinc-500 block">Maior faturamento</span>
+            </div>
+          </div>
+
+          <!-- Dia Desafiador -->
+          <div class="bg-[#09090c] p-3 rounded-2xl border border-zinc-800 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="h-9 w-9 rounded-xl bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                <i data-lucide="zap" class="w-5 h-5 text-red-400"></i>
+              </div>
+              <div>
+                <span class="text-[9px] font-black uppercase text-red-400 block">Maior Divergência</span>
+                <span class="text-xs font-black text-zinc-200 font-mono">03/08/2026</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-sm font-black mono text-red-400">-R$ 15,20</span>
+              <span class="text-[8px] text-zinc-500 block">Quebra registrada</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- BALANÇO ACUMULADO DE SOBRAS -->
+        <div class="bg-[#121216] p-4 rounded-[28px] border border-zinc-800/80 shadow-md">
+          <div class="flex items-center justify-between pb-2 border-b border-zinc-800/60 mb-3">
+            <div class="flex items-center gap-2">
+              <div class="h-7 w-7 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+                <i data-lucide="scale" class="w-3.5 h-3.5 text-emerald-400"></i>
+              </div>
+              <span class="text-xs font-black uppercase text-zinc-200">Balanço Geral de Gaveta</span>
+            </div>
+            <span class="text-[8px] font-mono text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">POSITIVO</span>
+          </div>
+
+          <div class="bg-[#09090c] p-3.5 rounded-2xl border border-zinc-800 flex items-center justify-between">
+            <div>
+              <span class="text-[9px] font-black uppercase text-zinc-500 block">Saldo Acumulado de Sobras</span>
+              <span class="text-base font-black mono text-emerald-400">+R$ 48,60</span>
+            </div>
+            <div class="text-right">
+              <span class="text-[8px] text-zinc-400 block font-medium">As sobras superaram as quebras.</span>
+              <span class="text-[8px] text-emerald-400 font-bold">Caixa altamente saudável</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTÃO FECHAR / VOLTAR -->
+        <button class="w-full py-4 rounded-2xl bg-zinc-100 text-black font-black uppercase tracking-wider text-xs shadow-xl active:scale-[0.98] transition">
+          Continuar Evoluindo
+        </button>
+
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODELO 2: STORIES DE CONQUISTAS (HIGHLIGHTS CAROUSEL) -->
+    <!-- ========================================================================= -->
+    <div id="modelo-2" class="mobile-frame flex flex-col hidden">
+      <!-- Status Bar Simulado -->
+      <div class="px-7 pt-3.5 pb-2 flex justify-between items-center text-[11px] font-bold text-zinc-500 border-b border-zinc-900/60 bg-[#09090c]">
+        <span class="mono">20:15</span>
+        <div class="flex items-center gap-1.5 text-zinc-400">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-pink-400"></i>
+          <i data-lucide="battery" class="w-4 h-4 text-pink-400"></i>
+        </div>
+      </div>
+
+      <!-- Top Story Bars -->
+      <div class="p-4 pb-2 bg-[#09090c] flex gap-1.5">
+        <div class="flex-1 h-1 bg-white rounded-full"></div>
+        <div class="flex-1 h-1 bg-zinc-700 rounded-full"></div>
+        <div class="flex-1 h-1 bg-zinc-700 rounded-full"></div>
+      </div>
+
+      <div class="p-4 flex items-center justify-between">
+        <span class="text-[10px] font-black uppercase tracking-widest text-zinc-500">Seus Números de Ouro</span>
+        <button class="h-8 w-8 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-800">
+          <i data-lucide="x" class="w-3.5 h-3.5 text-zinc-400"></i>
+        </button>
+      </div>
+
+      <!-- Story Hero Card -->
+      <div class="flex-1 p-6 flex flex-col items-center justify-center text-center space-y-6">
+        <div class="h-28 w-28 rounded-full bg-pink-500/10 border-2 border-pink-500/30 flex items-center justify-center shadow-2xl">
+          <i data-lucide="flame" class="w-14 h-14 text-pink-400 animate-pulse"></i>
+        </div>
+
+        <div>
+          <span class="text-[10px] font-black uppercase tracking-[3px] text-pink-400 block mb-1">Impacto Financeiro</span>
+          <h2 class="text-3xl font-black mono text-white">R$ 148.920,40</h2>
+          <p class="text-xs text-zinc-400 mt-2 max-w-xs mx-auto">Você operou e conferiu com precisão mais de 148 mil reais nos últimos 28 dias.</p>
+        </div>
+
+        <div class="w-full bg-[#121216] p-4 rounded-3xl border border-zinc-800 flex justify-around">
+          <div>
+            <span class="text-[9px] text-zinc-500 block uppercase font-black">Turnos</span>
+            <span class="text-base font-black text-white mono">28</span>
+          </div>
+          <div class="w-px bg-zinc-800"></div>
+          <div>
+            <span class="text-[9px] text-zinc-500 block uppercase font-black">Precisão</span>
+            <span class="text-base font-black text-emerald-400 mono">92.8%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-4 pb-8">
+        <button class="w-full py-4 rounded-2xl bg-pink-500 text-white font-black uppercase tracking-wider text-xs shadow-xl active:scale-[0.98] transition">
+          Próximo Destaque →
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODELO 3: AUDITORIA & RAIO-X FINANCEIRO -->
+    <!-- ========================================================================= -->
+    <div id="modelo-3" class="mobile-frame flex flex-col hidden">
+      <!-- Status Bar Simulado -->
+      <div class="px-7 pt-3.5 pb-2 flex justify-between items-center text-[11px] font-bold text-zinc-500 border-b border-zinc-900/60 bg-[#09090c]">
+        <span class="mono">20:15</span>
+        <div class="flex items-center gap-1.5 text-zinc-400">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <i data-lucide="battery" class="w-4 h-4 text-indigo-400"></i>
+        </div>
+      </div>
+
+      <div class="p-4 pb-3 bg-[#09090c] border-b border-zinc-900 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="h-9 w-9 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center">
+            <i data-lucide="file-check" class="w-4 h-4 text-indigo-400"></i>
+          </div>
+          <div>
+            <span class="text-[9px] font-black uppercase tracking-[2px] text-zinc-500">Auditoria</span>
+            <h2 class="text-sm font-black uppercase text-zinc-100">Raio-X de Performance</h2>
+          </div>
+        </div>
+        <button class="h-8 w-8 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-800">
+          <i data-lucide="x" class="w-3.5 h-3.5 text-zinc-400"></i>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-3.5 pb-8">
+        <div class="bg-[#121216] p-4 rounded-3xl border border-zinc-800 space-y-3">
+          <span class="text-[10px] font-black uppercase tracking-wider text-indigo-400">Índice de Confiabilidade</span>
+          <div class="flex items-center justify-between">
+            <span class="text-2xl font-black mono text-white">99.4/100</span>
+            <span class="px-2.5 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[9px] font-black">AUDITADO</span>
+          </div>
+          <p class="text-[9px] text-zinc-400 leading-relaxed">Taxa calculada com base no desvio padrão de quebras e consistência dos lançamentos.</p>
+        </div>
+
+        <div class="bg-[#121216] p-4 rounded-3xl border border-zinc-800 space-y-2.5">
+          <span class="text-[10px] font-black uppercase tracking-wider text-indigo-400">Composição do Fluxo</span>
+          <div class="space-y-2">
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-zinc-400">Malote em Espécie</span>
+              <span class="text-zinc-200 mono font-bold">56.5%</span>
+            </div>
+            <div class="flex justify-between items-center text-xs">
+              <span class="text-zinc-400">Transferências Pix</span>
+              <span class="text-zinc-200 mono font-bold">43.5%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function switchConcept(id) {
+      document.getElementById('modelo-1').classList.add('hidden');
+      document.getElementById('modelo-2').classList.add('hidden');
+      document.getElementById('modelo-3').classList.add('hidden');
+
+      document.getElementById(id).classList.remove('hidden');
+
+      const btns = ['btn-m1', 'btn-m2', 'btn-m3'];
+      btns.forEach(b => {
+        const el = document.getElementById(b);
+        el.className = "concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] text-zinc-400 border-zinc-800 hover:border-zinc-700";
+      });
+
+      const activeBtn = id === 'modelo-1' ? 'btn-m1' : (id === 'modelo-2' ? 'btn-m2' : 'btn-m3');
+      const activeColor = id === 'modelo-1' ? 'bg-amber-500 text-black border-amber-400' : (id === 'modelo-2' ? 'bg-pink-500 text-white border-pink-400' : 'bg-indigo-500 text-white border-indigo-400');
+      document.getElementById(activeBtn).className = `concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all ${activeColor} shadow-xl`;
+    }
+  </script>
+</body>
+</html>

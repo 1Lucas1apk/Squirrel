@@ -1,10 +1,20 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, Modal, ScrollView, Dimensions } from 'react-native';
-import { X, TrendingUp, BarChart2, Clock, Wallet, ArrowRight } from 'lucide-react-native';
+import { View, Text, Pressable, Modal, ScrollView, Dimensions, Platform } from 'react-native';
+import { 
+  X, 
+  TrendingUp, 
+  Activity, 
+  Clock, 
+  Wallet, 
+  Flame, 
+  ArrowUpRight, 
+  ArrowDownRight,
+  Info 
+} from 'lucide-react-native';
 import { LineChart } from "react-native-wagmi-charts";
+import * as Haptics from 'expo-haptics';
 import { Transacao, TotaisTurno } from '../types/domain';
 import { toBrl } from '../utils/currency';
-import { TabSwitcher } from '../components/common/tab-switcher';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -16,26 +26,41 @@ interface AnalyticsModalProps {
 }
 
 export function AnalyticsModal({ visible, onClose, transacoes, totais }: AnalyticsModalProps) {
-  const [activeTab, setActiveTab] = useState("timeline");
+  const [activeTab, setActiveTab] = useState<'trilha' | 'picos'>('trilha');
+
+  const triggerHaptic = (style: Haptics.ImpactFeedbackStyle = Haptics.ImpactFeedbackStyle.Light) => {
+    if (Platform.OS !== 'web') {
+      void Haptics.impactAsync(style);
+    }
+  };
 
   // 1. Processar dados para o Fluxo de Caixa (Timeline)
-  const chartData = useMemo(() => {
-    if (transacoes.length === 0) return [];
+  const { chartData, totalEntradas, totalSaidas, picoMaximo } = useMemo(() => {
+    if (!transacoes || transacoes.length === 0) {
+      return { chartData: [], totalEntradas: 0, totalSaidas: 0, picoMaximo: 0 };
+    }
     
-    // Ordena por tempo (antigo para novo) para o gráfico de fluxo
+    // Ordena por tempo (antigo para novo)
     const sorted = [...transacoes].sort((a, b) => a.timestamp - b.timestamp);
     
     let runningBalance = 0;
+    let entradas = 0;
+    let saidas = 0;
+    let maxVal = 0;
     
-    return sorted.map(t => {
+    const points = sorted.map(t => {
       const isSaida = t.categoria === "sangria" || t.categoria === "cancelamento";
       
-      // O desempenho real considera entradas (+) e saídas (-)
       if (isSaida) {
         runningBalance -= t.valorSistema;
+        saidas += t.valorSistema;
       } else {
-        // Usamos o valor real recebido para refletir o que de fato entrou na gaveta
         runningBalance += t.valorRecebidoFisico;
+        entradas += t.valorRecebidoFisico;
+      }
+
+      if (runningBalance > maxVal) {
+        maxVal = runningBalance;
       }
       
       return {
@@ -43,344 +68,360 @@ export function AnalyticsModal({ visible, onClose, transacoes, totais }: Analyti
         value: runningBalance,
       };
     });
+
+    return {
+      chartData: points,
+      totalEntradas: entradas,
+      totalSaidas: saidas,
+      picoMaximo: maxVal
+    };
   }, [transacoes]);
 
   // 2. Processar dados para o Balanço por Hora
-  const hourlyData = useMemo(() => {
+  const { hourlyData, peakHour, maxHourlyCount } = useMemo(() => {
     const hours: Record<number, { count: number; value: number }> = {};
     
-    // Horário comercial expandido
-    for (let i = 7; i <= 22; i++) hours[i] = { count: 0, value: 0 };
+    // Horário comercial de 07h até 22h
+    for (let i = 7; i <= 22; i++) {
+      hours[i] = { count: 0, value: 0 };
+    }
 
-    transacoes.forEach(t => {
-      const h = new Date(t.timestamp).getHours();
-      if (hours[h]) {
-        hours[h].count += 1;
-        const isSaida = t.categoria === "sangria" || t.categoria === "cancelamento";
-        // Soma entradas e subtrai saídas por hora
-        hours[h].value += isSaida ? -t.valorSistema : t.valorRecebidoFisico;
+    if (transacoes && Array.isArray(transacoes)) {
+      transacoes.forEach(t => {
+        const h = new Date(t.timestamp).getHours();
+        if (hours[h]) {
+          hours[h].count += 1;
+          const isSaida = t.categoria === "sangria" || t.categoria === "cancelamento";
+          hours[h].value += isSaida ? -t.valorSistema : t.valorRecebidoFisico;
+        }
+      });
+    }
+
+    const list = Object.entries(hours).map(([hour, data]) => ({
+      hour: parseInt(hour, 10),
+      ...data
+    }));
+
+    let maxCount = 1;
+    let peak = list[0];
+
+    list.forEach(item => {
+      if (item.count > maxCount) {
+        maxCount = item.count;
+      }
+      if (item.count > (peak?.count || 0)) {
+        peak = item;
       }
     });
 
-    return Object.entries(hours).map(([hour, data]) => ({
-      hour: parseInt(hour),
-      ...data
-    }));
+    return {
+      hourlyData: list,
+      peakHour: peak,
+      maxHourlyCount: maxCount
+    };
   }, [transacoes]);
 
-  const maxHourlyValue = Math.max(...hourlyData.map(d => Math.abs(d.value)), 1);
-
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          {/* HEADER */}
-          <View style={styles.header}>
-            <View>
-              <Text style={styles.headerTitle}>Mapa de Movimentação</Text>
-              <Text style={styles.headerSubtitle}>Rastro financeiro do expediente</Text>
+    <Modal 
+      visible={visible} 
+      transparent 
+      animationType="fade" 
+      onRequestClose={onClose}
+    >
+      <View className="flex-1 bg-black/90 items-center justify-center p-4">
+        <View className="w-full max-w-[400px] max-h-[92%] bg-[#0d0d12] border border-zinc-800 rounded-[36px] p-5 shadow-2xl flex-shrink">
+          
+          {/* Top Indicator */}
+          <View className="items-center pt-0 pb-1.5">
+            <View className="w-10 h-1 rounded-full bg-zinc-800" />
+          </View>
+
+          {/* Header */}
+          <View className="flex-row items-center justify-between pb-3 border-b border-zinc-900 mb-3">
+            <View className="flex-row items-center gap-3">
+              <View className="h-10 w-10 rounded-2xl bg-blue-500/15 border border-blue-500/30 items-center justify-center">
+                <Activity size={18} color="#60a5fa" />
+              </View>
+              <View>
+                <View className="flex-row items-center gap-1.5">
+                  <Text className="text-[10px] font-black uppercase tracking-[2px] text-zinc-500">Expediente</Text>
+                  <View className="px-1.5 py-0.5 rounded bg-blue-500/20">
+                    <Text className="text-blue-400 text-[8px] font-black">HOJE</Text>
+                  </View>
+                </View>
+                <Text className="text-sm font-black uppercase text-zinc-100">Mapa de Movimentação</Text>
+              </View>
             </View>
-            <Pressable onPress={onClose} style={styles.closeButton}>
-              <X color="#71717a" size={24} />
+            <Pressable 
+              onPress={() => {
+                triggerHaptic();
+                onClose();
+              }} 
+              className="h-8 w-8 bg-zinc-900 rounded-full items-center justify-center border border-zinc-800 active:bg-zinc-800"
+            >
+              <X size={15} color="#a1a1aa" />
             </Pressable>
           </View>
 
-          <TabSwitcher 
-            tabs={[
-              { key: "timeline", label: "Trilha da Gaveta" },
-              { key: "heatmap", label: "Picos de Horário" }
-            ]}
-            activeKey={activeTab}
-            onChange={setActiveTab}
-          />
+          {/* Seletor de Sub-Abas */}
+          <View className="bg-[#121216] p-1 rounded-2xl border border-zinc-800 flex-row gap-1 mb-3">
+            <Pressable 
+              onPress={() => {
+                triggerHaptic();
+                setActiveTab('trilha');
+              }}
+              className={`flex-1 py-2 rounded-xl items-center justify-center ${
+                activeTab === 'trilha' ? 'bg-blue-500 shadow' : 'bg-transparent'
+              }`}
+            >
+              <Text className={`text-[10px] font-black uppercase ${
+                activeTab === 'trilha' ? 'text-white' : 'text-zinc-400'
+              }`}>
+                Trilha da Gaveta
+              </Text>
+            </Pressable>
+            <Pressable 
+              onPress={() => {
+                triggerHaptic();
+                setActiveTab('picos');
+              }}
+              className={`flex-1 py-2 rounded-xl items-center justify-center ${
+                activeTab === 'picos' ? 'bg-blue-500 shadow' : 'bg-transparent'
+              }`}
+            >
+              <Text className={`text-[10px] font-black uppercase ${
+                activeTab === 'picos' ? 'text-white' : 'text-zinc-400'
+              }`}>
+                Picos por Hora
+              </Text>
+            </Pressable>
+          </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-            {activeTab === "timeline" ? (
-              <View style={styles.section}>
-                <View style={styles.cardInfo}>
-                   <TrendingUp size={16} color="#60a5fa" />
-                   <Text style={styles.cardInfoText}>Acompanhe como o volume de notas oscilou conforme as vendas e retiradas.</Text>
-                </View>
+          {/* Conteúdo com Scroll */}
+          <ScrollView 
+            showsVerticalScrollIndicator={false}
+            overScrollMode="never"
+            className="flex-shrink"
+            contentContainerStyle={{ paddingBottom: 16, gap: 12 }}
+          >
+            {/* STATS RÁPIDOS 2 COLUNAS */}
+            <View className="flex-row gap-2">
+              <View className="flex-1 bg-[#121216] p-3 rounded-2xl border border-zinc-800/80">
+                <Text className="text-[8px] font-black uppercase tracking-wider text-zinc-400 mb-0.5">
+                  Pico Máximo de Saldo
+                </Text>
+                <Text className="text-xs font-black font-mono text-emerald-400">
+                  {toBrl(picoMaximo)}
+                </Text>
+                <Text className="text-[7px] text-zinc-500 mt-0.5">
+                  Registrado no turno
+                </Text>
+              </View>
+              <View className="flex-1 bg-[#121216] p-3 rounded-2xl border border-zinc-800/80">
+                <Text className="text-[8px] font-black uppercase tracking-wider text-zinc-400 mb-0.5">
+                  Saldo em Mãos
+                </Text>
+                <Text className="text-xs font-black font-mono text-blue-300">
+                  {toBrl(totais?.gavetaFisico || 0)}
+                </Text>
+                <Text className="text-[7px] text-zinc-500 mt-0.5">
+                  Na gaveta física
+                </Text>
+              </View>
+            </View>
 
-                {chartData.length >= 2 ? (
-                  <View style={styles.chartContainer}>
-                    <LineChart.Provider data={chartData}>
-                      <LineChart height={200} width={SCREEN_WIDTH - 80}>
-                        <LineChart.Path color="#60a5fa" width={4}>
-                          <LineChart.Gradient color="#60a5fa" />
-                        </LineChart.Path>
-                        <LineChart.CursorCrosshair color="#f4f4f5">
-                          <LineChart.Tooltip textStyle={{ color: '#fff', fontWeight: 'bold' }} />
-                        </LineChart.CursorCrosshair>
-                      </LineChart>
-                    </LineChart.Provider>
-                    <View style={styles.chartLabels}>
-                      <Text style={styles.chartLabel}>Abertura</Text>
-                      <Text style={styles.chartLabel}>Agora</Text>
+            {activeTab === 'trilha' ? (
+              <View className="gap-3">
+                {/* CARD DO GRÁFICO */}
+                <View className="bg-[#121216] p-4 rounded-[26px] border border-zinc-800/80 shadow-md">
+                  <View className="flex-row items-center justify-between pb-2 border-b border-zinc-800/60 mb-2.5">
+                    <View className="flex-row items-center gap-2">
+                      <View className="h-6 w-6 rounded-lg bg-blue-500/15 border border-blue-500/30 items-center justify-center">
+                        <TrendingUp size={12} color="#60a5fa" />
+                      </View>
+                      <Text className="text-xs font-black uppercase text-zinc-200">Evolução do Saldo Físico</Text>
+                    </View>
+                    <View className="bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+                      <Text className="text-[8px] font-mono font-bold text-blue-400">AO VIVO</Text>
                     </View>
                   </View>
-                ) : (
-                  <View style={styles.emptyState}>
-                    <Clock size={40} color="#27272a" />
-                    <Text style={styles.emptyText}>Lance os primeiros registros para ver a trilha de saldo.</Text>
-                  </View>
-                )}
 
-                <View style={styles.statsRow}>
-                   <View style={styles.statBox}>
-                      <Text style={styles.statLabel}>Máximo Atingido</Text>
-                      <Text style={styles.statValue}>{toBrl(Math.max(...chartData.map(d => d.value), 0))}</Text>
-                   </View>
-                   <View style={styles.statBox}>
-                      <Text style={styles.statLabel}>Total em Mãos</Text>
-                      <Text style={[styles.statValue, { color: '#34d399' }]}>{toBrl(totais.gavetaFisico)}</Text>
-                   </View>
+                  {chartData.length >= 2 ? (
+                    <View className="bg-[#09090c] p-2 rounded-2xl border border-zinc-800/80 mb-2 items-center">
+                      <LineChart.Provider data={chartData}>
+                        <LineChart height={150} width={Math.min(SCREEN_WIDTH - 60, 340)}>
+                          <LineChart.Path color="#60a5fa" width={3}>
+                            <LineChart.Gradient color="#60a5fa" />
+                          </LineChart.Path>
+                          <LineChart.CursorCrosshair color="#f4f4f5">
+                            <LineChart.Tooltip textStyle={{ color: '#fff', fontWeight: 'bold', fontSize: 10 }} />
+                          </LineChart.CursorCrosshair>
+                        </LineChart>
+                      </LineChart.Provider>
+                      <View className="w-full flex-row justify-between pt-1 px-1">
+                        <Text className="text-[8px] font-mono text-zinc-500">Abertura</Text>
+                        <Text className="text-[8px] font-mono text-zinc-500">Agora</Text>
+                      </View>
+                    </View>
+                  ) : (
+                    <View className="bg-[#09090c] p-6 rounded-2xl border border-zinc-800/80 items-center justify-center mb-2">
+                      <Clock size={28} color="#3f3f46" />
+                      <Text className="text-[10px] text-zinc-400 font-medium text-center mt-2">
+                        Lance os primeiros registros de caixa para visualizar a curva de saldo.
+                      </Text>
+                    </View>
+                  )}
+
+                  <Text className="text-[9px] text-zinc-400 font-medium leading-4">
+                    O gráfico reflete entradas de dinheiro em espécie e quedas causadas por retiradas e sangrias no turno.
+                  </Text>
+                </View>
+
+                {/* RESUMO DE ENTRADAS VS RETIRADAS */}
+                <View className="bg-[#121216] p-4 rounded-[26px] border border-zinc-800/80 shadow-md">
+                  <Text className="text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-2.5">
+                    Composição do Fluxo
+                  </Text>
+                  <View className="flex-row gap-2">
+                    <View className="flex-1 bg-[#09090c] p-3 rounded-2xl border border-emerald-500/20">
+                      <View className="flex-row items-center justify-between mb-0.5">
+                        <Text className="text-[8px] font-black uppercase text-emerald-400">Total Recebido</Text>
+                        <ArrowUpRight size={11} color="#34d399" />
+                      </View>
+                      <Text className="text-xs font-black font-mono text-emerald-300">
+                        {toBrl(totalEntradas)}
+                      </Text>
+                      <Text className="text-[7px] text-zinc-500 mt-0.5">Vendas em espécie</Text>
+                    </View>
+                    <View className="flex-1 bg-[#09090c] p-3 rounded-2xl border border-red-500/20">
+                      <View className="flex-row items-center justify-between mb-0.5">
+                        <Text className="text-[8px] font-black uppercase text-red-400">Total Retirado</Text>
+                        <ArrowDownRight size={11} color="#f87171" />
+                      </View>
+                      <Text className="text-xs font-black font-mono text-red-300">
+                        {toBrl(totalSaidas)}
+                      </Text>
+                      <Text className="text-[7px] text-zinc-500 mt-0.5">Sangrias & Baixas</Text>
+                    </View>
+                  </View>
                 </View>
               </View>
             ) : (
-              <View style={styles.section}>
-                <View style={styles.cardInfo}>
-                   <BarChart2 size={16} color="#a78bfa" />
-                   <Text style={styles.cardInfoText}>Identifique os momentos de maior e menor giro de caixa na loja.</Text>
-                </View>
+              <View className="gap-3">
+                {/* HORÁRIO MAIS MOVIMENTADO */}
+                {peakHour && peakHour.count > 0 && (
+                  <View className="bg-[#121216] p-4 rounded-[26px] border border-amber-500/30 shadow-md flex-row items-center gap-3">
+                    <View className="h-10 w-10 rounded-2xl bg-amber-500/20 border border-amber-500/30 items-center justify-center">
+                      <Flame size={20} color="#fbbf24" />
+                    </View>
+                    <View className="flex-1">
+                      <Text className="text-[8px] font-black uppercase text-amber-400 tracking-wider">
+                        Horário Mais Movimentado
+                      </Text>
+                      <Text className="text-xs font-black text-white uppercase">
+                        {peakHour.hour}h às {peakHour.hour + 1}h ({peakHour.count} lançamentos)
+                      </Text>
+                      <Text className="text-[8px] text-zinc-400 font-mono">
+                        Volume líquido: {toBrl(peakHour.value)}
+                      </Text>
+                    </View>
+                  </View>
+                )}
 
-                <View style={styles.heatmapContainer}>
-                  {hourlyData.map((item) => {
-                    const barHeight = (Math.abs(item.value) / maxHourlyValue) * 120;
-                    const hasValue = Math.abs(item.value) > 0;
+                {/* BARRAS DE GIRO POR HORA */}
+                <View className="bg-[#121216] p-4 rounded-[26px] border border-zinc-800/80 shadow-md">
+                  <Text className="text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-2.5">
+                    Giro de Caixa por Hora
+                  </Text>
+                  
+                  <View className="bg-[#09090c] rounded-2xl border border-zinc-800/80 p-2.5 pt-3">
+                    <View className="flex-row items-end justify-between h-40 gap-1">
+                      {hourlyData.filter(d => d.hour >= 8 && d.hour <= 20).map((item) => {
+                        const isPeak = peakHour && peakHour.hour === item.hour && item.count > 0;
+                        const hasActivity = item.count > 0;
+                        const heightPercent = maxHourlyCount > 0 ? Math.round((item.count / maxHourlyCount) * 100) : 0;
+                        const barHeightPercent = hasActivity ? Math.max(16, Math.min(100, heightPercent)) : 6;
 
-                    return (
-                      <View key={item.hour} style={styles.heatmapBarWrapper}>
-                        <View style={styles.barLabelTop}>
-                           {item.count > 0 && <Text style={styles.barCount}>{item.count}x</Text>}
-                        </View>
-                        <View 
-                          style={[
-                            styles.heatmapBar, 
-                            { 
-                              height: Math.max(barHeight, 4), 
-                              backgroundColor: hasValue ? (item.value >= 0 ? '#a78bfa' : '#f87171') : '#18181b',
-                              opacity: hasValue ? 1 : 0.3
-                            }
-                          ]} 
-                        />
-                        <Text style={styles.heatmapBarLabel}>{item.hour}h</Text>
-                      </View>
-                    );
-                  })}
-                </View>
+                        return (
+                          <View key={item.hour} className="flex-1 flex-col items-center justify-between h-full">
+                            {/* Top Label (Count) */}
+                            <View className="h-4 items-center justify-center">
+                              {item.count > 0 ? (
+                                <Text className={`text-[8px] font-mono font-bold ${isPeak ? 'text-amber-400' : 'text-zinc-400'}`}>
+                                  {item.count}x
+                                </Text>
+                              ) : (
+                                <Text className="text-[8px] text-transparent leading-none">-</Text>
+                              )}
+                            </View>
 
-                <View style={styles.legendRow}>
-                   <View style={styles.legendItem}>
-                      <View style={[styles.legendDot, { backgroundColor: '#a78bfa' }]} />
-                      <Text style={styles.legendText}>Saldo Positivo</Text>
-                   </View>
-                   <View style={styles.legendItem}>
-                      <View style={[styles.legendDot, { backgroundColor: '#f87171' }]} />
-                      <Text style={styles.legendText}>Saldo Negativo</Text>
-                   </View>
+                            {/* Bar Track */}
+                            <View className="w-full flex-1 justify-end items-center px-0.5 py-1">
+                              <View 
+                                className={`w-full rounded-t-sm ${
+                                  isPeak 
+                                    ? 'bg-amber-400' 
+                                    : hasActivity 
+                                      ? (item.value >= 0 ? 'bg-blue-500' : 'bg-red-500') 
+                                      : 'bg-zinc-800/50'
+                                }`}
+                                style={{ height: `${barHeightPercent}%`, minHeight: hasActivity ? 6 : 3 }}
+                              />
+                            </View>
+
+                            {/* Bottom Label (Hour) */}
+                            <View className="h-4 items-center justify-center">
+                              <Text className={`text-[8px] font-mono font-black ${isPeak ? 'text-amber-400' : hasActivity ? 'text-zinc-300' : 'text-zinc-600'}`}>
+                                {item.hour}h
+                              </Text>
+                            </View>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  </View>
+
+                  <View className="flex-row items-center justify-center gap-4 mt-3 pt-2 border-t border-zinc-800/60">
+                    <View className="flex-row items-center gap-1.5">
+                      <View className="h-2 w-2 rounded-full bg-blue-500" />
+                      <Text className="text-[8px] font-bold text-zinc-400 uppercase">Entrada</Text>
+                    </View>
+                    <View className="flex-row items-center gap-1.5">
+                      <View className="h-2 w-2 rounded-full bg-amber-400" />
+                      <Text className="text-[8px] font-bold text-zinc-400 uppercase">Pico do Dia</Text>
+                    </View>
+                    <View className="flex-row items-center gap-1.5">
+                      <View className="h-2 w-2 rounded-full bg-red-500" />
+                      <Text className="text-[8px] font-bold text-zinc-400 uppercase">Saída/Sangria</Text>
+                    </View>
+                  </View>
                 </View>
               </View>
             )}
 
-            <View style={styles.footerInfo}>
-               <Wallet size={14} color="#71717a" />
-               <Text style={styles.footerText}>
-                 A análise considera apenas os dados deste turno ({totais.sistema > 0 ? 'Ativo' : 'Vazio'}).
-               </Text>
+            <View className="flex-row items-center gap-2 px-1 pt-1">
+              <Wallet size={12} color="#71717a" />
+              <Text className="text-[8px] text-zinc-500 font-medium">
+                Análise em tempo real baseada nas transações registradas neste turno.
+              </Text>
             </View>
           </ScrollView>
+
+          {/* Botão Fechar */}
+          <Pressable 
+            onPress={() => {
+              triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
+              onClose();
+            }}
+            className="w-full py-4 rounded-2xl bg-zinc-100 items-center justify-center shadow-xl active:scale-[0.98] mt-2"
+          >
+            <Text className="text-center font-black uppercase text-xs tracking-wider text-zinc-950">
+              Fechar Mapa
+            </Text>
+          </Pressable>
+
         </View>
       </View>
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.95)',
-    justifyContent: 'flex-end',
-  },
-  container: {
-    backgroundColor: '#09090b',
-    borderTopLeftRadius: 40,
-    borderTopRightRadius: 40,
-    borderWidth: 1,
-    borderColor: '#27272a',
-    height: '85%',
-    padding: 24,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#ffffff',
-    textTransform: 'uppercase',
-    letterSpacing: -0.5,
-  },
-  headerSubtitle: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: '#71717a',
-    textTransform: 'uppercase',
-    letterSpacing: 2,
-    marginTop: 2,
-  },
-  closeButton: {
-    padding: 8,
-    backgroundColor: '#18181b',
-    borderRadius: 16,
-  },
-  scroll: {
-    paddingTop: 16,
-    paddingBottom: 40,
-  },
-  section: {
-    gap: 24,
-  },
-  cardInfo: {
-    flexDirection: 'row',
-    gap: 12,
-    backgroundColor: '#18181b',
-    padding: 16,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#27272a',
-  },
-  cardInfoText: {
-    flex: 1,
-    fontSize: 11,
-    color: '#a1a1aa',
-    fontWeight: '600',
-    lineHeight: 16,
-  },
-  chartContainer: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  chartLabels: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    paddingHorizontal: 8,
-    marginTop: 12,
-  },
-  chartLabel: {
-    fontSize: 9,
-    fontWeight: '900',
-    color: '#3f3f46',
-    textTransform: 'uppercase',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  statBox: {
-    flex: 1,
-    backgroundColor: '#0f0f0f',
-    padding: 20,
-    borderRadius: 24,
-    borderWidth: 1,
-    borderColor: '#1f1f1f',
-  },
-  statLabel: {
-    fontSize: 9,
-    fontWeight: '800',
-    color: '#52525b',
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: '#f4f4f5',
-  },
-  heatmapContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    height: 180,
-    paddingHorizontal: 4,
-    backgroundColor: '#0f0f0f',
-    borderRadius: 32,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#1f1f1f',
-  },
-  heatmapBarWrapper: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  barLabelTop: {
-    height: 12,
-    justifyContent: 'center',
-  },
-  barCount: {
-    fontSize: 7,
-    fontWeight: 'black',
-    color: '#71717a',
-  },
-  heatmapBar: {
-    width: 10,
-    borderRadius: 4,
-  },
-  heatmapBarLabel: {
-    fontSize: 8,
-    fontWeight: 'bold',
-    color: '#3f3f46',
-  },
-  legendRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 20,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  legendText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: '#52525b',
-    textTransform: 'uppercase',
-  },
-  emptyState: {
-    height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 16,
-  },
-  emptyText: {
-    fontSize: 12,
-    color: '#3f3f46',
-    textAlign: 'center',
-    fontWeight: 'bold',
-    maxWidth: '80%',
-  },
-  footerInfo: {
-    marginTop: 32,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    opacity: 0.5,
-  },
-  footerText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: '#71717a',
-    textTransform: 'uppercase',
-  }
-});

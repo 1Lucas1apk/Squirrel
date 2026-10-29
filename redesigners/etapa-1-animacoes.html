@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Etapa 1: Micro-Animações Sutis e Táteis</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 390px;
+      border-radius: 44px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+    }
+
+    /* 1. ANIMAÇÕES DE ENTRADA SUAVE (FADE + SLIDE UP) */
+    @keyframes enterUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .anim-header {
+      animation: enterUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .anim-main-card {
+      animation: enterUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.05s forwards;
+      opacity: 0;
+    }
+    .anim-triad {
+      animation: enterUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards;
+      opacity: 0;
+    }
+
+    /* 2. ANIMAÇÃO DE BARRA PROGRESSIVA (FLUIDA) */
+    @keyframes barFillAmber {
+      from { width: 0%; }
+      to { width: 14.3%; }
+    }
+    @keyframes barFillIndigo {
+      from { width: 0%; }
+      to { width: 85.7%; }
+    }
+    .bar-anim-amber {
+      animation: barFillAmber 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+    }
+    .bar-anim-indigo {
+      animation: barFillIndigo 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+    }
+
+    /* 3. PULSO SUTIL NO STATUS E FANTASMA */
+    @keyframes softPulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.15); opacity: 0.8; }
+    }
+    .pulse-dot {
+      animation: softPulse 2.5s ease-in-out infinite;
+    }
+
+    /* 4. FLASH SUAVE AO ATUALIZAR VALOR */
+    @keyframes valueFlash {
+      0% { color: #34d399; transform: scale(1.02); }
+      100% { color: #ffffff; transform: scale(1); }
+    }
+    .value-updated {
+      animation: valueFlash 0.5s ease-out;
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8 max-w-6xl mx-auto pb-24">
+
+  <!-- CABEÇALHO DA PÁGINA -->
+  <div class="mb-8 text-center">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-black uppercase tracking-widest mb-2">
+      ⚡ MICRO-ANIMAÇÕES • RÁPIDAS E TÁTEIS
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      Animações Rápidas (Zero Enrolação para o Rush)
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-xl mx-auto">
+      Como você abre e fecha o app várias vezes ao dia, as animações duram menos de <b>0.3s</b> e dão sensação de toque físico sem atrasar seu trabalho.
+    </p>
+
+    <!-- BOTÕES DE TESTE INTERATIVO -->
+    <div class="mt-4 flex flex-wrap items-center justify-center gap-3">
+      <button onclick="relaunchApp()" class="px-4 py-2 rounded-2xl text-xs font-black bg-emerald-500 hover:bg-emerald-400 text-black shadow-lg transition-all flex items-center gap-2 active:scale-95">
+        <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Testar Abertura Suave do App
+      </button>
+      <button onclick="simulateSale()" class="px-4 py-2 rounded-2xl text-xs font-black bg-[#181822] hover:bg-[#222230] text-indigo-300 border border-indigo-500/30 shadow-lg transition-all flex items-center gap-2 active:scale-95">
+        <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i> Simular Entrada de Venda
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER CENTRAL DO CELULAR -->
+  <div class="flex flex-col items-center justify-center">
+
+    <!-- MOLDURA DO CELULAR -->
+    <div id="phone-container" class="mobile-frame p-5">
+      
+      <!-- BARRA DE STATUS -->
+      <div class="flex justify-between items-center px-3 pt-1 pb-3 text-xs font-bold text-zinc-500">
+        <span>22:40</span>
+        <div class="w-20 h-4 bg-zinc-900 rounded-full"></div>
+        <div class="flex items-center gap-1">
+          <i data-lucide="wifi" class="w-3 h-3 text-zinc-400"></i>
+          <i data-lucide="battery-charging" class="w-3.5 h-3.5 text-emerald-400"></i>
+        </div>
+      </div>
+
+      <!-- 1. HEADER DO APP (ANIMAÇÃO 1: FADE SLIDE UP 0.3s) -->
+      <div id="anim-head" class="anim-header flex items-center justify-between pb-3 mb-3 border-b border-zinc-900">
+        <div>
+          <div class="text-base font-black text-white uppercase tracking-tighter flex items-center gap-2">
+            CAIXA
+            <span class="h-2 w-2 rounded-full bg-emerald-400 pulse-dot"></span>
+          </div>
+          <div class="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">27 AGO • 2701</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <!-- Botão Fantasma com Micro-Interação ao Tocar -->
+          <button class="h-9 w-9 rounded-2xl bg-zinc-900 hover:bg-zinc-800 active:scale-90 transition-all border border-zinc-800 flex items-center justify-center text-zinc-400 relative">
+            <i data-lucide="ghost" class="w-4 h-4 text-amber-400"></i>
+            <span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-500 pulse-dot"></span>
+          </button>
+          <button class="h-9 w-9 rounded-2xl bg-zinc-900 hover:bg-zinc-800 active:scale-90 transition-all border border-zinc-800 flex items-center justify-center text-zinc-400">
+            <i data-lucide="calendar-days" class="w-4 h-4 text-zinc-400"></i>
+          </button>
+          <button class="h-9 w-9 rounded-2xl bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-90 transition-all border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+            <i data-lucide="unlock" class="w-4 h-4 text-emerald-400"></i>
+          </button>
+          <button class="h-9 w-9 rounded-2xl bg-zinc-900 hover:bg-zinc-800 active:scale-90 transition-all border border-zinc-800 flex items-center justify-center text-zinc-400">
+            <i data-lucide="more-horizontal" class="w-4 h-4 text-zinc-400"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. CARD PRINCIPAL (ANIMAÇÃO 2: ENTRADA SUAVE COM PROPORÇÃO FLUIDA) -->
+      <div id="anim-card" class="anim-main-card bg-[#121216] border border-zinc-800/80 rounded-[28px] p-4 shadow-2xl mb-3 transition-all hover:border-zinc-700">
+        
+        <!-- Topo do Card -->
+        <div class="flex items-center justify-between mb-1">
+          <div class="flex items-center gap-1.5 text-zinc-400">
+            <i data-lucide="monitor" class="w-3.5 h-3.5 text-zinc-400"></i>
+            <span class="text-[12px] font-black uppercase tracking-[2px] text-zinc-300">Total</span>
+          </div>
+          
+          <span class="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/30 text-red-400 flex items-center gap-1">
+            <i data-lucide="alert-triangle" class="w-3 h-3 text-red-400"></i>
+            -R$ 0,09 Quebra
+          </span>
+        </div>
+
+        <!-- Total Hero com Efeito Flash Suave quando Atualiza -->
+        <div class="flex items-baseline justify-between mb-2.5">
+          <div id="hero-value" class="text-[26px] font-black text-white tracking-tight mono leading-none transition-all">
+            R$ 7.340<span class="text-zinc-500 text-lg font-bold">,98</span>
+          </div>
+          <div id="sales-count" class="text-[11px] font-bold text-zinc-400">22 baixas</div>
+        </div>
+
+        <!-- Barra de Proporção Fluida -->
+        <div class="h-1.5 w-full bg-zinc-900 rounded-full flex overflow-hidden mb-3 p-0.5 border border-zinc-800/60">
+          <div id="bar-amber" class="bar-anim-amber bg-amber-400 rounded-full mr-0.5" style="width: 14.3%; transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);" title="14% Papel"></div>
+          <div id="bar-indigo" class="bar-anim-indigo bg-indigo-400 rounded-full" style="width: 85.7%; transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);" title="86% Pix"></div>
+        </div>
+
+        <!-- LINHAS AMPLAS COM EFEITO DE TOQUE SUAVE -->
+        <div class="space-y-2 pt-2 border-t border-zinc-800/60">
+          
+          <!-- Linha Espécie -->
+          <div class="bg-[#09090c] hover:bg-[#111116] transition-all p-2.5 px-3.5 rounded-2xl border border-zinc-800/80 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="h-7 w-7 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                <i data-lucide="banknote" class="w-3.5 h-3.5 text-amber-400"></i>
+              </div>
+              <div>
+                <div class="text-[12px] font-black text-amber-400">Dinheiro no Saco</div>
+                <div class="text-[10px] text-zinc-500 font-medium">14% do malote</div>
+              </div>
+            </div>
+            <div class="text-[15px] font-black text-zinc-100 mono tracking-tight">
+              R$ 1.051<span class="text-zinc-500 text-xs">,00</span>
+            </div>
+          </div>
+
+          <!-- Linha Pix -->
+          <div class="bg-[#09090c] hover:bg-[#111116] transition-all p-2.5 px-3.5 rounded-2xl border border-zinc-800/80 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="h-7 w-7 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                <i data-lucide="smartphone" class="w-3.5 h-3.5 text-indigo-400"></i>
+              </div>
+              <div>
+                <div class="text-[12px] font-black text-indigo-400">Pix a Transferir</div>
+                <div id="pix-count" class="text-[10px] text-indigo-400/70 font-medium">12 transações</div>
+              </div>
+            </div>
+            <div id="pix-value" class="text-[15px] font-black text-indigo-300 mono tracking-tight">
+              R$ 6.289<span class="text-indigo-400/60 text-xs">,98</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- 3. TRINCA DE CARDS (ANIMAÇÃO 3: CASCATA COM FEEDBACK TÁTIL ACTIVE:SCALE) -->
+      <div id="anim-triad" class="anim-triad grid grid-cols-3 gap-2 text-center">
+        
+        <!-- Card 1: Saídas -->
+        <div class="bg-[#121216] py-2 px-1 rounded-2xl border border-zinc-800/80 flex flex-col justify-center transition-all hover:bg-[#181820]">
+          <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-wider flex items-center justify-center gap-1">
+            <i data-lucide="arrow-up-right" class="w-3 h-3 text-red-400"></i> Saídas
+          </div>
+          <div class="text-[13px] font-black text-zinc-200 mono mt-0.5">R$ 0,00</div>
+          <div class="text-[10px] text-zinc-600 font-medium">0 retiradas</div>
+        </div>
+
+        <!-- Card 2: Canhotos (Atalho com Press Feedback) -->
+        <button class="bg-[#121216] hover:bg-[#181822] active:scale-90 active:bg-blue-500/20 transition-all py-2 px-1 rounded-2xl border border-blue-500/30 flex flex-col justify-center text-center shadow">
+          <div class="text-[10px] font-bold text-blue-400 uppercase tracking-wider flex items-center justify-center gap-1">
+            <i data-lucide="check-square" class="w-3 h-3 text-blue-400"></i> Canhotos
+          </div>
+          <div id="check-count" class="text-[13px] font-black text-blue-300 mono mt-0.5">22 de 22</div>
+          <div class="text-[10px] text-blue-400/70 font-medium">Toque p/ abrir</div>
+        </button>
+
+        <!-- Card 3: Ajuste (Interativo com Press Feedback) -->
+        <button class="bg-[#14141c] hover:bg-[#1c1c28] active:scale-90 active:bg-amber-500/20 transition-all py-2 px-1 rounded-2xl border border-amber-500/30 flex flex-col justify-center text-center shadow">
+          <div class="text-[10px] font-bold text-amber-400 uppercase tracking-wider flex items-center justify-center gap-1">
+            <i data-lucide="sliders-horizontal" class="w-3 h-3 text-amber-400"></i> Ajuste
+          </div>
+          <div class="text-[13px] font-black text-amber-300 mono mt-0.5">R$ 0,00</div>
+          <div class="text-[10px] text-amber-400/80 font-medium">Toque p/ editar</div>
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    // 1. REINICIA A ENTRADA SUAVE DO APP
+    function relaunchApp() {
+      const head = document.getElementById('anim-head');
+      const card = document.getElementById('anim-card');
+      const triad = document.getElementById('anim-triad');
+      const barAmber = document.getElementById('bar-amber');
+      const barIndigo = document.getElementById('bar-indigo');
+
+      head.classList.remove('anim-header');
+      card.classList.remove('anim-main-card');
+      triad.classList.remove('anim-triad');
+      barAmber.classList.remove('bar-anim-amber');
+      barIndigo.classList.remove('bar-anim-indigo');
+
+      void head.offsetWidth; // Força repaint
+
+      head.classList.add('anim-header');
+      card.classList.add('anim-main-card');
+      triad.classList.add('anim-triad');
+      barAmber.classList.add('bar-anim-amber');
+      barIndigo.classList.add('bar-anim-indigo');
+    }
+
+    // 2. SIMULA ENTRADA DE UMA VENDA NOVA EM TEMPO REAL
+    let saleAdded = false;
+    function simulateSale() {
+      const hero = document.getElementById('hero-value');
+      const salesCount = document.getElementById('sales-count');
+      const checkCount = document.getElementById('check-count');
+      const pixCount = document.getElementById('pix-count');
+      const pixValue = document.getElementById('pix-value');
+      const barAmber = document.getElementById('bar-amber');
+      const barIndigo = document.getElementById('bar-indigo');
+
+      if (!saleAdded) {
+        // Adiciona venda de R$ 500 no Pix
+        hero.innerHTML = 'R$ 7.840<span class="text-zinc-500 text-lg font-bold">,98</span>';
+        salesCount.innerText = '23 baixas';
+        checkCount.innerText = '22 de 23';
+        pixCount.innerText = '13 transações';
+        pixValue.innerHTML = 'R$ 6.789<span class="text-indigo-400/60 text-xs">,98</span>';
+        barAmber.style.width = '13.4%';
+        barIndigo.style.width = '86.6%';
+        saleAdded = true;
+      } else {
+        // Volta ao normal
+        hero.innerHTML = 'R$ 7.340<span class="text-zinc-500 text-lg font-bold">,98</span>';
+        salesCount.innerText = '22 baixas';
+        checkCount.innerText = '22 de 22';
+        pixCount.innerText = '12 transações';
+        pixValue.innerHTML = 'R$ 6.289<span class="text-indigo-400/60 text-xs">,98</span>';
+        barAmber.style.width = '14.3%';
+        barIndigo.style.width = '85.7%';
+        saleAdded = false;
+      }
+
+      hero.classList.remove('value-updated');
+      void hero.offsetWidth;
+      hero.classList.add('value-updated');
+    }
+  </script>
+</body>
+</html>

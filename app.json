@@ -17,6 +17,7 @@
     },
     "android": {
       "package": "com.ecliptia.cx",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0a0a0a"
@@ -33,7 +34,23 @@
       }
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Permitir que o Squirrel salve fotos diretamente na sua galeria.",
+          "savePhotosPermission": "Permitir que o Squirrel salve fotos diretamente na sua galeria."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#6366f1",
+          "sounds": [],
+          "defaultChannel": "chat-messages"
+        }
+      ]
     ]
   }
 }

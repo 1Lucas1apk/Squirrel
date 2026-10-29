@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — 5 Animações para o Footer do Painel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 420px;
+      height: 840px;
+      border-radius: 40px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* ===================================================
+       ANIMAÇÃO 1: RADAR PULSANTE SQUIRREL
+       =================================================== */
+    @keyframes pulseRing {
+      0% { transform: scale(0.6); opacity: 0.8; }
+      50% { opacity: 0.3; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .radar-ring {
+      animation: pulseRing 3s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    .radar-ring-2 {
+      animation: pulseRing 3s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+      animation-delay: 1.5s;
+    }
+
+    /* ===================================================
+       ANIMAÇÃO 2: ONDA ELETROCARDIOGRAMA FINANCEIRO (CASH FLOW WAVE)
+       =================================================== */
+    @keyframes waveFlow {
+      0% { stroke-dashoffset: 600; }
+      100% { stroke-dashoffset: 0; }
+    }
+    .wave-line {
+      stroke-dasharray: 120 480;
+      animation: waveFlow 4s linear infinite;
+    }
+
+    /* ===================================================
+       ANIMAÇÃO 3: AURORA BOREALIS & PARTÍCULAS DOURADAS
+       =================================================== */
+    @keyframes auroraBreath {
+      0%, 100% { opacity: 0.35; transform: scale(1) translateY(0); }
+      50% { opacity: 0.75; transform: scale(1.15) translateY(-5px); }
+    }
+    @keyframes floatParticle {
+      0% { transform: translateY(20px) scale(0); opacity: 0; }
+      40% { opacity: 1; }
+      80% { opacity: 0.8; }
+      100% { transform: translateY(-35px) scale(1.2); opacity: 0; }
+    }
+    .aurora-bg {
+      animation: auroraBreath 4s ease-in-out infinite;
+    }
+    .particle-1 { animation: floatParticle 3.2s ease-in-out infinite; }
+    .particle-2 { animation: floatParticle 2.8s ease-in-out infinite 1.1s; }
+    .particle-3 { animation: floatParticle 3.5s ease-in-out infinite 2s; }
+
+    /* ===================================================
+       ANIMAÇÃO 4: ORBE DE ENERGIA HOLOGRÁFICO (FLOATING ORB)
+       =================================================== */
+    @keyframes orbRotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes orbGlow {
+      0%, 100% { filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.6)); }
+      50% { filter: drop-shadow(0 0 24px rgba(99, 102, 241, 0.8)); }
+    }
+    .orb-orbit {
+      animation: orbRotate 6s linear infinite;
+    }
+    .orb-glow {
+      animation: orbGlow 4s ease-in-out infinite;
+    }
+
+    /* ===================================================
+       ANIMAÇÃO 5: PEGADAS DO ESQUILO (SQUIRREL FOOTSTEPS TRACKER)
+       =================================================== */
+    @keyframes squirrelPaws {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(60px); }
+    }
+    @keyframes stepFade {
+      0% { opacity: 0; transform: scale(0.5); }
+      30% { opacity: 1; transform: scale(1.1); }
+      70% { opacity: 0.8; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.8); }
+    }
+    .step-1 { animation: stepFade 2.4s infinite; }
+    .step-2 { animation: stepFade 2.4s infinite 0.6s; }
+    .step-3 { animation: stepFade 2.4s infinite 1.2s; }
+    .step-4 { animation: stepFade 2.4s infinite 1.8s; }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-5xl mx-auto pb-28">
+
+  <!-- CABEÇALHO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      ✨ 5 CONCEITOS DE ANIMAÇÃO PARA O FOOTER
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      Animações Vivas no Rodapé
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-xl mx-auto font-medium">
+      Aproveitando o espaço antes do menu flutuante com elegância e identidade da marca:
+    </p>
+
+    <!-- SELETOR DE 5 ANIMAÇÕES -->
+    <div class="mt-4 grid grid-cols-2 sm:grid-cols-5 gap-2 bg-[#121216] p-1.5 rounded-2xl border border-zinc-800 max-w-3xl mx-auto">
+      <button onclick="setAnim(1)" id="btn-a1" class="py-2.5 rounded-xl text-xs font-black bg-emerald-500 text-zinc-950 shadow transition-all">
+        1. Radar Seguro
+      </button>
+      <button onclick="setAnim(2)" id="btn-a2" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        2. Sinal Vital (ECG)
+      </button>
+      <button onclick="setAnim(3)" id="btn-a3" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        3. Aurora Dourada
+      </button>
+      <button onclick="setAnim(4)" id="btn-a4" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        4. Orbe de Equilíbrio
+      </button>
+      <button onclick="setAnim(5)" id="btn-a5" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        5. Passinhos do Esquilo
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER CENTRAL COM O CELULAR -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- CABEÇALHO DO APP -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="text-base font-black uppercase tracking-tighter text-white">CAIXA</span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span class="text-[11px] font-black text-zinc-400 uppercase">27 AGO</span>
+        </div>
+        <div id="anim-tag" class="text-xs font-black text-emerald-400 uppercase bg-emerald-500/10 px-2.5 py-0.5 rounded-xl border border-emerald-500/20">
+          Opção 1: Radar Seguro
+        </div>
+      </div>
+
+      <!-- CORPO SCROLLÁVEL SIMULADO -->
+      <div class="flex-1 overflow-y-auto p-3.5 space-y-3 relative">
+        
+        <!-- CARD DO TOTAL COMPACTADO P/ VER O FOOTER -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-3 px-3.5 shadow-lg flex items-center justify-between opacity-50">
+          <div>
+            <div class="text-[10px] font-bold text-zinc-400 uppercase">Total do Caixa</div>
+            <div class="mono text-lg font-black text-white">R$ 7.340,98</div>
+          </div>
+          <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">
+            Malote Pronto
+          </span>
+        </div>
+
+        <!-- BATE-PAPO (CONTEXTO) -->
+        <div class="bg-[#121216] border border-indigo-500/20 rounded-2xl p-3 flex items-center justify-between opacity-50">
+          <div class="flex items-center gap-2 text-xs font-bold text-indigo-300">
+            <i data-lucide="message-square" class="w-3.5 h-3.5"></i>
+            <span>Bate-papo da Equipe</span>
+          </div>
+          <span class="text-[10px] text-zinc-400">14:32 ›</span>
+        </div>
+
+        <!-- CARROSSEL DE ATIVIDADES (CONTEXTO) -->
+        <div class="flex gap-2 overflow-x-hidden opacity-50">
+          <div class="bg-[#121216] border border-emerald-500/20 rounded-xl p-2.5 min-w-[120px]">
+            <div class="text-[10px] font-bold text-emerald-400">+ R$ 45,00</div>
+            <div class="text-[9px] text-zinc-500">14:28 Espécie</div>
+          </div>
+          <div class="bg-[#121216] border border-indigo-500/20 rounded-xl p-2.5 min-w-[120px]">
+            <div class="text-[10px] font-bold text-indigo-300">+ R$ 120,50</div>
+            <div class="text-[9px] text-zinc-500">14:10 Pix</div>
+          </div>
+        </div>
+
+        <!-- DIVISOR SUTIL ANTES DO FOOTER ANIMADO -->
+        <div class="pt-4 pb-1 text-center">
+          <div class="h-px bg-gradient-to-r from-transparent via-zinc-800 to-transparent w-3/4 mx-auto"></div>
+        </div>
+
+        <!-- ==============================================
+             ÁREA DE ANIMAÇÃO DO FOOTER DINÂMICA
+             ============================================== -->
+        <div id="anim-container" class="min-h-[140px] flex items-center justify-center">
+          <!-- Injetado via JS -->
+        </div>
+
+      </div>
+
+      <!-- BARRA FLUTUANTE INFERIOR (BOTTOM BAR) -->
+      <div class="p-3 bg-[#09090b]/90 backdrop-blur-md border-t border-zinc-900 flex-shrink-0">
+        <div class="bg-[#121216] border border-zinc-800 rounded-2xl p-2 px-4 flex items-center justify-between shadow-2xl">
+          <div class="flex items-center gap-2 text-emerald-400 text-xs font-black uppercase tracking-wider">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+            <span>Caixa 2701 Ativo</span>
+          </div>
+          <button class="h-8 px-3 rounded-xl bg-emerald-500 text-zinc-950 text-xs font-black flex items-center gap-1 shadow">
+            <span>Ações</span> <i data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- DESCRIÇÃO DA ANIMAÇÃO ESCOLHIDA -->
+    <div id="anim-description" class="mt-6 max-w-xl text-center bg-[#121216] p-4 rounded-2xl border border-zinc-800 text-xs text-zinc-300">
+      <!-- Injetado via JS -->
+    </div>
+
+  </div>
+
+  <script>
+    let currentAnim = 1;
+
+    function setAnim(n) {
+      currentAnim = n;
+
+      for (let i = 1; i <= 5; i++) {
+        const btn = document.getElementById('btn-a' + i);
+        if (i === n) {
+          btn.className = 'py-2.5 rounded-xl text-xs font-black bg-emerald-500 text-zinc-950 shadow transition-all';
+        } else {
+          btn.className = 'py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all';
+        }
+      }
+
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById('anim-container');
+      const tag = document.getElementById('anim-tag');
+      const desc = document.getElementById('anim-description');
+
+      if (currentAnim === 1) {
+        // ==========================================
+        // OPÇÃO 1: RADAR SEGURO & SINCRONIZAÇÃO EM NUVEM
+        // ==========================================
+        tag.innerText = '1. Radar Seguro (Live Cloud)';
+        tag.className = 'text-xs font-black text-emerald-400 uppercase bg-emerald-500/10 px-2.5 py-0.5 rounded-xl border border-emerald-500/20';
+        desc.innerHTML = `<b>Opção 1 — Radar Seguro & Live Cloud:</b> Ondas circulares concêntricas que emanam suavemente do selo de segurança Squirrel. Transmite sensação de que o caixa está 100% blindado, criptografado e sincronizado com a nuvem em tempo real.`;
+
+        container.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-2 relative">
+            
+            <!-- Círculos de Radar -->
+            <div class="relative w-16 h-16 flex items-center justify-center mb-2">
+              <div class="absolute inset-0 rounded-full border border-emerald-500/40 bg-emerald-500/5 radar-ring"></div>
+              <div class="absolute inset-0 rounded-full border border-emerald-400/30 bg-emerald-400/5 radar-ring-2"></div>
+              
+              <!-- Ícone Central -->
+              <div class="relative z-10 h-10 w-10 rounded-full bg-[#121216] border border-emerald-500/50 shadow-lg shadow-emerald-500/20 flex items-center justify-center text-emerald-400">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
+              </div>
+            </div>
+
+            <div class="text-[11px] font-black uppercase tracking-[2px] text-zinc-300">
+              Sessão Criptografada
+            </div>
+            <div class="flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold mt-0.5">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+              Sincronizado com Nuvem • Firebase RTDB
+            </div>
+
+          </div>
+        `;
+      } else if (currentAnim === 2) {
+        // ==========================================
+        // OPÇÃO 2: SINAL VITAL (ECG / CASH FLOW WAVE)
+        // ==========================================
+        tag.innerText = '2. Sinal Vital (Cash Flow ECG)';
+        tag.className = 'text-xs font-black text-cyan-400 uppercase bg-cyan-500/10 px-2.5 py-0.5 rounded-xl border border-cyan-500/20';
+        desc.innerHTML = `<b>Opção 2 — Sinal Vital do Caixa (ECG):</b> Uma linha de frequência holográfica néon que pulsa continuamente como o batimento cardíaco financeiro da loja, com micro-partículas correndo pela trilha.`;
+
+        container.innerHTML = `
+          <div class="flex flex-col items-center justify-center w-full py-2">
+            
+            <!-- SVG da Onda ECG -->
+            <div class="w-full max-w-[280px] h-12 relative flex items-center justify-center">
+              <svg viewBox="0 0 300 60" class="w-full h-full">
+                <!-- Linha de fundo escura -->
+                <path d="M 0 30 L 60 30 L 75 10 L 90 50 L 105 20 L 120 38 L 130 30 L 300 30" 
+                      fill="none" stroke="#27272a" stroke-width="2" stroke-linecap="round" />
+                
+                <!-- Linha Animada Néon -->
+                <path d="M 0 30 L 60 30 L 75 10 L 90 50 L 105 20 L 120 38 L 130 30 L 300 30" 
+                      fill="none" stroke="#06b6d4" stroke-width="3" stroke-linecap="round" class="wave-line filter drop-shadow-[0_0_8px_#06b6d4]" />
+              </svg>
+            </div>
+
+            <div class="text-[11px] font-black uppercase tracking-[2px] text-zinc-300 mt-1">
+              Fluxo Contínuo de Caixa
+            </div>
+            <div class="text-[10px] text-cyan-400 font-bold mt-0.5 flex items-center gap-1">
+              <i data-lucide="activity" class="w-3 h-3"></i>
+              Todos os lançamentos auditados em tempo real
+            </div>
+
+          </div>
+        `;
+      } else if (currentAnim === 3) {
+        // ==========================================
+        // OPÇÃO 3: AURORA BOREALIS & PARTÍCULAS DOURADAS
+        // ==========================================
+        tag.innerText = '3. Aurora Dourada (Fintech Glow)';
+        tag.className = 'text-xs font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-0.5 rounded-xl border border-amber-500/20';
+        desc.innerHTML = `<b>Opção 3 — Aurora Dourada:</b> Um gradiente de névoa esmeralda/dourada que respira suavemente ao fundo enquanto 3 partículas de moedas de ouro flutuam para cima como poeira estelar.`;
+
+        container.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-3 relative overflow-hidden w-full">
+            
+            <!-- Efeito de Aurora de Fundo -->
+            <div class="absolute w-44 h-24 bg-gradient-to-r from-emerald-500/20 via-amber-500/25 to-indigo-500/20 blur-2xl rounded-full aurora-bg pointer-events-none"></div>
+
+            <!-- Partículas Flutuantes -->
+            <div class="relative w-28 h-10 flex items-center justify-around mb-1">
+              <div class="w-2 h-2 rounded-full bg-amber-300 shadow-[0_0_10px_#fcd34d] particle-1"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-emerald-300 shadow-[0_0_12px_#6ee7b7] particle-2"></div>
+              <div class="w-1.5 h-1.5 rounded-full bg-amber-200 shadow-[0_0_8px_#fef08a] particle-3"></div>
+            </div>
+
+            <div class="relative z-10 text-[11px] font-black uppercase tracking-[2px] text-zinc-200">
+              Squirrel Finanças Seguras
+            </div>
+            <div class="relative z-10 text-[10px] text-amber-300/90 font-bold mt-0.5">
+              Turno Ativo • Operação em Perfeita Harmonia
+            </div>
+
+          </div>
+        `;
+      } else if (currentAnim === 4) {
+        // ==========================================
+        // OPÇÃO 4: ORBE DE ENERGIA / EQUILÍBRIO DO CAIXA
+        // ==========================================
+        tag.innerText = '4. Orbe de Equilíbrio Holográfico';
+        tag.className = 'text-xs font-black text-indigo-400 uppercase bg-indigo-500/10 px-2.5 py-0.5 rounded-xl border border-indigo-500/20';
+        desc.innerHTML = `<b>Opção 4 — Orbe de Equilíbrio:</b> Um orbe luminoso 3D futurista com anéis orbitais girando em 360° que pulsa suavemente entre tons esmeralda e cobalto.`;
+
+        container.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-2">
+            
+            <!-- Orbe e Anéis Orbitais -->
+            <div class="relative w-14 h-14 flex items-center justify-center mb-2">
+              <div class="absolute inset-0 rounded-full border-2 border-dashed border-indigo-500/40 orb-orbit"></div>
+              <div class="absolute w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-indigo-500 orb-glow shadow-lg shadow-indigo-500/30 flex items-center justify-center">
+                <i data-lucide="check" class="w-4 h-4 text-white stroke-[3]"></i>
+              </div>
+            </div>
+
+            <div class="text-[11px] font-black uppercase tracking-[2px] text-zinc-300">
+              Caixa 100% Balanceado
+            </div>
+            <div class="text-[10px] text-indigo-400 font-bold mt-0.5">
+              Diferença Zero entre Físico e Sistema
+            </div>
+
+          </div>
+        `;
+      } else if (currentAnim === 5) {
+        // ==========================================
+        // OPÇÃO 5: PASSINHOS DO ESQUILO (SQUIRREL TRACKS)
+        // ==========================================
+        tag.innerText = '5. Passinhos do Esquilo (Mascote)';
+        tag.className = 'text-xs font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-0.5 rounded-xl border border-amber-500/20';
+        desc.innerHTML = `<b>Opção 5 — Passinhos do Esquilo (Mascote):</b> Uma trilha lúdica e estilosa de pequenas patinhas de esquilo brilhantes que caminham sequencialmente pelo rodapé, trazendo a identidade viva do Squirrel!`;
+
+        container.innerHTML = `
+          <div class="flex flex-col items-center justify-center py-2 w-full">
+            
+            <!-- Trilha de Patinhas -->
+            <div class="flex items-center gap-4 mb-2">
+              <div class="h-6 w-6 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 step-1">
+                <i data-lucide="footprints" class="w-3.5 h-3.5"></i>
+              </div>
+              <div class="h-6 w-6 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 step-2">
+                <i data-lucide="footprints" class="w-3.5 h-3.5"></i>
+              </div>
+              <div class="h-6 w-6 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 step-3">
+                <i data-lucide="footprints" class="w-3.5 h-3.5"></i>
+              </div>
+              <div class="h-6 w-6 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 step-4">
+                <i data-lucide="nut" class="w-3.5 h-3.5 text-amber-300"></i>
+              </div>
+            </div>
+
+            <div class="text-[11px] font-black uppercase tracking-[2px] text-zinc-300">
+              Squirrel • Sistema de Caixa Seguro
+            </div>
+            <div class="text-[10px] text-amber-400 font-bold mt-0.5">
+              Cuidando de cada centavo da sua operação 🐿️
+            </div>
+
+          </div>
+        `;
+      }
+
+      lucide.createIcons();
+    }
+
+    render();
+  </script>
+</body>
+</html>

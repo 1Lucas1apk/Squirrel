@@ -68,7 +68,7 @@ export async function entrarNaLoja(codigo: string, nomeOperador: string = "Opera
     entrou_em: Date.now()
   });
 
-  return { nome: snap.data().nome };
+  return { nome: snap.data()?.nome || "" };
 }
 
 export async function sairDaLoja(codigo: string): Promise<void> {

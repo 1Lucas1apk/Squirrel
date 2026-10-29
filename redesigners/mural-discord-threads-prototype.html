@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Toque Duplo (Double Tap) para Reação Rápida (Mural & Chat)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800;900&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050507;
+      color: #f4f4f5;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Moldura Mobile */
+    .app-phone-container {
+      width: 100%;
+      max-width: 415px;
+      height: 840px;
+      border-radius: 48px;
+      border: 4px solid #27272a;
+      box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.95), 0 0 0 1px #18181b;
+      background-color: #09090c;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .phone-notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 140px;
+      height: 24px;
+      background-color: #18181b;
+      border-bottom-left-radius: 18px;
+      border-bottom-right-radius: 18px;
+      z-index: 50;
+    }
+
+    /* Animação Heart Pop estilo Instagram / WhatsApp no Duplo Toque */
+    @keyframes heartPopAnim {
+      0% { opacity: 0; transform: scale(0.3) rotate(-15deg); }
+      50% { opacity: 1; transform: scale(1.4) rotate(0deg); }
+      70% { opacity: 1; transform: scale(1.1) rotate(5deg); }
+      100% { opacity: 0; transform: scale(1.5) translateY(-30px); }
+    }
+    .heart-pop {
+      animation: heartPopAnim 0.75s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      pointer-events: none;
+    }
+
+    /* Animação Slide-In da Thread estilo Discord */
+    .slide-in-right {
+      animation: slideInRight 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .slide-out-right {
+      animation: slideOutRight 0.24s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+    }
+
+    @keyframes slideInRight {
+      from { transform: translateX(100%); }
+      to { transform: translateX(0%); }
+    }
+    @keyframes slideOutRight {
+      from { transform: translateX(0%); }
+      to { transform: translateX(100%); }
+    }
+
+    /* Modal / Bottom Sheet */
+    .modal-enter {
+      animation: modalEnter 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes modalEnter {
+      from { opacity: 0; transform: scale(0.92) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* Barra flutuante de emojis estilo Discord */
+    .floating-reaction-bar {
+      animation: floatBar 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes floatBar {
+      from { opacity: 0; transform: scale(0.85) translateY(10px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* Toast animado */
+    @keyframes toastFade {
+      0% { opacity: 0; transform: translateY(-10px); }
+      15% { opacity: 1; transform: translateY(0); }
+      85% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-10px); }
+    }
+    .toast-anim {
+      animation: toastFade 2.5s ease-in-out forwards;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex flex-col items-center justify-center">
+
+  <!-- =========================================================================
+       PAINEL SUPERIOR: GUIA DE GESTOS
+       ========================================================================= -->
+  <div class="w-full max-w-5xl mb-6 flex flex-col md:flex-row items-center justify-between gap-4 p-5 bg-[#0e0e13] border border-zinc-800 rounded-3xl shadow-2xl">
+    <div class="flex items-center gap-3.5">
+      <div class="h-12 w-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-300 shadow">
+        <i data-lucide="heart" class="w-6 h-6"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[10.5px] font-mono font-black uppercase">
+            Toque Duplo (Double Tap)
+          </span>
+          <span class="text-xs text-zinc-500">•</span>
+          <span class="text-xs text-zinc-400 font-mono">Reação Rápida no Chat Direto & Mural</span>
+        </div>
+        <h1 class="text-xl md:text-2xl font-black text-white tracking-tight mt-0.5">
+          Duplo Toque com Animação Heart Pop
+        </h1>
+      </div>
+    </div>
+
+    <!-- Alternador de Abas de Teste (Chat Direto vs Mural) -->
+    <div class="flex items-center gap-2 bg-[#161622] p-1.5 rounded-2xl border border-zinc-800">
+      <button onclick="switchTab('direto')" id="tabBtnDireto" class="px-3.5 py-1.5 rounded-xl bg-purple-600 text-white text-xs font-black flex items-center gap-1.5 transition">
+        <i data-lucide="user" class="w-3.5 h-3.5"></i>
+        <span>Chat Direto</span>
+      </button>
+      <button onclick="switchTab('mural')" id="tabBtnMural" class="px-3.5 py-1.5 rounded-xl text-zinc-400 hover:text-white text-xs font-black flex items-center gap-1.5 transition">
+        <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
+        <span>Mural da Loja</span>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- =========================================================================
+       DISPOSITIVO MOBILE COM ABAS CHAT DIRETO E MURAL
+       ========================================================================= -->
+  <div class="app-phone-container">
+    
+    <!-- Notch -->
+    <div class="phone-notch"></div>
+
+    <!-- Status Bar -->
+    <div class="pt-2 px-6 pb-1 flex items-center justify-between text-[11px] font-mono text-zinc-400 font-bold z-40 bg-[#0d0d12]">
+      <span>15:00</span>
+      <div class="flex items-center gap-1.5">
+        <i data-lucide="wifi" class="w-3 h-3 text-zinc-400"></i>
+        <i data-lucide="battery-charging" class="w-3.5 h-3.5 text-emerald-400"></i>
+      </div>
+    </div>
+
+    <!-- Toast Flutuante de Feedback -->
+    <div id="appToast" class="absolute top-10 inset-x-4 z-50 pointer-events-none hidden">
+      <div class="p-3 rounded-2xl bg-[#161622] border border-rose-500/50 shadow-2xl flex items-center gap-2.5 text-xs text-white toast-anim">
+        <i data-lucide="heart" class="w-4 h-4 text-rose-400 flex-shrink-0 fill-rose-400"></i>
+        <span id="toastMessage" class="font-bold">Reação adicionada via Duplo Toque!</span>
+      </div>
+    </div>
+
+
+    <!-- =========================================================================
+         ABA 1: CHAT DIRETO 1X1 (COM DUPLO TOQUE EM QUALQUER BALÃO)
+         ========================================================================= -->
+    <div id="screenChatDireto" class="flex-1 flex flex-col justify-between overflow-hidden bg-[#07070a] relative">
+      
+      <!-- Header do Chat Direto -->
+      <div class="p-3.5 bg-[#0d0d12] border-b border-zinc-800 flex items-center justify-between shadow-md">
+        <div class="flex items-center gap-2.5">
+          <div class="h-10 w-10 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-300 font-black text-sm">
+            MA
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-sm font-black text-white uppercase">Matheus (Caixa 02)</span>
+              <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+            </div>
+            <span class="text-xs font-mono text-purple-400">@matheus • Online</span>
+          </div>
+        </div>
+        <div class="px-2 py-1 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[10px] font-mono flex items-center gap-1">
+          <span>❤️ 2 Toques</span>
+        </div>
+      </div>
+
+      <!-- Feed do Chat Direto -->
+      <div class="flex-1 p-3.5 overflow-y-auto flex flex-col gap-3">
+        
+        <div class="text-center my-1">
+          <span class="px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-[10px] font-mono text-zinc-500">
+            Dê dois toques rápidos em qualquer balão para reagir ❤️
+          </span>
+        </div>
+
+        <!-- BALÃO 1: MENSAGEM RECEBIDA (MATHEUS) -->
+        <div class="flex flex-col items-start max-w-[85%] relative">
+          
+          <div 
+            id="bubble_direct_1"
+            onclick="handleDoubleTap('direct_1', event)"
+            class="p-3.5 rounded-2xl rounded-tl-sm bg-[#161620] hover:bg-[#1a1a26] border border-zinc-800 text-xs text-zinc-100 leading-relaxed shadow select-none cursor-pointer transition relative overflow-visible"
+          >
+            <!-- Efeito Heart Pop Container -->
+            <div id="pop_direct_1" class="absolute inset-0 flex items-center justify-center pointer-events-none hidden">
+              <span class="text-4xl heart-pop">❤️</span>
+            </div>
+
+            <span>Oi Lucas! Salvei o comprovante da sangria de R$ 300,00 no Drive. Já pode conferir na gaveta.</span>
+            
+            <div class="flex items-center justify-between mt-1 text-[9.5px] font-mono text-zinc-500">
+              <span>14:45</span>
+            </div>
+          </div>
+
+          <!-- Pílula de Reação do Balão -->
+          <div id="reaction_direct_1" class="mt-1 flex items-center gap-1">
+            <button onclick="handlePillClick('direct_1', '❤️')" onmousedown="startPillLongPress('direct_1', '❤️')" onmouseup="cancelPillLongPress()" class="px-2 py-0.5 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/60 text-purple-300 text-[10.5px] font-bold flex items-center gap-1 shadow">
+              <span>❤️</span>
+              <span id="count_direct_1">1</span>
+              <span id="badge_direct_1" class="text-[8px] text-purple-400 font-mono ml-0.5">(Você)</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- BALÃO 2: MENSAGEM ENVIADA (LUCAS - EU) -->
+        <div class="flex flex-col items-end max-w-[85%] self-end relative">
+          
+          <div 
+            id="bubble_direct_2"
+            onclick="handleDoubleTap('direct_2', event)"
+            class="p-3.5 rounded-2xl rounded-tr-sm bg-purple-700 hover:bg-purple-600 text-xs text-white leading-relaxed shadow select-none cursor-pointer transition relative overflow-visible"
+          >
+            <!-- Efeito Heart Pop Container -->
+            <div id="pop_direct_2" class="absolute inset-0 flex items-center justify-center pointer-events-none hidden">
+              <span class="text-4xl heart-pop">❤️</span>
+            </div>
+
+            <span>Perfeito Matheus! Já verifiquei aqui no painel e o valor da sangria bateu 100% com o malote.</span>
+            
+            <div class="flex items-center justify-end gap-1 mt-1 text-[9.5px] font-mono text-purple-200">
+              <span>14:48</span>
+              <i data-lucide="check-check" class="w-3.5 h-3.5 text-sky-300"></i>
+            </div>
+          </div>
+
+          <!-- Pílula de Reação do Balão 2 -->
+          <div id="reaction_direct_2" class="mt-1 flex items-center gap-1 hidden">
+            <button onclick="handlePillClick('direct_2', '❤️')" onmousedown="startPillLongPress('direct_2', '❤️')" onmouseup="cancelPillLongPress()" class="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/60 text-purple-300 text-[10.5px] font-bold flex items-center gap-1">
+              <span>❤️</span>
+              <span id="count_direct_2">1</span>
+              <span class="text-[8px] text-purple-400 font-mono ml-0.5">(Você)</span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Barra de Input do Chat Direto -->
+      <div class="p-3 bg-[#0d0d12] border-t border-zinc-800 flex items-center gap-2">
+        <button class="h-10 w-10 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-zinc-300 active:scale-95">
+          <i data-lucide="image" class="w-4 h-4"></i>
+        </button>
+        <input type="text" placeholder="Escreva uma mensagem..." class="flex-1 h-10 px-3.5 rounded-xl bg-[#14141a] border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500">
+        <button class="h-10 w-10 rounded-xl bg-purple-600 hover:bg-purple-500 flex items-center justify-center text-white shadow active:scale-95">
+          <i data-lucide="send" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+    </div>
+
+
+    <!-- =========================================================================
+         ABA 2: MURAL DA LOJA COM THREADS + DUPLO TOQUE NOS RECADOS
+         ========================================================================= -->
+    <div id="screenMuralLoja" class="flex-1 flex flex-col justify-between overflow-hidden bg-[#07070a] relative hidden">
+      
+      <!-- Header do Mural -->
+      <div class="p-3.5 bg-[#0d0d12] border-b border-zinc-800 flex items-center justify-between shadow-md">
+        <div class="flex items-center gap-2.5">
+          <div class="h-10 w-10 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 font-black text-sm">
+            SQ
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-sm font-black text-white uppercase">Mural da Loja</span>
+              <span class="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-mono text-[9px] font-black">GRUPO</span>
+            </div>
+            <span class="text-xs font-mono text-zinc-400">Toque 2x no card para ❤️</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feed do Mural -->
+      <div class="flex-1 p-3.5 overflow-y-auto flex flex-col gap-3.5">
+        
+        <!-- CARD DO MURAL COM DUPLO TOQUE ATIVO -->
+        <div 
+          id="card_mural_1"
+          onclick="handleDoubleTap('mural_1', event)"
+          class="bg-[#121216] hover:bg-[#14141a] border border-zinc-800 rounded-2xl p-3.5 shadow-lg select-none cursor-pointer transition relative overflow-visible"
+        >
+          <!-- Efeito Heart Pop Container -->
+          <div id="pop_mural_1" class="absolute inset-0 flex items-center justify-center pointer-events-none hidden z-40">
+            <span class="text-5xl heart-pop">❤️</span>
+          </div>
+
+          <!-- Cabeçalho -->
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2.5">
+              <div class="h-8 w-8 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-xs font-black text-indigo-300">
+                LU
+              </div>
+              <div>
+                <span class="text-xs font-black text-zinc-100">Lucas Morais</span>
+                <span class="text-[10px] font-mono text-indigo-400 block">@lucas</span>
+              </div>
+            </div>
+            <span class="text-[10px] text-zinc-500 font-mono">14:20</span>
+          </div>
+
+          <p class="text-xs text-zinc-200 leading-relaxed">
+            Pessoal, hoje o movimento foi alto no Pix. Verifiquem se todos os comprovantes foram conferidos antes das 18h!
+          </p>
+
+          <!-- Reações -->
+          <div class="flex items-center justify-between mt-3 pt-2.5 border-t border-zinc-800/80">
+            <div class="flex items-center gap-1.5">
+              <button onclick="event.stopPropagation(); handlePillClick('mural_1', '❤️')" onmousedown="event.stopPropagation(); startPillLongPress('mural_1', '❤️')" onmouseup="event.stopPropagation(); cancelPillLongPress()" class="px-2.5 py-0.5 rounded-full bg-purple-500/20 hover:bg-purple-500/30 border border-purple-500/60 text-purple-300 text-[11px] font-bold flex items-center gap-1 transition active:scale-95 shadow">
+                <span>❤️</span>
+                <span id="count_mural_1">3</span>
+                <span class="text-[8px] text-purple-400 font-mono ml-0.5">(Você)</span>
+              </button>
+            </div>
+            <span class="text-[9.5px] font-mono text-zinc-500 italic">2 Toques no card p/ ❤️</span>
+          </div>
+
+          <!-- THREAD BAR DO DISCORD -->
+          <div onclick="event.stopPropagation(); openThread('thread_1')" class="mt-3 p-2.5 rounded-xl bg-[#181824] hover:bg-[#20202e] border border-purple-500/30 flex items-center justify-between cursor-pointer transition active:scale-[0.98] shadow-inner">
+            <div class="flex items-center gap-2.5 flex-1 min-w-0">
+              <div class="flex -space-x-1.5">
+                <div class="h-6 w-6 rounded-full bg-emerald-600 border-2 border-[#181824] flex items-center justify-center text-[8px] font-black text-white">MA</div>
+                <div class="h-6 w-6 rounded-full bg-purple-600 border-2 border-[#181824] flex items-center justify-center text-[8px] font-black text-white">C1</div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <span class="text-xs font-black text-purple-300">💬 3 Respostas no Subchat</span>
+                <div class="text-[10.5px] text-zinc-300 truncate">@matheus: "Já conferi o caixa 02..."</div>
+              </div>
+            </div>
+            <div class="h-7 w-7 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-300 ml-2">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Barra de Input do Mural -->
+      <div class="p-3 bg-[#0d0d12] border-t border-zinc-800 flex items-center gap-2">
+        <button class="h-10 w-10 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-zinc-300">
+          <i data-lucide="camera" class="w-4 h-4"></i>
+        </button>
+        <input type="text" placeholder="Publicar novo recado..." class="flex-1 h-10 px-3.5 rounded-xl bg-[#14141a] border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500">
+        <button class="h-10 w-10 rounded-xl bg-purple-600 flex items-center justify-center text-white shadow">
+          <i data-lucide="send" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+    </div>
+
+
+    <!-- =========================================================================
+         TELA 3: SUBCHAT / THREAD DEDICADA (TAMBÉM COM DUPLO TOQUE)
+         ========================================================================= -->
+    <div id="discordThreadScreen" class="absolute inset-0 bg-[#09090d] flex flex-col justify-between z-50 hidden slide-in-right">
+      
+      <!-- Header do Subchat -->
+      <div class="pt-8 px-4 pb-3 bg-[#0d0d14] border-b border-purple-500/30 flex items-center justify-between shadow-xl">
+        <div class="flex items-center gap-3">
+          <button onclick="closeThread()" class="h-9 w-9 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-300 active:scale-95">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          </button>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <i data-lucide="message-square" class="w-3.5 h-3.5 text-purple-400"></i>
+              <span class="text-sm font-black text-white uppercase tracking-wider">Thread: Pix e Conferência</span>
+            </div>
+            <div class="text-[10px] font-mono text-zinc-400">Subchat do Mural • 3 participantes</div>
+          </div>
+        </div>
+        <span class="px-2 py-0.5 rounded-md bg-purple-500/20 border border-purple-500/40 text-purple-300 font-mono text-[9px] font-black">SUBCHAT</span>
+      </div>
+
+      <!-- Feed Interno do Subchat -->
+      <div id="threadFeed" class="flex-1 p-3.5 overflow-y-auto flex flex-col gap-3">
+        
+        <!-- CARD RAIZ FIXADO -->
+        <div class="p-3 rounded-2xl bg-[#14121a] border-l-4 border-purple-500 border-t border-r border-b border-zinc-800 shadow-md">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[10px] font-mono font-bold text-purple-300 uppercase">📌 Recado Principal</span>
+            <span class="text-[9.5px] text-zinc-500 font-mono">14:20</span>
+          </div>
+          <p class="text-xs text-zinc-200 leading-relaxed font-medium">
+            "Pessoal, hoje o movimento foi alto no Pix. Verifiquem se todos os comprovantes foram conferidos antes das 18h!"
+          </p>
+        </div>
+
+        <!-- Resposta 1 da Thread com Duplo Toque -->
+        <div class="flex flex-col items-start max-w-[85%] relative">
+          <div class="flex items-center gap-1.5 mb-0.5 ml-1">
+            <span class="text-[11px] font-black text-emerald-400">Matheus</span>
+            <span class="text-[9px] font-mono text-zinc-500">14:25</span>
+          </div>
+          
+          <div 
+            id="bubble_thread_1"
+            onclick="handleDoubleTap('thread_1', event)"
+            class="p-3 rounded-2xl rounded-tl-sm bg-[#161620] hover:bg-[#1a1a26] border border-zinc-800 text-xs text-zinc-200 leading-relaxed shadow select-none cursor-pointer relative"
+          >
+            <div id="pop_thread_1" class="absolute inset-0 flex items-center justify-center pointer-events-none hidden">
+              <span class="text-4xl heart-pop">❤️</span>
+            </div>
+            Aqui no Caixa 02 já conferi tudo. Tive 14 Pix confirmados e o valor bateu certinho com o relatório!
+          </div>
+
+          <div id="reaction_thread_1" class="mt-1 flex items-center gap-1 hidden">
+            <button onclick="handlePillClick('thread_1', '❤️')" class="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/60 text-purple-300 text-[10px] font-bold flex items-center gap-1">
+              <span>❤️</span>
+              <span>1</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="newThreadMessages"></div>
+
+      </div>
+
+      <!-- Barra de Input da Thread -->
+      <div class="p-3 bg-[#0d0d14] border-t border-purple-500/30 flex items-center gap-2">
+        <button class="h-10 w-10 rounded-xl bg-zinc-900 border border-zinc-700 flex items-center justify-center text-zinc-300">
+          <i data-lucide="camera" class="w-4 h-4"></i>
+        </button>
+        <input id="inputThreadReply" type="text" placeholder="Responder no subchat..." class="flex-1 h-10 px-3.5 rounded-xl bg-[#14141c] border border-purple-500/30 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-400">
+        <button onclick="sendThreadReply()" class="h-10 w-10 rounded-xl bg-purple-600 hover:bg-purple-500 flex items-center justify-center text-white shadow">
+          <i data-lucide="send" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+    </div>
+
+
+    <!-- =========================================================================
+         MODAL: QUEM REAGIU (ABERTO AO SEGURAR A PÍLULA)
+         ========================================================================= -->
+    <div id="modalReactions" class="absolute inset-0 bg-black/85 flex items-end justify-center z-50 hidden">
+      <div class="w-full bg-[#121218] border-t-2 border-purple-500/50 rounded-t-[32px] p-5 shadow-2xl modal-enter max-h-[80%] overflow-y-auto">
+        
+        <div class="flex items-center justify-between pb-3 mb-3 border-b border-zinc-800">
+          <div class="flex items-center gap-2">
+            <i data-lucide="smile" class="w-5 h-5 text-purple-400"></i>
+            <span class="text-sm font-black text-white uppercase tracking-wider">Quem Reagiu com ❤️</span>
+          </div>
+          <button onclick="closeModals()" class="h-8 w-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <div class="flex flex-col gap-2.5">
+          <div class="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="h-8 w-8 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-xs font-black text-indigo-300">
+                LU
+              </div>
+              <div>
+                <span class="text-xs font-black text-white">Você (@lucas)</span>
+                <span class="text-[10px] font-mono text-purple-300 block">Sua reação ativa</span>
+              </div>
+            </div>
+            <span class="text-lg">❤️</span>
+          </div>
+
+          <div class="flex items-center justify-between p-2.5 rounded-xl bg-[#181822] border border-zinc-800/80">
+            <div class="flex items-center gap-2.5">
+              <div class="h-8 w-8 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-xs font-black text-emerald-300">
+                MA
+              </div>
+              <div>
+                <span class="text-xs font-black text-white">Matheus</span>
+                <span class="text-[10px] font-mono text-emerald-400 block">@matheus</span>
+              </div>
+            </div>
+            <span class="text-lg">❤️</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+
+  <!-- =========================================================================
+       SCRIPT DE INTERATIVIDADE: DOUBLE TAP DETECTOR & HEART POP ANIMATION
+       ========================================================================= -->
+  <script>
+    lucide.createIcons();
+
+    // Rastreio de Duplo Toque por elemento
+    const lastTapMap = {};
+    let pillLongPressTimer = null;
+    let isLongPressTriggered = false;
+
+    // DETECÇÃO DE DUPLO TOQUE (DOUBLE TAP < 300ms) EM QUALQUER MENSAGEM
+    function handleDoubleTap(msgId, event) {
+      const now = Date.now();
+      const lastTap = lastTapMap[msgId] || 0;
+      const timeDiff = now - lastTap;
+
+      if (timeDiff < 320 && timeDiff > 0) {
+        // DISPARA ANIMAÇÃO HEART POP
+        triggerHeartPop(msgId);
+        showToast("❤️ Reação com Duplo Toque!");
+        lastTapMap[msgId] = 0;
+      } else {
+        lastTapMap[msgId] = now;
+      }
+    }
+
+    function triggerHeartPop(msgId) {
+      const popEl = document.getElementById(`pop_${msgId}`);
+      if (popEl) {
+        popEl.classList.remove('hidden');
+        setTimeout(() => {
+          popEl.classList.add('hidden');
+        }, 750);
+      }
+
+      // Ativa ou incrementa a pílula de reação correspondente
+      if (msgId === 'direct_2') {
+        document.getElementById('reaction_direct_2').classList.remove('hidden');
+      } else if (msgId === 'thread_1') {
+        document.getElementById('reaction_thread_1').classList.remove('hidden');
+      }
+    }
+
+    function switchTab(tab) {
+      const chatScreen = document.getElementById('screenChatDireto');
+      const muralScreen = document.getElementById('screenMuralLoja');
+      const btnDireto = document.getElementById('tabBtnDireto');
+      const btnMural = document.getElementById('tabBtnMural');
+
+      if (tab === 'direto') {
+        chatScreen.classList.remove('hidden');
+        muralScreen.classList.add('hidden');
+        btnDireto.className = "px-3.5 py-1.5 rounded-xl bg-purple-600 text-white text-xs font-black flex items-center gap-1.5 transition";
+        btnMural.className = "px-3.5 py-1.5 rounded-xl text-zinc-400 hover:text-white text-xs font-black flex items-center gap-1.5 transition";
+      } else {
+        chatScreen.classList.add('hidden');
+        muralScreen.classList.remove('hidden');
+        btnMural.className = "px-3.5 py-1.5 rounded-xl bg-purple-600 text-white text-xs font-black flex items-center gap-1.5 transition";
+        btnDireto.className = "px-3.5 py-1.5 rounded-xl text-zinc-400 hover:text-white text-xs font-black flex items-center gap-1.5 transition";
+      }
+      lucide.createIcons();
+    }
+
+    function handlePillClick(msgId, emoji) {
+      if (isLongPressTriggered) {
+        isLongPressTriggered = false;
+        return;
+      }
+      showToast("❤️ Reação alternada com sucesso!");
+    }
+
+    function startPillLongPress(msgId, emoji) {
+      isLongPressTriggered = false;
+      pillLongPressTimer = setTimeout(() => {
+        isLongPressTriggered = true;
+        document.getElementById('modalReactions').classList.remove('hidden');
+        lucide.createIcons();
+      }, 500);
+    }
+
+    function cancelPillLongPress() {
+      clearTimeout(pillLongPressTimer);
+    }
+
+    function closeModals() {
+      document.getElementById('modalReactions').classList.add('hidden');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('appToast');
+      document.getElementById('toastMessage').innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => {
+        toast.classList.add('hidden');
+      }, 2200);
+    }
+
+    function openThread(threadId) {
+      const screen = document.getElementById('discordThreadScreen');
+      screen.classList.remove('hidden');
+      screen.classList.remove('slide-out-right');
+      screen.classList.add('slide-in-right');
+      lucide.createIcons();
+    }
+
+    function closeThread() {
+      const screen = document.getElementById('discordThreadScreen');
+      screen.classList.remove('slide-in-right');
+      screen.classList.add('slide-out-right');
+      setTimeout(() => {
+        screen.classList.add('hidden');
+      }, 200);
+    }
+
+    function sendThreadReply() {
+      const input = document.getElementById('inputThreadReply');
+      const txt = input.value.trim();
+      if (!txt) return;
+      input.value = '';
+
+      const container = document.getElementById('newThreadMessages');
+      const now = new Date();
+      const hora = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+
+      const msgHtml = `
+        <div class="flex flex-col items-end max-w-[85%] self-end my-1.5 animate-bounce-short">
+          <div class="flex items-center gap-1.5 mb-0.5 mr-1">
+            <span class="text-[11px] font-black text-indigo-400">Você (@lucas)</span>
+            <span class="text-[9px] font-mono text-zinc-500">${hora}</span>
+          </div>
+          <div 
+            onclick="handleDoubleTap('sub_${Date.now()}', event)"
+            class="p-3 rounded-2xl rounded-tr-sm bg-purple-700 text-xs text-white leading-relaxed shadow select-none cursor-pointer"
+          >
+            ${txt}
+          </div>
+          <div class="flex items-center gap-1 mt-1 mr-1 text-[9.5px] font-mono text-purple-300">
+            <span>${hora}</span>
+            <i data-lucide="check-check" class="w-3.5 h-3.5 text-sky-400"></i>
+          </div>
+        </div>
+      `;
+
+      container.innerHTML += msgHtml;
+      lucide.createIcons();
+
+      const feed = document.getElementById('threadFeed');
+      feed.scrollTop = feed.scrollHeight;
+    }
+  </script>
+
+</body>
+</html>

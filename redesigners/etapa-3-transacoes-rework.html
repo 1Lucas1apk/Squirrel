@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Rework Oficial de Transações & Dinheiro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 425px;
+      height: 915px;
+      border-radius: 44px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.95), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-6xl mx-auto pb-32">
+
+  <!-- CABEÇALHO DA APRESENTAÇÃO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      🚀 ETAPA 3 • REWORK TOTAL DE TRANSAÇÕES
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      Terminal Financeiro do Balcão
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-2xl mx-auto font-medium">
+      Redesenhado do zero: Vault Hero imponente, terminal de lançamento em 3 passos fluidos, cálculo inteligente de sobra e histórico com cards lapidados.
+    </p>
+  </div>
+
+  <!-- CONTAINER DO CELULAR -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- 1. CABEÇALHO OFICIAL DO APP -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-5 py-4 flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="text-lg font-black uppercase tracking-tighter text-white">DINHEIRO</span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span class="text-xs font-black text-zinc-400 uppercase tracking-wider">27 AGO • 2701</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-black uppercase">
+            12 Lançamentos
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. CORPO ROLÁVEL (ESPAÇAMENTO AMPLO E NOBRE) -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-4 relative pb-36">
+
+        <!-- =================================================================== -->
+        <!-- 1. DOCK DO SALDO EM GAVETA (VAULT HERO) -->
+        <!-- =================================================================== -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-[28px] p-5 shadow-xl">
+          <div class="flex items-center justify-between text-xs font-black uppercase text-zinc-400 mb-1.5">
+            <div class="flex items-center gap-2">
+              <i data-lucide="vault" class="w-4 h-4 text-emerald-400"></i>
+              <span class="tracking-wider text-zinc-300">Dinheiro Físico na Gaveta</span>
+            </div>
+            <span class="text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full border border-emerald-500/20 text-[10.5px] font-black">+ R$ 2,39 Sobra</span>
+          </div>
+
+          <div class="mono text-[34px] font-black text-emerald-400 leading-tight">
+            <span class="text-zinc-500 text-lg font-bold mr-1">R$</span>2.580<span class="text-emerald-300 text-2xl font-extrabold">,00</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3 mt-3.5 pt-3.5 border-t border-zinc-800/60 text-xs">
+            <div class="bg-[#09090c] p-3 rounded-2xl border border-zinc-800/80">
+              <div class="text-[9.5px] font-black uppercase text-emerald-400 mb-0.5">Entradas do Dia</div>
+              <div class="mono font-black text-sm text-white">+R$ 2.587,61</div>
+            </div>
+            <div class="bg-[#09090c] p-3 rounded-2xl border border-zinc-800/80">
+              <div class="text-[9.5px] font-black uppercase text-red-400 mb-0.5">Sangrias / Saídas</div>
+              <div class="mono font-black text-sm text-white">-R$ 50,00</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- 2. O TERMINAL DE LANÇAMENTO (REWORK MASTER) -->
+        <!-- =================================================================== -->
+        <div id="terminal-card" class="bg-[#121216] border border-zinc-800/80 rounded-[32px] p-5 shadow-2xl space-y-4 transition-all">
+          
+          <!-- SELETOR PRINCIPAL DE FLUXO EM ABAS LARGAS -->
+          <div>
+            <div class="text-[10px] font-black uppercase tracking-wider text-zinc-400 mb-2 ml-1">O que você está lançando?</div>
+            <div class="grid grid-cols-3 gap-2">
+              <button onclick="setMode('dinheiro')" id="tab-dinheiro" class="mode-tab h-12 rounded-2xl border flex items-center justify-center gap-2 transition-all bg-white border-white text-zinc-950 font-black text-xs uppercase shadow-sm">
+                <i data-lucide="banknote" class="w-4 h-4 stroke-[2.5]"></i>
+                <span>Dinheiro</span>
+              </button>
+              <button onclick="setMode('prestacao')" id="tab-prestacao" class="mode-tab h-12 rounded-2xl border flex items-center justify-center gap-2 transition-all bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-white font-black text-xs uppercase">
+                <i data-lucide="arrow-down-circle" class="w-4 h-4"></i>
+                <span>Prestação</span>
+              </button>
+              <button onclick="setMode('multiplo')" id="tab-multiplo" class="mode-tab h-12 rounded-2xl border flex items-center justify-center gap-2 transition-all bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-white font-black text-xs uppercase">
+                <i data-lucide="split" class="w-4 h-4"></i>
+                <span>Misto / Lote</span>
+              </button>
+            </div>
+
+            <div class="grid grid-cols-3 gap-2 mt-2">
+              <button onclick="setMode('compra_vista')" id="tab-compra_vista" class="mode-tab h-10 rounded-xl border flex items-center justify-center gap-1.5 transition-all bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-white font-black text-[11px] uppercase">
+                <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i>
+                <span>À Vista</span>
+              </button>
+              <button onclick="setMode('sangria')" id="tab-sangria" class="mode-tab h-10 rounded-xl border flex items-center justify-center gap-1.5 transition-all bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-red-400 font-black text-[11px] uppercase">
+                <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
+                <span>Sangria</span>
+              </button>
+              <button onclick="setMode('cancelamento')" id="tab-cancelamento" class="mode-tab h-10 rounded-xl border flex items-center justify-center gap-1.5 transition-all bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-red-400 font-black text-[11px] uppercase">
+                <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
+                <span>Estorno</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- SUB-TIPOS DE PRESTAÇÃO (SÓ APARECE QUANDO É PRESTAÇÃO) -->
+          <div id="subtipos-box" class="hidden bg-[#0c121d] p-3.5 rounded-2xl border border-blue-500/30 space-y-2">
+            <div class="text-[10px] font-black uppercase text-blue-400 ml-1">Tipo de Prestação:</div>
+            <div class="grid grid-cols-3 gap-2">
+              <button onclick="setSub('Renegociação')" id="sub-reneg" class="h-10 rounded-xl text-xs font-black uppercase border border-zinc-800 bg-[#09090c] text-zinc-400 hover:text-white transition-all">Renegociação</button>
+              <button onclick="setSub('Quitação')" id="sub-quit" class="h-10 rounded-xl text-xs font-black uppercase border border-zinc-800 bg-[#09090c] text-zinc-400 hover:text-white transition-all">Quitação</button>
+              <button onclick="setSub('Entrada (Compra)')" id="sub-ent" class="h-10 rounded-xl text-xs font-black uppercase border border-blue-500 bg-blue-500 text-white shadow transition-all">Entrada Compra</button>
+            </div>
+          </div>
+
+          <!-- LINHA DE IDENTIFICAÇÃO: NOME DO CLIENTE + Nº CONTRATO -->
+          <div class="grid grid-cols-5 gap-2.5" id="row-cliente-contrato">
+            <div class="col-span-3" id="col-desc">
+              <label class="block text-[10px] font-black uppercase text-zinc-400 tracking-wider mb-1 ml-1" id="lbl-desc">Nome do Cliente / Descrição</label>
+              <input type="text" id="ipt-desc" value="Deise" placeholder="Ex: Manoel, Deise, Gás..." class="w-full h-12 bg-[#09090c] border border-zinc-800 rounded-2xl px-4 text-sm text-white font-bold focus:outline-none focus:border-zinc-600" />
+            </div>
+            <div class="col-span-2" id="col-contrato">
+              <label class="block text-[10px] font-black uppercase text-zinc-400 tracking-wider mb-1 text-center" id="lbl-contrato">Nº Contrato</label>
+              <input type="text" id="ipt-contrato" value="#1082" placeholder="#40921" class="w-full h-12 bg-[#09090c] border border-zinc-800 rounded-2xl px-3 text-sm text-center text-zinc-300 font-black uppercase focus:outline-none focus:border-zinc-600" />
+            </div>
+          </div>
+
+          <!-- MÓDULO DE VÍNCULO (SÓ APARECE SE FOR ESTORNO/CANCELAMENTO) -->
+          <div id="box-vinculo" class="hidden bg-[#180a0a] p-4 rounded-2xl border border-red-500/30 space-y-2">
+            <div class="text-[10px] font-black uppercase text-red-400">Vincular Venda Original a Cancelar:</div>
+            <input type="text" placeholder="Buscar venda pelo nome ou valor..." class="w-full h-11 bg-[#09090c] border border-red-500/30 rounded-xl px-4 text-xs text-white font-medium focus:outline-none" />
+          </div>
+
+          <!-- DISPLAY DE VALOR HEROICO -->
+          <div id="box-valor-padrao" class="space-y-1.5">
+            <div class="flex items-center justify-between ml-1">
+              <label class="text-[10px] font-black uppercase tracking-wider text-emerald-400" id="lbl-valor">Valor a Lançar</label>
+              <button onclick="toggleTroco()" id="btn-toggle-troco" class="text-[10px] font-black uppercase text-zinc-400 hover:text-emerald-300 flex items-center gap-1 transition-all">
+                <i data-lucide="calculator" class="w-3.5 h-3.5"></i>
+                <span id="txt-toggle-troco">+ Adicionar Troco</span>
+              </button>
+            </div>
+            <div class="h-16 bg-[#09090c] border border-zinc-800 focus-within:border-emerald-500 rounded-2xl px-5 flex items-center justify-between transition-all">
+              <div class="flex items-baseline font-black mono text-[30px] flex-1">
+                <span class="text-zinc-500 text-lg font-bold mr-2">R$</span>
+                <input type="text" id="ipt-valor" value="436,23" oninput="recalc()" class="bg-transparent font-black mono text-[30px] text-zinc-100 focus:outline-none w-full leading-none" />
+              </div>
+            </div>
+          </div>
+
+          <!-- MODO MULTI-LINHAS (SÓ APARECE NO MISTO/LOTE) -->
+          <div id="box-multi-linhas" class="hidden bg-[#14100a] p-4 rounded-2xl border border-amber-500/30 space-y-3">
+            <div class="flex items-center justify-between text-xs font-black uppercase text-amber-400">
+              <span>Carnês em Lote (Até R$ 4.000)</span>
+              <button onclick="addMultiRow()" class="text-amber-300 text-[10px] hover:underline font-black">+ Adicionar Carnê</button>
+            </div>
+            <div id="multi-items" class="space-y-2">
+              <div class="grid grid-cols-12 gap-2 items-center">
+                <input type="text" value="800,00" placeholder="R$ 0,00" class="col-span-4 h-11 bg-[#09090c] border border-zinc-800 rounded-xl px-3 text-sm text-white mono font-bold" />
+                <input type="text" value="Dilone (Contrato 1)" placeholder="Nome" class="col-span-5 h-11 bg-[#09090c] border border-zinc-800 rounded-xl px-3 text-xs text-white font-medium" />
+                <input type="text" value="#4092" placeholder="Contrato" class="col-span-3 h-11 bg-[#09090c] border border-zinc-800 rounded-xl px-2 text-xs text-center text-zinc-300 font-bold uppercase" />
+              </div>
+              <div class="grid grid-cols-12 gap-2 items-center">
+                <input type="text" value="1.200,00" placeholder="R$ 0,00" class="col-span-4 h-11 bg-[#09090c] border border-zinc-800 rounded-xl px-3 text-sm text-white mono font-bold" />
+                <input type="text" value="Dilone (Contrato 2)" placeholder="Nome" class="col-span-5 h-11 bg-[#09090c] border border-zinc-800 rounded-xl px-3 text-xs text-white font-medium" />
+                <input type="text" value="#4093" placeholder="Contrato" class="col-span-3 h-11 bg-[#09090c] border border-zinc-800 rounded-xl px-2 text-xs text-center text-zinc-300 font-bold uppercase" />
+              </div>
+            </div>
+          </div>
+
+          <!-- MÓDULO INTELIGENTE DE TROCO / SOBRA (EXPANSÍVEL) -->
+          <div id="box-troco-expand" class="hidden bg-[#0c120e] p-4 rounded-2xl border border-emerald-500/30 space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[10px] font-black uppercase text-zinc-400 mb-1 ml-1">Dinheiro Entregue</label>
+                <input type="text" id="ipt-entregue" value="438,00" oninput="recalc()" class="w-full h-12 bg-[#09090c] border border-zinc-800 rounded-xl px-3.5 text-base text-white mono font-bold focus:outline-none" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-black uppercase text-zinc-400 mb-1 ml-1">Troco Devolvido</label>
+                <input type="text" id="ipt-devolvido" value="0,00" oninput="recalc()" class="w-full h-12 bg-[#09090c] border border-zinc-800 rounded-xl px-3.5 text-base text-white mono font-bold focus:outline-none" />
+              </div>
+            </div>
+
+            <div class="bg-[#09090c] p-3.5 rounded-xl border border-zinc-800 flex items-center justify-between">
+              <div>
+                <div class="text-[9.5px] font-black uppercase text-emerald-400">Sobra Calculada na Gaveta</div>
+                <div id="txt-sobra" class="mono text-xl font-black text-emerald-300">+ R$ 1,77</div>
+              </div>
+              <div class="text-right">
+                <div class="text-[9px] font-bold uppercase text-zinc-500">Fica no Caixa</div>
+                <div id="txt-gaveta" class="mono text-sm font-black text-white">R$ 438,00</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BOTÃO DE REGISTRO HEROICO (54PX) -->
+          <button onclick="salvar()" id="btn-salvar" class="w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all">
+            <i data-lucide="check" class="w-5 h-5 stroke-[3]"></i>
+            <span id="txt-salvar">Registrar Lançamento</span>
+          </button>
+
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- 3. FEED DE AUDITORIA & HISTÓRICO DE HOJE -->
+        <!-- =================================================================== -->
+        <div class="space-y-3 pt-2">
+          
+          <!-- FILTROS RÁPIDOS EM ABAS -->
+          <div class="flex items-center gap-2 overflow-x-auto pb-0.5">
+            <button onclick="filtrar('todos')" id="flt-todos" class="h-10 px-4 rounded-xl text-xs font-black uppercase bg-zinc-200 text-zinc-950 shadow transition-all flex-shrink-0">
+              Todos (12)
+            </button>
+            <button onclick="filtrar('dinheiro')" id="flt-dinheiro" class="h-10 px-4 rounded-xl text-xs font-black uppercase bg-[#121216] border border-zinc-800 text-zinc-400 hover:text-white transition-all flex-shrink-0">
+              Dinheiro (8)
+            </button>
+            <button onclick="filtrar('prestacao')" id="flt-prestacao" class="h-10 px-4 rounded-xl text-xs font-black uppercase bg-[#121216] border border-zinc-800 text-zinc-400 hover:text-white transition-all flex-shrink-0">
+              Prestações (3)
+            </button>
+            <button onclick="filtrar('sangria')" id="flt-sangria" class="h-10 px-4 rounded-xl text-xs font-black uppercase bg-[#121216] border border-zinc-800 text-zinc-400 hover:text-white transition-all flex-shrink-0">
+              Sangrias (1)
+            </button>
+          </div>
+
+          <!-- BUSCA RÁPIDA -->
+          <div class="h-12 bg-[#121216] border border-zinc-800/80 rounded-2xl px-4 flex items-center gap-3 shadow-sm">
+            <i data-lucide="search" class="w-4 h-4 text-zinc-500"></i>
+            <input type="text" oninput="buscar(this.value)" placeholder="Buscar cliente (Manoel, Deise), contrato ou valor..." class="bg-transparent text-sm text-white focus:outline-none w-full font-medium placeholder:text-zinc-600" />
+          </div>
+
+          <!-- LISTA DE CARDS DO FEED (DADOS REAIS DO FIRESTORE) -->
+          <div id="feed-items-list" class="space-y-3">
+            
+            <!-- Card 1: Manoel -->
+            <div class="card-item bg-[#121216] border border-zinc-800/80 hover:border-zinc-700 rounded-[24px] p-4 flex items-center justify-between shadow-sm transition-all">
+              <div class="flex items-center gap-3.5 min-w-0">
+                <div class="h-11 w-11 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                  <i data-lucide="banknote" class="w-5 h-5"></i>
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-[11px] font-black uppercase text-emerald-400 tracking-wider">Dinheiro</span>
+                    <span class="text-[10px] text-zinc-500 font-bold">• 16:49:30</span>
+                    <span class="text-[9px] font-black bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-md border border-emerald-500/20">+ R$ 0,25 Sobra</span>
+                  </div>
+                  <div class="text-sm font-black text-white truncate mt-1">Manoel</div>
+                </div>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <div class="mono font-black text-emerald-400 text-lg leading-tight">+R$ 984,75</div>
+                <div class="flex items-center justify-end gap-2 mt-1">
+                  <button class="p-1.5 text-zinc-500 hover:text-zinc-300"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                  <button class="p-1.5 text-zinc-500 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Dilone -->
+            <div class="card-item bg-[#121216] border border-zinc-800/80 hover:border-zinc-700 rounded-[24px] p-4 flex items-center justify-between shadow-sm transition-all">
+              <div class="flex items-center gap-3.5 min-w-0">
+                <div class="h-11 w-11 rounded-2xl bg-orange-500/15 border border-orange-500/30 flex items-center justify-center text-orange-400 flex-shrink-0">
+                  <i data-lucide="split" class="w-5 h-5"></i>
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-[11px] font-black uppercase text-orange-400 tracking-wider">Misto / Lote</span>
+                    <span class="text-[10px] text-zinc-500 font-bold">• 15:25:03</span>
+                    <span class="text-[9px] font-black bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-md border border-zinc-700">#4092</span>
+                  </div>
+                  <div class="text-sm font-black text-white truncate mt-1">Dilone (Carnês Família)</div>
+                </div>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <div class="mono font-black text-orange-300 text-lg leading-tight">+R$ 800,00</div>
+                <div class="flex items-center justify-end gap-2 mt-1">
+                  <button class="p-1.5 text-zinc-500 hover:text-zinc-300"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                  <button class="p-1.5 text-zinc-500 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: Daniel -->
+            <div class="card-item bg-[#121216] border border-zinc-800/80 hover:border-zinc-700 rounded-[24px] p-4 flex items-center justify-between shadow-sm transition-all">
+              <div class="flex items-center gap-3.5 min-w-0">
+                <div class="h-11 w-11 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400 flex-shrink-0">
+                  <i data-lucide="arrow-down-circle" class="w-5 h-5"></i>
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-[11px] font-black uppercase text-blue-400 tracking-wider">Entrada Compra</span>
+                    <span class="text-[10px] text-zinc-500 font-bold">• 14:05:50</span>
+                  </div>
+                  <div class="text-sm font-black text-white truncate mt-1">Entrada (Compra) / Daniel</div>
+                </div>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <div class="mono font-black text-blue-300 text-lg leading-tight">+R$ 500,00</div>
+                <div class="flex items-center justify-end gap-2 mt-1">
+                  <button class="p-1.5 text-zinc-500 hover:text-zinc-300"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                  <button class="p-1.5 text-zinc-500 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 4: Sangria Gasolina -->
+            <div class="card-item bg-[#121216] border border-zinc-800/80 hover:border-zinc-700 rounded-[24px] p-4 flex items-center justify-between shadow-sm transition-all">
+              <div class="flex items-center gap-3.5 min-w-0">
+                <div class="h-11 w-11 rounded-2xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400 flex-shrink-0">
+                  <i data-lucide="arrow-up-right" class="w-5 h-5"></i>
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span class="text-[11px] font-black uppercase text-red-400 tracking-wider">Sangria</span>
+                    <span class="text-[10px] text-zinc-500 font-bold">• 13:47:12</span>
+                  </div>
+                  <div class="text-sm font-black text-white truncate mt-1">Despesa Gasolina / Terceirizado</div>
+                </div>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <div class="mono font-black text-red-400 text-lg leading-tight">-R$ 50,00</div>
+                <div class="flex items-center justify-end gap-2 mt-1">
+                  <button class="p-1.5 text-zinc-500 hover:text-zinc-300"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                  <button class="p-1.5 text-zinc-500 hover:text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- =================================================================== -->
+      <!-- 4. BARRA FLUTUANTE OFICIAL (COM ABA DINHEIRO ATIVA) -->
+      <!-- =================================================================== -->
+      <div class="absolute bottom-6 left-0 right-0 px-3 z-50 flex items-center justify-center pointer-events-auto">
+        <div class="bg-[#141418]/95 backdrop-blur-2xl border border-zinc-700/80 rounded-full p-1.5 px-2 flex items-center gap-1 shadow-[0_20px_50px_rgba(0,0,0,0.95)]">
+          <button class="h-10 w-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white"><i data-lucide="layout-dashboard" class="w-4 h-4"></i></button>
+          <button class="flex items-center gap-2 py-2 px-4 rounded-full bg-white text-zinc-950 shadow-md font-black">
+            <i data-lucide="banknote" class="w-4 h-4 stroke-[2.5]"></i>
+            <span class="text-[10.5px] uppercase tracking-tight font-sans">Dinheiro</span>
+          </button>
+          <button class="h-10 w-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white"><i data-lucide="credit-card" class="w-4 h-4"></i></button>
+          <button class="h-10 w-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white"><i data-lucide="building-2" class="w-4 h-4"></i></button>
+          <button class="h-10 w-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white relative">
+            <i data-lucide="check-square" class="w-4 h-4"></i>
+            <span class="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-blue-500 text-[8.5px] font-black text-white shadow-sm">22</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    let mode = 'dinheiro';
+    let isTrocoOpen = false;
+
+    function setMode(m) {
+      mode = m;
+      const subtipos = document.getElementById('subtipos-box');
+      const boxVinculo = document.getElementById('box-vinculo');
+      const boxMulti = document.getElementById('box-multi-linhas');
+      const boxValor = document.getElementById('box-valor-padrao');
+      const colContrato = document.getElementById('col-contrato');
+      const colDesc = document.getElementById('col-desc');
+      const lblDesc = document.getElementById('lbl-desc');
+      const lblValor = document.getElementById('lbl-valor');
+      const btnSalvar = document.getElementById('btn-salvar');
+      const txtSalvar = document.getElementById('txt-salvar');
+      const terminal = document.getElementById('terminal-card');
+
+      document.querySelectorAll('.mode-tab').forEach(b => {
+        b.className = 'mode-tab h-12 rounded-2xl border flex items-center justify-center gap-2 transition-all bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-white font-black text-xs uppercase';
+      });
+
+      // Abas secundárias
+      document.getElementById('tab-compra_vista').className = 'mode-tab h-10 rounded-xl border flex items-center justify-center gap-1.5 transition-all bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-white font-black text-[11px] uppercase';
+      document.getElementById('tab-sangria').className = 'mode-tab h-10 rounded-xl border flex items-center justify-center gap-1.5 transition-all bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-red-400 font-black text-[11px] uppercase';
+      document.getElementById('tab-cancelamento').className = 'mode-tab h-10 rounded-xl border flex items-center justify-center gap-1.5 transition-all bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-red-400 font-black text-[11px] uppercase';
+
+      const sel = document.getElementById('tab-' + m);
+
+      if (m === 'dinheiro') {
+        sel.className = 'mode-tab h-12 rounded-2xl border flex items-center justify-center gap-2 transition-all bg-white border-white text-zinc-950 font-black text-xs uppercase shadow-sm';
+        terminal.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+        lblValor.innerText = 'Valor do Sistema';
+        lblValor.className = 'text-[10px] font-black uppercase tracking-wider text-emerald-400';
+        btnSalvar.className = 'w-full h-14 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all';
+        txtSalvar.innerText = 'Registrar Lançamento';
+        lblDesc.innerText = 'Nome do Cliente / Descrição';
+        subtipos.classList.add('hidden');
+        boxVinculo.classList.add('hidden');
+        boxMulti.classList.add('hidden');
+        boxValor.classList.remove('hidden');
+        colContrato.classList.remove('hidden');
+        colDesc.className = 'col-span-3';
+      } else if (m === 'prestacao') {
+        sel.className = 'mode-tab h-12 rounded-2xl border flex items-center justify-center gap-2 transition-all bg-blue-500 border-blue-500 text-white font-black text-xs uppercase shadow-sm';
+        terminal.style.borderColor = 'rgba(59, 130, 246, 0.3)';
+        lblValor.innerText = 'Valor da Prestação';
+        lblValor.className = 'text-[10px] font-black uppercase tracking-wider text-blue-400';
+        btnSalvar.className = 'w-full h-14 rounded-2xl bg-blue-500 hover:bg-blue-400 text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all';
+        txtSalvar.innerText = 'Registrar Prestação';
+        lblDesc.innerText = 'Nome do Cliente';
+        subtipos.classList.remove('hidden');
+        boxVinculo.classList.add('hidden');
+        boxMulti.classList.add('hidden');
+        boxValor.classList.remove('hidden');
+        colContrato.classList.remove('hidden');
+        colDesc.className = 'col-span-3';
+      } else if (m === 'multiplo') {
+        sel.className = 'mode-tab h-12 rounded-2xl border flex items-center justify-center gap-2 transition-all bg-orange-500 border-orange-500 text-white font-black text-xs uppercase shadow-sm';
+        terminal.style.borderColor = 'rgba(249, 115, 22, 0.3)';
+        btnSalvar.className = 'w-full h-14 rounded-2xl bg-orange-500 hover:bg-orange-400 text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all';
+        txtSalvar.innerText = 'Registrar Pagamento Misto';
+        lblDesc.innerText = 'Nome do Cliente / Referência';
+        subtipos.classList.add('hidden');
+        boxVinculo.classList.add('hidden');
+        boxMulti.classList.remove('hidden');
+        boxValor.classList.add('hidden');
+        colContrato.classList.remove('hidden');
+        colDesc.className = 'col-span-3';
+      } else if (m === 'compra_vista') {
+        sel.className = 'mode-tab h-10 rounded-xl border flex items-center justify-center gap-1.5 transition-all bg-zinc-200 border-zinc-200 text-zinc-950 font-black text-[11px] uppercase shadow-sm';
+        terminal.style.borderColor = 'rgba(244, 244, 245, 0.3)';
+        lblValor.innerText = 'Valor da Venda';
+        lblValor.className = 'text-[10px] font-black uppercase tracking-wider text-zinc-300';
+        btnSalvar.className = 'w-full h-14 rounded-2xl bg-zinc-100 hover:bg-white text-zinc-950 font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all';
+        txtSalvar.innerText = 'Registrar Venda à Vista';
+        lblDesc.innerText = 'Produto / Descrição';
+        subtipos.classList.add('hidden');
+        boxVinculo.classList.add('hidden');
+        boxMulti.classList.add('hidden');
+        boxValor.classList.remove('hidden');
+        colContrato.classList.remove('hidden');
+        colDesc.className = 'col-span-3';
+      } else if (m === 'sangria') {
+        sel.className = 'mode-tab h-10 rounded-xl border flex items-center justify-center gap-1.5 transition-all bg-red-500 border-red-500 text-white font-black text-[11px] uppercase shadow-sm';
+        terminal.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+        lblValor.innerText = 'Valor Retirado da Gaveta';
+        lblValor.className = 'text-[10px] font-black uppercase tracking-wider text-red-400';
+        btnSalvar.className = 'w-full h-14 rounded-2xl bg-red-500 hover:bg-red-400 text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all';
+        txtSalvar.innerText = 'Confirmar Sangria / Retirada';
+        lblDesc.innerText = 'Motivo da Saída (ex: Despesa gasolina, Cofre)';
+        subtipos.classList.add('hidden');
+        boxVinculo.classList.add('hidden');
+        boxMulti.classList.add('hidden');
+        boxValor.classList.remove('hidden');
+        colContrato.classList.add('hidden');
+        colDesc.className = 'col-span-5';
+        document.getElementById('box-troco-expand').classList.add('hidden');
+      } else if (m === 'cancelamento') {
+        sel.className = 'mode-tab h-10 rounded-xl border flex items-center justify-center gap-1.5 transition-all bg-red-600 border-red-600 text-white font-black text-[11px] uppercase shadow-sm';
+        terminal.style.borderColor = 'rgba(220, 38, 38, 0.3)';
+        lblValor.innerText = 'Valor a Estornar';
+        lblValor.className = 'text-[10px] font-black uppercase tracking-wider text-red-400';
+        btnSalvar.className = 'w-full h-14 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all';
+        txtSalvar.innerText = 'Confirmar Estorno';
+        lblDesc.innerText = 'Motivo do Cancelamento';
+        subtipos.classList.add('hidden');
+        boxVinculo.classList.remove('hidden');
+        boxMulti.classList.add('hidden');
+        boxValor.classList.remove('hidden');
+        colContrato.classList.add('hidden');
+        colDesc.className = 'col-span-5';
+        document.getElementById('box-troco-expand').classList.add('hidden');
+      }
+    }
+
+    function setSub(s) {
+      document.getElementById('ipt-desc').value = s + ' / ';
+      document.getElementById('sub-reneg').className = s === 'Renegociação' ? 'h-10 rounded-xl text-xs font-black uppercase border border-blue-500 bg-blue-500 text-white shadow' : 'h-10 rounded-xl text-xs font-black uppercase border border-zinc-800 bg-[#09090c] text-zinc-400 hover:text-white';
+      document.getElementById('sub-quit').className = s === 'Quitação' ? 'h-10 rounded-xl text-xs font-black uppercase border border-blue-500 bg-blue-500 text-white shadow' : 'h-10 rounded-xl text-xs font-black uppercase border border-zinc-800 bg-[#09090c] text-zinc-400 hover:text-white';
+      document.getElementById('sub-ent').className = s === 'Entrada (Compra)' ? 'h-10 rounded-xl text-xs font-black uppercase border border-blue-500 bg-blue-500 text-white shadow' : 'h-10 rounded-xl text-xs font-black uppercase border border-zinc-800 bg-[#09090c] text-zinc-400 hover:text-white';
+    }
+
+    function toggleTroco() {
+      isTrocoOpen = !isTrocoOpen;
+      const box = document.getElementById('box-troco-expand');
+      const txt = document.getElementById('txt-toggle-troco');
+
+      if (isTrocoOpen) {
+        box.classList.remove('hidden');
+        txt.innerText = '- Ocultar Troco';
+      } else {
+        box.classList.add('hidden');
+        txt.innerText = '+ Adicionar Troco';
+      }
+    }
+
+    function recalc() {
+      const vSis = parseFloat(document.getElementById('ipt-valor').value.replace(',', '.')) || 0;
+      const vEnt = parseFloat(document.getElementById('ipt-entregue').value.replace(',', '.')) || 0;
+      const vDev = parseFloat(document.getElementById('ipt-devolvido').value.replace(',', '.')) || 0;
+
+      const ficou = vEnt - vDev;
+      const sobra = ficou - vSis;
+
+      document.getElementById('txt-gaveta').innerText = 'R$ ' + ficou.toFixed(2).replace('.', ',');
+
+      const sobraEl = document.getElementById('txt-sobra');
+      if (sobra > 0.001) {
+        sobraEl.innerText = '+ R$ ' + sobra.toFixed(2).replace('.', ',');
+        sobraEl.className = 'mono text-xl font-black text-emerald-300';
+      } else if (sobra < -0.001) {
+        sobraEl.innerText = '- R$ ' + Math.abs(sobra).toFixed(2).replace('.', ',');
+        sobraEl.className = 'mono text-xl font-black text-red-400';
+      } else {
+        sobraEl.innerText = 'R$ 0,00 (Exato)';
+        sobraEl.className = 'mono text-xl font-black text-blue-300';
+      }
+    }
+
+    function addMultiRow() {
+      const list = document.getElementById('multi-items');
+      const div = document.createElement('div');
+      div.className = 'grid grid-cols-12 gap-2 items-center';
+      div.innerHTML = `
+        <input type="text" placeholder="R$ 0,00" class="col-span-4 h-11 bg-[#09090c] border border-zinc-800 rounded-xl px-3 text-sm text-white mono font-bold" />
+        <input type="text" placeholder="Nome" class="col-span-5 h-11 bg-[#09090c] border border-zinc-800 rounded-xl px-3 text-xs text-white font-medium" />
+        <input type="text" placeholder="Contrato" class="col-span-3 h-11 bg-[#09090c] border border-zinc-800 rounded-xl px-2 text-xs text-center text-zinc-300 font-bold uppercase" />
+      `;
+      list.appendChild(div);
+    }
+
+    function salvar() {
+      alert('Lançamento Registrado com Sucesso!');
+    }
+
+    function filtrar(cat) {
+      document.querySelectorAll('#flt-todos, #flt-dinheiro, #flt-prestacao, #flt-sangria').forEach(b => {
+        b.className = 'h-10 px-4 rounded-xl text-xs font-black uppercase bg-[#121216] border border-zinc-800 text-zinc-400 hover:text-white transition-all flex-shrink-0';
+      });
+      document.getElementById('flt-' + cat).className = 'h-10 px-4 rounded-xl text-xs font-black uppercase bg-zinc-200 text-zinc-950 shadow transition-all flex-shrink-0';
+    }
+
+    function buscar(q) {
+      const query = q.toLowerCase();
+      document.querySelectorAll('.card-item').forEach(c => {
+        const t = c.innerText.toLowerCase();
+        c.style.display = t.includes(query) ? 'flex' : 'none';
+      });
+    }
+
+    lucide.createIcons();
+  </script>
+</body>
+</html>

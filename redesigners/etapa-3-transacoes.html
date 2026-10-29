@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Redesign da Tela de Dinheiro / Transações</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 420px;
+      height: 870px;
+      border-radius: 40px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-6xl mx-auto pb-28">
+
+  <!-- CABEÇALHO DA APRESENTAÇÃO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      💵 ETAPA 3 • TRANSAÇÕES / DINHEIRO
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      Redesign da Tela de Dinheiro
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-2xl mx-auto font-medium">
+      Diagnóstico completo dos problemas atuais e novo design compacto, hierárquico e veloz para o operador:
+    </p>
+
+    <!-- ALTERNADOR DE MODO NO PROTÓTIPO -->
+    <div class="mt-4 flex items-center justify-center gap-2 max-w-md mx-auto bg-[#121216] p-1.5 rounded-2xl border border-zinc-800">
+      <button onclick="setTab('novo')" id="btn-novo" class="flex-1 py-2 rounded-xl text-xs font-black bg-emerald-500 text-zinc-950 shadow transition-all">
+        + Formulário de Lançamento
+      </button>
+      <button onclick="setTab('historico')" id="btn-historico" class="flex-1 py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        📋 Histórico & Busca (22)
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER DO CELULAR -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- CABEÇALHO DO APP -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="text-base font-black uppercase tracking-tighter text-white">DINHEIRO</span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span class="text-[11px] font-black text-zinc-400 uppercase">27 AGO</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <div class="px-2.5 py-1 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center gap-1.5">
+            <i data-lucide="banknote" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span class="mono text-xs font-black text-emerald-300">R$ 1.051,00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CORPO DA TELA COM SCROLL -->
+      <div class="flex-1 overflow-y-auto p-3.5 space-y-3.5 relative pb-36">
+
+        <!-- 1. MINI DOCK DE RESUMO RÁPIDO -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-3 px-4 flex items-center justify-between shadow-lg">
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+              <i data-lucide="arrow-down-left" class="w-4.5 h-4.5"></i>
+            </div>
+            <div>
+              <div class="text-[10px] font-bold text-zinc-400 uppercase">Entradas</div>
+              <div class="mono text-base font-black text-emerald-300">+R$ 1.051,00</div>
+            </div>
+          </div>
+          <div class="w-px h-7 bg-zinc-800"></div>
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400">
+              <i data-lucide="arrow-up-right" class="w-4.5 h-4.5"></i>
+            </div>
+            <div>
+              <div class="text-[10px] font-bold text-zinc-400 uppercase">Sangrias</div>
+              <div class="mono text-base font-black text-red-400">-R$ 0,00</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. FORMULÁRIO DE LANÇAMENTO COMPACTO & PROFISSIONAL -->
+        <div id="form-container" class="bg-[#121216] border border-zinc-800/80 rounded-[28px] p-4 shadow-xl space-y-3.5">
+          
+          <!-- Tipo de Operação: Entrada vs Sangria -->
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-black uppercase text-zinc-400 tracking-wider">Novo Lançamento</span>
+            <div class="flex items-center gap-1.5 bg-[#09090c] p-1 rounded-xl border border-zinc-800">
+              <button onclick="setNatureza('entrada')" id="btn-nat-ent" class="px-3 py-1 rounded-lg text-[10px] font-black uppercase bg-emerald-500 text-zinc-950 shadow transition-all">
+                + Entrada
+              </button>
+              <button onclick="setNatureza('sangria')" id="btn-nat-san" class="px-3 py-1 rounded-lg text-[10px] font-bold uppercase text-zinc-400 hover:text-red-400 transition-all">
+                - Sangria
+              </button>
+            </div>
+          </div>
+
+          <!-- Categorias Rápidas em Linha -->
+          <div class="grid grid-cols-3 gap-1.5">
+            <button onclick="setCat('dinheiro')" id="cat-dinheiro" class="py-2 px-2 rounded-xl text-xs font-black bg-zinc-100 text-zinc-950 flex items-center justify-center gap-1.5 border border-white transition-all">
+              <i data-lucide="banknote" class="w-3.5 h-3.5"></i>
+              <span>Dinheiro</span>
+            </button>
+            <button onclick="setCat('entrada_prestacao')" id="cat-entrada_prestacao" class="py-2 px-2 rounded-xl text-xs font-bold text-zinc-400 bg-zinc-900 border border-zinc-800 flex items-center justify-center gap-1.5 hover:text-white transition-all">
+              <i data-lucide="arrow-down-circle" class="w-3.5 h-3.5 text-blue-400"></i>
+              <span>Prestação</span>
+            </button>
+            <button onclick="setCat('compra_vista')" id="cat-compra_vista" class="py-2 px-2 rounded-xl text-xs font-bold text-zinc-400 bg-zinc-900 border border-zinc-800 flex items-center justify-center gap-1.5 hover:text-white transition-all">
+              <i data-lucide="shopping-cart" class="w-3.5 h-3.5 text-zinc-300"></i>
+              <span>À Vista</span>
+            </button>
+          </div>
+
+          <!-- Input Hero do Valor -->
+          <div class="bg-[#09090c] p-3 px-4 rounded-2xl border border-zinc-800 flex items-center justify-between">
+            <div class="flex-1">
+              <div class="text-[10px] font-bold uppercase text-zinc-500">Valor do Lançamento</div>
+              <div class="flex items-baseline">
+                <span class="text-zinc-500 font-bold text-sm mr-1">R$</span>
+                <input id="inp-valor" type="text" value="0,00" class="bg-transparent mono text-2xl font-black text-emerald-400 focus:outline-none w-full" placeholder="0,00" />
+              </div>
+            </div>
+            <!-- Botão Rápido de Calculadora de Troco -->
+            <button onclick="toggleCalc()" id="btn-calc" class="h-9 px-3 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center gap-1.5 text-zinc-400 hover:text-purple-300 text-xs font-bold">
+              <i data-lucide="calculator" class="w-4 h-4"></i>
+              <span class="text-[10px] uppercase font-black">Troco</span>
+            </button>
+          </div>
+
+          <!-- Calculadora de Troco (Ocultável) -->
+          <div id="calc-box" class="hidden bg-[#14121a] p-3 rounded-2xl border border-purple-500/30 grid grid-cols-2 gap-2">
+            <div>
+              <div class="text-[9px] font-bold text-purple-300 uppercase">Recebido do Cliente</div>
+              <input type="text" placeholder="R$ 0,00" class="bg-[#09090c] border border-purple-500/20 rounded-xl px-3 py-2 text-white mono font-black text-sm w-full mt-1" />
+            </div>
+            <div>
+              <div class="text-[9px] font-bold text-purple-300 uppercase">Troco Devolvido</div>
+              <input type="text" placeholder="R$ 0,00" class="bg-[#09090c] border border-purple-500/20 rounded-xl px-3 py-2 text-white mono font-black text-sm w-full mt-1" />
+            </div>
+          </div>
+
+          <!-- Linha de Descrição & Contrato -->
+          <div class="grid grid-cols-5 gap-2">
+            <div class="col-span-3">
+              <input type="text" placeholder="Descrição (ex: Venda Balcão)" class="w-full bg-[#09090c] border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-medium focus:outline-none focus:border-zinc-700" />
+            </div>
+            <div class="col-span-2">
+              <input type="text" placeholder="Nº Contrato" class="w-full bg-[#09090c] border border-zinc-800 rounded-xl px-3.5 py-2.5 text-xs text-center text-zinc-300 font-bold focus:outline-none focus:border-zinc-700 uppercase" />
+            </div>
+          </div>
+
+          <!-- Botão Salvar Principal -->
+          <button onclick="alert('Lançamento Registrado com Sucesso!')" class="w-full py-3.5 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all">
+            <i data-lucide="check" class="w-4 h-4 stroke-[3]"></i>
+            <span>Registrar Lançamento</span>
+          </button>
+
+        </div>
+
+        <!-- 3. BARRA DE BUSCA & FILTRO COMPACTA -->
+        <div class="flex items-center gap-2">
+          <div class="flex-1 bg-[#121216] border border-zinc-800/80 rounded-xl px-3 py-2 flex items-center gap-2">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-500"></i>
+            <input type="text" placeholder="Buscar por valor, descrição..." class="bg-transparent text-xs text-white focus:outline-none w-full font-medium" />
+          </div>
+          <div class="px-2.5 py-2 rounded-xl bg-[#121216] border border-zinc-800 text-[10px] font-black uppercase text-zinc-400">
+            22 Lançamentos
+          </div>
+        </div>
+
+        <!-- 4. LISTAGEM DE LANÇAMENTOS LAPIDADA (PROPORÇÕES 36PX) -->
+        <div class="space-y-2">
+          
+          <!-- Item 1: Entrada em Dinheiro -->
+          <div class="bg-[#121216] border border-zinc-800/80 hover:border-zinc-700 rounded-2xl p-3 flex items-center justify-between shadow-sm transition-all">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="h-9 w-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                <i data-lucide="banknote" class="w-4.5 h-4.5"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[10px] font-black uppercase text-emerald-400 tracking-wider">Dinheiro</span>
+                  <span class="text-[9px] text-zinc-500 font-bold">• 14:32</span>
+                  <span class="text-[8px] font-black bg-zinc-800 text-zinc-400 px-1.5 py-0.2 rounded border border-zinc-700">#40921</span>
+                </div>
+                <div class="text-xs font-bold text-white truncate mt-0.5">Venda Balcão Balas</div>
+              </div>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <div class="mono font-black text-emerald-400 text-base leading-tight">+R$ 150,00</div>
+              <div class="flex items-center justify-end gap-1.5 mt-1">
+                <button class="p-1 text-zinc-500 hover:text-zinc-300"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                <button class="p-1 text-zinc-500 hover:text-red-400"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Item 2: Entrada Prestação com Sobra -->
+          <div class="bg-[#121216] border border-zinc-800/80 hover:border-zinc-700 rounded-2xl p-3 flex items-center justify-between shadow-sm transition-all">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="h-9 w-9 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400 flex-shrink-0">
+                <i data-lucide="arrow-down-circle" class="w-4.5 h-4.5"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[10px] font-black uppercase text-blue-400 tracking-wider">Prestação</span>
+                  <span class="text-[9px] text-zinc-500 font-bold">• 13:15</span>
+                  <span class="text-[8px] font-black bg-emerald-500/15 text-emerald-400 px-1.5 py-0.2 rounded border border-emerald-500/30">+ R$ 0,05 Sobra</span>
+                </div>
+                <div class="text-xs font-bold text-white truncate mt-0.5">Renegociação João Silva</div>
+              </div>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <div class="mono font-black text-blue-300 text-base leading-tight">+R$ 280,00</div>
+              <div class="flex items-center justify-end gap-1.5 mt-1">
+                <button class="p-1 text-zinc-500 hover:text-zinc-300"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                <button class="p-1 text-zinc-500 hover:text-red-400"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Item 3: Sangria / Retirada -->
+          <div class="bg-[#121216] border border-red-500/20 hover:border-red-500/40 rounded-2xl p-3 flex items-center justify-between shadow-sm transition-all">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="h-9 w-9 rounded-xl bg-red-500/15 border border-red-500/30 flex items-center justify-center text-red-400 flex-shrink-0">
+                <i data-lucide="arrow-up-right" class="w-4.5 h-4.5"></i>
+              </div>
+              <div class="min-w-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[10px] font-black uppercase text-red-400 tracking-wider">Sangria</span>
+                  <span class="text-[9px] text-zinc-500 font-bold">• 11:40</span>
+                </div>
+                <div class="text-xs font-bold text-white truncate mt-0.5">Sangria Cofre Retirada</div>
+              </div>
+            </div>
+            <div class="text-right flex-shrink-0">
+              <div class="mono font-black text-red-400 text-base leading-tight">-R$ 500,00</div>
+              <div class="flex items-center justify-end gap-1.5 mt-1">
+                <button class="p-1 text-zinc-500 hover:text-zinc-300"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                <button class="p-1 text-zinc-500 hover:text-red-400"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- BARRA FLUTUANTE OFICIAL (DINHEIRO ATIVO) -->
+      <div class="absolute bottom-6 left-0 right-0 px-3 z-50 flex items-center justify-center pointer-events-auto">
+        <div class="bg-[#141418]/95 backdrop-blur-2xl border border-zinc-700/80 rounded-full p-1.5 px-2 flex items-center gap-1 shadow-[0_20px_50px_rgba(0,0,0,0.95)]">
+          
+          <button class="h-10 w-10 rounded-full flex items-center justify-center text-zinc-400">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Dinheiro Ativo Expandido -->
+          <button class="flex items-center gap-2 py-2 px-4 rounded-full bg-white text-zinc-950 shadow-md font-black">
+            <i data-lucide="banknote" class="w-4 h-4 stroke-[2.5]"></i>
+            <span class="text-[10.5px] uppercase tracking-tight font-sans">Dinheiro</span>
+          </button>
+
+          <button class="h-10 w-10 rounded-full flex items-center justify-center text-zinc-400">
+            <i data-lucide="credit-card" class="w-4 h-4"></i>
+          </button>
+
+          <button class="h-10 w-10 rounded-full flex items-center justify-center text-zinc-400">
+            <i data-lucide="building-2" class="w-4 h-4"></i>
+          </button>
+
+          <button class="h-10 w-10 rounded-full flex items-center justify-center text-zinc-400 relative">
+            <i data-lucide="check-square" class="w-4 h-4"></i>
+            <span class="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-blue-500 text-[8.5px] font-black text-white shadow-sm">22</span>
+          </button>
+
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ANÁLISE E DIAGNÓSTICO -->
+    <div class="mt-6 max-w-xl text-left bg-[#121216] p-5 rounded-2xl border border-zinc-800 text-xs text-zinc-300 space-y-2">
+      <div class="font-black text-white uppercase text-sm mb-2">📋 Diagnóstico da Tela de Dinheiro / Transações:</div>
+      <div><b>1. Formulário Compacto:</b> Reduzido de 600px para apenas ~240px, permitindo ver os lançamentos sem rolar tanto.</div>
+      <div><b>2. Segmented Control Rápido:</b> Troca instantânea entre <code>+ Entrada</code> e <code>- Sangria</code>.</div>
+      <div><b>3. Cards de Lançamento em 36px:</b> Ícones padronizados de 36px, alinhamento perfeito de valores e badges.</div>
+      <div><b>4. Calculadora Ocultável:</b> A ferramenta de troco abre apenas sob demanda com o botão "Troco".</div>
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    let isCalcOpen = false;
+    function toggleCalc() {
+      isCalcOpen = !isCalcOpen;
+      const box = document.getElementById('calc-box');
+      const btn = document.getElementById('btn-calc');
+      if (isCalcOpen) {
+        box.classList.remove('hidden');
+        btn.className = 'h-9 px-3 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center gap-1.5 text-purple-300 text-xs font-bold';
+      } else {
+        box.classList.add('hidden');
+        btn.className = 'h-9 px-3 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center gap-1.5 text-zinc-400 hover:text-purple-300 text-xs font-bold';
+      }
+    }
+
+    function setNatureza(nat) {
+      const btnEnt = document.getElementById('btn-nat-ent');
+      const btnSan = document.getElementById('btn-nat-san');
+      const inp = document.getElementById('inp-valor');
+      if (nat === 'entrada') {
+        btnEnt.className = 'px-3 py-1 rounded-lg text-[10px] font-black uppercase bg-emerald-500 text-zinc-950 shadow transition-all';
+        btnSan.className = 'px-3 py-1 rounded-lg text-[10px] font-bold uppercase text-zinc-400 hover:text-red-400 transition-all';
+        inp.className = 'bg-transparent mono text-2xl font-black text-emerald-400 focus:outline-none w-full';
+      } else {
+        btnSan.className = 'px-3 py-1 rounded-lg text-[10px] font-black uppercase bg-red-500 text-white shadow transition-all';
+        btnEnt.className = 'px-3 py-1 rounded-lg text-[10px] font-bold uppercase text-zinc-400 hover:text-emerald-400 transition-all';
+        inp.className = 'bg-transparent mono text-2xl font-black text-red-400 focus:outline-none w-full';
+      }
+    }
+
+    function setCat(cat) {
+      ['dinheiro', 'entrada_prestacao', 'compra_vista'].forEach(c => {
+        const btn = document.getElementById('cat-' + c);
+        if (c === cat) {
+          btn.className = 'py-2 px-2 rounded-xl text-xs font-black bg-zinc-100 text-zinc-950 flex items-center justify-center gap-1.5 border border-white transition-all';
+        } else {
+          btn.className = 'py-2 px-2 rounded-xl text-xs font-bold text-zinc-400 bg-zinc-900 border border-zinc-800 flex items-center justify-center gap-1.5 hover:text-white transition-all';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

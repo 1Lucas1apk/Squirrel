@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Modelos de Animação de Envio de Imagens</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Press+Start+2P&family=JetBrains+Mono:wght@500;700;800;900&family=VT323&display=swap');
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #060608;
+      color: #f4f4f5;
+    }
+
+    .pixel-font {
+      font-family: 'Press Start 2P', monospace;
+    }
+
+    .vt-font {
+      font-family: 'VT323', monospace;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Pixel art rendering crisp */
+    .pixelated {
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+    }
+
+    /* Moldura Mobile */
+    .mobile-frame {
+      width: 100%;
+      max-width: 360px;
+      min-height: 640px;
+      border-radius: 36px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #0a0a0e;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* =========================================================================
+       ANIMAÇÕES CSS REAIS
+       ========================================================================= */
+
+    /* 1. Scanline CRT */
+    @keyframes crtScan {
+      0% { top: -5%; opacity: 0.8; }
+      50% { opacity: 1; }
+      100% { top: 105%; opacity: 0.8; }
+    }
+    .anim-crt-scan {
+      animation: crtScan 1.6s ease-in-out infinite;
+    }
+
+    /* 2. Cyber Laser Sweep */
+    @keyframes cyberLaser {
+      0%, 100% { top: 2%; opacity: 0.7; transform: scaleX(0.98); }
+      50% { top: 96%; opacity: 1; transform: scaleX(1.02); }
+    }
+    .anim-cyber-laser {
+      animation: cyberLaser 1.8s ease-in-out infinite;
+    }
+
+    /* 3. Esquilinho Pixel Breathing & Tail */
+    @keyframes pixelTailWag {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(-10deg) translateY(-2px); }
+    }
+    @keyframes pixelBreathe {
+      0%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(0.92); }
+    }
+    .anim-pixel-tail {
+      animation: pixelTailWag 0.9s ease-in-out infinite;
+      transform-origin: bottom right;
+    }
+    .anim-pixel-breathe {
+      animation: pixelBreathe 0.9s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+
+    /* 4. Jetpack Floating */
+    @keyframes jetpackFloat {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(-3deg); }
+    }
+    @keyframes jetpackFire {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.3, 1.6); opacity: 1; }
+    }
+    .anim-jetpack-float {
+      animation: jetpackFloat 1.2s ease-in-out infinite;
+    }
+    .anim-jetpack-fire {
+      animation: jetpackFire 0.25s ease-in-out infinite alternate;
+      transform-origin: top center;
+    }
+
+    /* 5. Hologram Quantum Ring Rotation */
+    @keyframes ringRotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes ringPulse {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.1); opacity: 1; }
+    }
+    .anim-ring-rotate {
+      animation: ringRotate 3s linear infinite;
+    }
+    .anim-ring-pulse {
+      animation: ringPulse 1.4s ease-in-out infinite;
+    }
+
+    /* 6. Matrix Code Rain Stream */
+    @keyframes matrixScroll {
+      0% { background-position-y: 0px; }
+      100% { background-position-y: 200px; }
+    }
+    .matrix-bg {
+      background-image: repeating-linear-gradient(0deg, rgba(34, 197, 94, 0.15) 0px, transparent 2px, transparent 4px);
+      background-size: 100% 6px;
+      animation: matrixScroll 4s linear infinite;
+    }
+
+    /* 7. Blinking Cursor */
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+    .anim-blink {
+      animation: blink 0.8s infinite;
+    }
+
+    /* 8. Success Pop */
+    @keyframes successPop {
+      0% { transform: scale(0.6); opacity: 0; }
+      70% { transform: scale(1.15); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .anim-success-pop {
+      animation: successPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8">
+
+  <!-- =========================================================================
+       CABEÇALHO & CONTROLES GLOBAIS DE INTERATIVIDADE
+       ========================================================================= -->
+  <div class="max-w-7xl mx-auto mb-8">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 bg-[#0f1015] border border-zinc-800 rounded-3xl shadow-2xl">
+      <div class="flex items-center gap-4">
+        <div class="h-14 w-14 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl shadow-lg">
+          🐿️
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-400 font-mono text-[11px] font-black uppercase">
+              Laboratório de Design
+            </span>
+            <span class="text-xs text-zinc-500">•</span>
+            <span class="text-xs text-zinc-400 font-mono">Upload Animation Showcase</span>
+          </div>
+          <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight mt-1">
+            Modelos de Animação para Envio de Imagens
+          </h1>
+          <p class="text-sm text-zinc-400 mt-0.5">
+            Teste os 5 conceitos visuais com física em tempo real, scanlines e arte pixel.
+          </p>
+        </div>
+      </div>
+
+      <!-- Barra de Controle Interativo Global -->
+      <div class="flex flex-wrap items-center gap-3 p-2 bg-[#09090c] border border-zinc-800 rounded-2xl">
+        <button id="btnPlay" onclick="toggleUploadSimulation()" class="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-black uppercase text-xs tracking-wider flex items-center gap-2 shadow-lg transition active:scale-95">
+          <span id="playIcon">▶</span>
+          <span id="playText">Simular Envio</span>
+        </button>
+
+        <button onclick="resetSimulation()" class="px-4 py-3 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 font-black uppercase text-xs tracking-wider flex items-center gap-2 transition active:scale-95">
+          <span>↺</span>
+          <span>Resetar</span>
+        </button>
+
+        <div class="flex items-center gap-2 px-3 py-2 bg-zinc-900/60 rounded-xl border border-zinc-800">
+          <span class="text-[11px] font-mono text-zinc-400 font-bold">Progresso:</span>
+          <input id="rangeProgress" type="range" min="0" max="100" value="45" oninput="setManualProgress(this.value)" class="w-28 accent-amber-500 cursor-pointer">
+          <span id="labelGlobalProgress" class="text-xs font-mono font-black text-amber-400 min-w-[36px] text-right">45%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       GRID DE MODELOS DE ANIMAÇÃO
+       ========================================================================= -->
+  <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+    <!-- =========================================================================
+         MODELO 1: 👾 RETRO ARCADE PIXEL ART (8-BIT CRT BEAM)
+         ========================================================================= -->
+    <div class="flex flex-col items-center">
+      <div class="w-full mb-3 flex items-center justify-between px-2">
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[11px] font-mono font-bold">
+            MODELO 1
+          </span>
+          <h2 class="text-sm font-black uppercase tracking-wider text-white">Pixel Arcade 8-Bit</h2>
+        </div>
+        <span class="text-[11px] font-mono text-emerald-400 font-bold">CRT Scanline</span>
+      </div>
+
+      <div class="mobile-frame p-4 flex flex-col justify-between border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.15)]">
+        
+        <!-- Header do Chat Simulado -->
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+          <div class="flex items-center gap-2.5">
+            <div class="h-9 w-9 bg-emerald-500/20 border border-emerald-500/40 rounded-xl flex items-center justify-center text-sm font-black text-emerald-300">
+              SQ
+            </div>
+            <div>
+              <div class="text-xs font-black uppercase text-white">Mural da Loja</div>
+              <div class="text-[10px] font-mono text-emerald-400">@servidor_drive</div>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono text-zinc-500">14:40</span>
+        </div>
+
+        <!-- Card de Upload em Pixel Art -->
+        <div class="my-auto py-2">
+          <div class="bg-[#12141a] border-4 border-[#34d399] p-3.5 relative shadow-[0_0_20px_rgba(52,211,153,0.25)]">
+            
+            <!-- Cantos Pixelados -->
+            <div class="absolute -top-1.5 -left-1.5 w-3 h-3 bg-[#34d399]"></div>
+            <div class="absolute -top-1.5 -right-1.5 w-3 h-3 bg-[#34d399]"></div>
+            <div class="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-[#34d399]"></div>
+            <div class="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-[#34d399]"></div>
+
+            <!-- Topo do Card Retrô -->
+            <div class="flex items-center justify-between pb-2 mb-2 border-b-2 border-dashed border-emerald-500/40">
+              <span class="pixel-font text-[9px] text-emerald-400 uppercase tracking-widest">[SQ_PIXEL_DRIVE]</span>
+              <span id="p1Status" class="pixel-font text-[8px] text-emerald-300">UPLOADING...</span>
+            </div>
+
+            <!-- Imagem com Scanline CRT e Mascote -->
+            <div class="w-full h-44 bg-black relative overflow-hidden border-2 border-emerald-500/30">
+              <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80" class="w-full h-full object-cover opacity-85 pixelated" alt="Preview">
+
+              <!-- Scanline CRT Verde -->
+              <div id="p1Scanline" class="absolute left-0 right-0 h-2 bg-emerald-400/70 shadow-[0_0_12px_#34d399] anim-crt-scan"></div>
+
+              <!-- Mascote Esquilinho Pixel Art (SVG) -->
+              <div class="absolute bottom-2 left-2 bg-black/85 border border-emerald-400 px-2 py-1 flex items-center gap-1.5">
+                <svg class="w-6 h-6 anim-pixel-breathe" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <!-- Rabo Pixel -->
+                  <path class="anim-pixel-tail" d="M18 16H20V12H22V6H20V4H16V6H14V10H16V14H18V16Z" fill="#f59e0b"/>
+                  <!-- Corpo Pixel -->
+                  <path d="M6 18H14V10H12V8H8V10H6V18Z" fill="#d97706"/>
+                  <!-- Olhinho Pixel -->
+                  <rect x="9" y="10" width="2" height="2" fill="#ffffff"/>
+                  <rect x="10" y="10" width="1" height="1" fill="#000000"/>
+                  <!-- Bochecha/Focinho -->
+                  <rect x="6" y="12" width="2" height="2" fill="#fbbf24"/>
+                  <!-- Patinhas -->
+                  <rect x="6" y="18" width="3" height="2" fill="#78350f"/>
+                  <rect x="11" y="18" width="3" height="2" fill="#78350f"/>
+                  <!-- Disquete / Noz -->
+                  <rect x="4" y="14" width="3" height="3" fill="#34d399"/>
+                </svg>
+                <div class="pixel-font text-[8.5px] text-emerald-300">
+                  <span id="p1LabelPct">45</span>%
+                </div>
+              </div>
+            </div>
+
+            <!-- Barra de Blocos de Pixel [██████░░░░] -->
+            <div class="mt-3">
+              <div class="flex items-center justify-between mb-1 text-[9.5px] font-mono font-bold text-emerald-400">
+                <span>CHUNKS: <span id="p1Chunks">920</span>/2048 KB</span>
+                <span class="pixel-font text-[9px]"><span id="p1BarPct">45</span>%</span>
+              </div>
+              <div id="p1BlockContainer" class="w-full h-4 bg-black border border-emerald-500/50 p-0.5 flex gap-0.5">
+                <!-- 20 blocos de pixel gerados dinamicamente -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Rodapé do Card -->
+        <div class="p-2 bg-[#121216] rounded-xl border border-zinc-800 text-[11px] text-zinc-400 font-mono text-center">
+          Estilo: <span class="text-emerald-400 font-bold">Chiptune Retro 8-Bit</span>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- =========================================================================
+         MODELO 2: ⚡ CYBERPUNK QUANTUM BEAM (HOLOGRAPHIC SCANNER)
+         ========================================================================= -->
+    <div class="flex flex-col items-center">
+      <div class="w-full mb-3 flex items-center justify-between px-2">
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 text-[11px] font-mono font-bold">
+            MODELO 2
+          </span>
+          <h2 class="text-sm font-black uppercase tracking-wider text-white">Quantum Cyber Laser</h2>
+        </div>
+        <span class="text-[11px] font-mono text-cyan-400 font-bold">HUD Matrix</span>
+      </div>
+
+      <div class="mobile-frame p-4 flex flex-col justify-between border-cyan-500/30 shadow-[0_0_30px_rgba(6,182,212,0.15)]">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+          <div class="flex items-center gap-2.5">
+            <div class="h-9 w-9 bg-cyan-500/20 border border-cyan-500/40 rounded-xl flex items-center justify-center text-sm font-black text-cyan-300">
+              ⚡
+            </div>
+            <div>
+              <div class="text-xs font-black uppercase text-white">Canal Direto</div>
+              <div class="text-[10px] font-mono text-cyan-400">@quantum_node</div>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono text-zinc-500">14:40</span>
+        </div>
+
+        <!-- Card Cyberpunk -->
+        <div class="my-auto py-2">
+          <div class="bg-[#0b1017] border-2 border-cyan-500/50 rounded-3xl p-4 shadow-[0_0_30px_rgba(6,182,212,0.2)] relative overflow-hidden">
+            
+            <!-- Grid Topo HUD -->
+            <div class="flex items-center justify-between pb-2 border-b border-cyan-500/20">
+              <div class="flex items-center gap-1.5">
+                <span class="h-2 w-2 rounded-full bg-cyan-400 animate-ping"></span>
+                <span class="text-[10px] font-mono font-black text-cyan-300 tracking-wider">BEAM PROTOCOL v3.9</span>
+              </div>
+              <span id="p2HudHex" class="text-[9.5px] font-mono text-cyan-400/80">0x7F4A...</span>
+            </div>
+
+            <!-- Imagem com Laser Holográfico e HUD Circular -->
+            <div class="w-full h-44 rounded-2xl bg-black my-3 relative overflow-hidden border border-cyan-500/40">
+              <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80" class="w-full h-full object-cover opacity-80" alt="Preview">
+
+              <!-- Laser Sweep Neon -->
+              <div id="p2Laser" class="absolute left-0 right-0 h-1.5 bg-cyan-300 shadow-[0_0_15px_#22d3ee] anim-cyber-laser"></div>
+
+              <!-- HUD Circular Holográfico no Centro -->
+              <div id="p2HudCenter" class="absolute inset-0 flex items-center justify-center bg-black/35">
+                <div class="w-16 h-16 rounded-full border-2 border-dashed border-cyan-400 flex items-center justify-center anim-ring-rotate shadow-[0_0_15px_#22d3ee]">
+                  <div class="w-11 h-11 rounded-full border-2 border-cyan-300 bg-cyan-500/20 flex items-center justify-center anim-ring-pulse">
+                    <span id="p2CenterPct" class="text-[11px] font-mono font-black text-white">45%</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Overlay Criptográfico de Sucesso -->
+              <div id="p2SuccessOverlay" class="absolute inset-0 bg-black/75 flex items-center justify-center hidden">
+                <div class="px-4 py-3 rounded-2xl bg-cyan-500/20 border-2 border-cyan-400 text-center anim-success-pop shadow-[0_0_25px_rgba(34,211,238,0.5)]">
+                  <div class="text-xs font-mono font-black text-cyan-300">🔒 ENCRYPTED & SYNCED</div>
+                  <div class="text-[9px] font-mono text-zinc-300 mt-0.5">SHA-256 VERIFIED • DRIVE OK</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Barra Linear Neon e Status -->
+            <div>
+              <div class="flex items-center justify-between mb-1 text-[10px] font-mono font-bold">
+                <span class="text-cyan-400/80">BUFFER TRANSMISSION</span>
+                <span id="p2BarPct" class="text-cyan-300">45%</span>
+              </div>
+              <div class="w-full h-2.5 rounded-full bg-zinc-900 border border-cyan-500/40 overflow-hidden p-0.5">
+                <div id="p2BarFill" style="width: 45%" class="h-full bg-cyan-400 rounded-full shadow-[0_0_10px_#22d3ee] transition-all duration-150"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Rodapé -->
+        <div class="p-2 bg-[#121216] rounded-xl border border-zinc-800 text-[11px] text-zinc-400 font-mono text-center">
+          Estilo: <span class="text-cyan-400 font-bold">Holographic HUD Matrix</span>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- =========================================================================
+         MODELO 3: 🚀 SQUIRREL JETPACK EXPRESS (MASCOTE 16-BIT)
+         ========================================================================= -->
+    <div class="flex flex-col items-center">
+      <div class="w-full mb-3 flex items-center justify-between px-2">
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/40 text-amber-400 text-[11px] font-mono font-bold">
+            MODELO 3
+          </span>
+          <h2 class="text-sm font-black uppercase tracking-wider text-white">Squirrel Jetpack</h2>
+        </div>
+        <span class="text-[11px] font-mono text-amber-400 font-bold">Playful 16-Bit</span>
+      </div>
+
+      <div class="mobile-frame p-4 flex flex-col justify-between border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.15)]">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+          <div class="flex items-center gap-2.5">
+            <div class="h-9 w-9 bg-amber-500/20 border border-amber-500/40 rounded-xl flex items-center justify-center text-sm font-black text-amber-300">
+              🚀
+            </div>
+            <div>
+              <div class="text-xs font-black uppercase text-white">Squirrel Express</div>
+              <div class="text-[10px] font-mono text-amber-400">@cloud_delivery</div>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono text-zinc-500">14:40</span>
+        </div>
+
+        <!-- Card Jetpack -->
+        <div class="my-auto py-2">
+          <div class="bg-[#17130c] border-2 border-amber-500/50 rounded-[32px] p-4 shadow-[0_0_30px_rgba(245,158,11,0.2)]">
+            
+            <div class="flex items-center justify-between pb-2 border-b border-amber-500/20">
+              <span class="text-xs font-black uppercase text-amber-300">Entrega de Mídia 🌰</span>
+              <span id="p3Pct" class="text-xs font-mono font-bold text-amber-400">45%</span>
+            </div>
+
+            <!-- Imagem com Mascote em Foguete Subindo -->
+            <div class="w-full h-44 rounded-2xl bg-black my-3 relative overflow-hidden border border-amber-500/30">
+              <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80" class="w-full h-full object-cover opacity-75" alt="Preview">
+
+              <!-- Mascote com Jetpack Flutuante -->
+              <div id="p3JetpackContainer" class="absolute inset-0 flex items-center justify-center">
+                <div class="flex flex-col items-center anim-jetpack-float">
+                  <div class="h-16 w-16 rounded-full bg-amber-500/30 border-2 border-amber-400 flex items-center justify-center text-3xl shadow-[0_0_25px_#f59e0b]">
+                    <span id="p3MascotEmoji">🐿️</span>
+                  </div>
+                  <!-- Chamas do Jetpack -->
+                  <div id="p3Fire" class="w-4 h-5 bg-gradient-to-b from-amber-400 via-orange-500 to-transparent rounded-b-full anim-jetpack-fire -mt-1"></div>
+                  
+                  <div class="px-2 py-0.5 rounded-full bg-black/80 border border-amber-400/60 text-[10px] font-mono font-black text-amber-300 mt-1 shadow">
+                    💨 <span id="p3FlyingPct">45</span>%
+                  </div>
+                </div>
+              </div>
+
+              <!-- Overlay Dourado de Conclusão -->
+              <div id="p3SuccessOverlay" class="absolute inset-0 bg-black/75 flex items-center justify-center hidden">
+                <div class="px-5 py-3 rounded-2xl bg-amber-500 border-2 border-amber-300 text-center anim-success-pop shadow-2xl">
+                  <div class="text-sm font-black uppercase text-black">🏆 ENTREGA CONCLUÍDA!</div>
+                  <div class="text-[10px] font-bold text-amber-950 mt-0.5">Comprovante salvo no Google Drive</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Barra Dourada -->
+            <div>
+              <div class="w-full h-3 rounded-full bg-zinc-900 border border-amber-500/40 overflow-hidden p-0.5">
+                <div id="p3BarFill" style="width: 45%" class="h-full bg-gradient-to-r from-amber-500 to-amber-300 rounded-full shadow-[0_0_12px_#f59e0b] transition-all duration-150"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Rodapé -->
+        <div class="p-2 bg-[#121216] rounded-xl border border-zinc-800 text-[11px] text-zinc-400 font-mono text-center">
+          Estilo: <span class="text-amber-400 font-bold">Playful Mascote & Foguete</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- =========================================================================
+       SEGUNDA FILEIRA DE MODELOS (MODERN GLASS & MATRIX TERMINAL)
+       ========================================================================= -->
+  <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+
+    <!-- =========================================================================
+         MODELO 4: 🚀 LIQUID GLASS FLUID (WHATSAPP / TELEGRAM PRO)
+         ========================================================================= -->
+    <div class="flex flex-col items-center">
+      <div class="w-full mb-3 flex items-center justify-between px-2">
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-500/40 text-indigo-400 text-[11px] font-mono font-bold">
+            MODELO 4
+          </span>
+          <h2 class="text-sm font-black uppercase tracking-wider text-white">Liquid Glass Fluid</h2>
+        </div>
+        <span class="text-[11px] font-mono text-indigo-400 font-bold">Ultra Modern Pro</span>
+      </div>
+
+      <div class="mobile-frame p-4 flex flex-col justify-between border-indigo-500/30 shadow-[0_0_30px_rgba(99,102,241,0.15)]">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+          <div class="flex items-center gap-2.5">
+            <div class="h-9 w-9 bg-indigo-500/20 border border-indigo-500/40 rounded-xl flex items-center justify-center text-sm font-black text-indigo-300">
+              💎
+            </div>
+            <div>
+              <div class="text-xs font-black uppercase text-white">Conversa com Caixa</div>
+              <div class="text-[10px] font-mono text-indigo-400">@operador_01</div>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono text-zinc-500">14:40</span>
+        </div>
+
+        <!-- Card Glass -->
+        <div class="my-auto py-2">
+          <div class="bg-[#14141c]/90 border border-zinc-700/60 rounded-[32px] p-4 shadow-2xl backdrop-blur-xl">
+            
+            <div class="flex items-center justify-between pb-2 mb-2 border-b border-zinc-800">
+              <span class="text-xs font-bold text-zinc-300">Comprovante de Fechamento</span>
+              <span id="p4Pct" class="text-xs font-mono font-bold text-indigo-400">45%</span>
+            </div>
+
+            <!-- Imagem com Círculo Líquido Central -->
+            <div class="w-full h-44 rounded-2xl bg-black relative overflow-hidden border border-zinc-700 shadow-inner">
+              <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80" class="w-full h-full object-cover opacity-70" alt="Preview">
+
+              <!-- Círculo de Progresso Líquido Translúcido -->
+              <div class="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-[2px]">
+                <div class="w-16 h-16 rounded-full bg-black/70 border border-white/25 flex items-center justify-center shadow-2xl">
+                  <div id="p4CircleNormal" class="flex flex-col items-center">
+                    <span id="p4CenterPct" class="text-xs font-black text-white">45%</span>
+                  </div>
+                  <div id="p4CircleSuccess" class="h-10 w-10 rounded-full bg-emerald-500 flex items-center justify-center text-white text-lg font-black shadow-lg hidden anim-success-pop">
+                    ✓✓
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Barra Suave -->
+            <div class="mt-3">
+              <div class="w-full h-2 rounded-full bg-zinc-800 overflow-hidden">
+                <div id="p4BarFill" style="width: 45%" class="h-full bg-indigo-500 rounded-full shadow-lg transition-all duration-150"></div>
+              </div>
+              <div class="flex items-center justify-between mt-1.5 text-[10px]">
+                <span class="text-zinc-400">Google Drive 5TB</span>
+                <span id="p4StatusText" class="font-mono text-indigo-300 font-bold">Enviando imagem...</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Rodapé -->
+        <div class="p-2 bg-[#121216] rounded-xl border border-zinc-800 text-[11px] text-zinc-400 font-mono text-center">
+          Estilo: <span class="text-indigo-400 font-bold">Liquid Glassmorphism Pro</span>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- =========================================================================
+         MODELO 5: 💻 MATRIX TERMINAL STREAM (RETRO HACKER)
+         ========================================================================= -->
+    <div class="flex flex-col items-center">
+      <div class="w-full mb-3 flex items-center justify-between px-2">
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded bg-green-500/20 border border-green-500/40 text-green-400 text-[11px] font-mono font-bold">
+            MODELO 5
+          </span>
+          <h2 class="text-sm font-black uppercase tracking-wider text-white">Terminal Matrix Stream</h2>
+        </div>
+        <span class="text-[11px] font-mono text-green-400 font-bold">Green Phosphor</span>
+      </div>
+
+      <div class="mobile-frame p-4 flex flex-col justify-between border-green-500/30 shadow-[0_0_30px_rgba(34,197,94,0.15)]">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+          <div class="flex items-center gap-2.5">
+            <div class="h-9 w-9 bg-green-500/20 border border-green-500/40 rounded-xl flex items-center justify-center text-sm font-black text-green-300">
+              >_
+            </div>
+            <div>
+              <div class="text-xs font-black uppercase text-white">Shell Drive Daemon</div>
+              <div class="text-[10px] font-mono text-green-400">tty1@squirrel-os</div>
+            </div>
+          </div>
+          <span class="text-[10px] font-mono text-zinc-500">14:40</span>
+        </div>
+
+        <!-- Card Terminal -->
+        <div class="my-auto py-2">
+          <div class="bg-[#080d09] border-2 border-green-500/50 rounded-2xl p-3.5 font-mono shadow-[0_0_25px_rgba(34,197,94,0.2)]">
+            
+            <div class="flex items-center justify-between pb-1.5 border-b border-green-500/20 text-[10px] text-green-400">
+              <span>root@drive:~# curl -X POST</span>
+              <span id="p5Pct" class="font-bold">45%</span>
+            </div>
+
+            <!-- Imagem com Chuva Matrix -->
+            <div class="w-full h-44 rounded-xl bg-black my-2.5 relative overflow-hidden border border-green-500/40">
+              <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80" class="w-full h-full object-cover opacity-60 filter contrast-125" alt="Preview">
+
+              <!-- Chuva Matrix -->
+              <div class="absolute inset-0 matrix-bg pointer-events-none"></div>
+
+              <!-- Terminal Overlay com Log ao Vivo -->
+              <div class="absolute inset-x-2 bottom-2 p-2 rounded bg-black/85 border border-green-500/40 text-[9.5px] leading-tight text-green-400">
+                <div>> AUTH: OK (OAUTH2_BEARER)</div>
+                <div>> STREAM: <span id="p5StreamBytes">920</span> KB SENT</div>
+                <div id="p5LogLine" class="text-green-300 font-bold">> STATUS: STREAMING CHUNKS<span class="anim-blink">_</span></div>
+              </div>
+
+              <!-- Overlay Sucesso Terminal -->
+              <div id="p5SuccessOverlay" class="absolute inset-0 bg-black/85 flex items-center justify-center hidden">
+                <div class="p-3 bg-[#0a140c] border-2 border-green-400 text-center anim-success-pop">
+                  <div class="text-xs font-black text-green-400">[200 OK] UPLOAD FINISHED</div>
+                  <div class="text-[9px] text-green-300 mt-0.5">FILE ID: 1UZkP2w9Gqu7...</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Barra de Progresso Terminal ASCII -->
+            <div class="text-[10px] text-green-400 font-mono">
+              <div class="flex justify-between mb-0.5">
+                <span>[<span id="p5AsciiBar">==========..........</span>]</span>
+                <span id="p5AsciiPct" class="font-bold">45%</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Rodapé -->
+        <div class="p-2 bg-[#121216] rounded-xl border border-zinc-800 text-[11px] text-zinc-400 font-mono text-center">
+          Estilo: <span class="text-green-400 font-bold">Matrix Hacker Terminal</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- =========================================================================
+       SCRIPT DE INTERATIVIDADE DO SHOWCASE
+       ========================================================================= -->
+  <script>
+    let globalProgress = 45;
+    let isSimulating = false;
+    let simulationTimer = null;
+
+    // Inicializa a barra de blocos de pixel art
+    function initPixelBlocks() {
+      const container = document.getElementById('p1BlockContainer');
+      container.innerHTML = '';
+      for (let i = 0; i < 20; i++) {
+        const block = document.createElement('div');
+        block.className = 'flex-1 h-full rounded-none transition-colors duration-100';
+        block.id = `p1Block_${i}`;
+        container.appendChild(block);
+      }
+      updateAllUI(globalProgress);
+    }
+
+    // Atualiza todas as 5 animações com o valor de progresso (0 a 100)
+    function updateAllUI(pct) {
+      globalProgress = Math.min(100, Math.max(0, pct));
+      document.getElementById('labelGlobalProgress').innerText = `${globalProgress}%`;
+      document.getElementById('rangeProgress').value = globalProgress;
+
+      const isDone = globalProgress >= 100;
+
+      // 1. Pixel Art
+      document.getElementById('p1LabelPct').innerText = globalProgress;
+      document.getElementById('p1BarPct').innerText = globalProgress;
+      document.getElementById('p1Chunks').innerText = Math.round((globalProgress / 100) * 2048);
+      document.getElementById('p1Status').innerText = isDone ? 'SYNCED' : 'UPLOADING...';
+      document.getElementById('p1Scanline').style.display = isDone ? 'none' : 'block';
+
+      for (let i = 0; i < 20; i++) {
+        const blk = document.getElementById(`p1Block_${i}`);
+        if (blk) {
+          const filled = (i / 20) * 100 <= globalProgress;
+          blk.style.backgroundColor = filled ? '#34d399' : 'rgba(6, 78, 59, 0.4)';
+        }
+      }
+
+      // 2. Cyber Matrix
+      document.getElementById('p2CenterPct').innerText = `${globalProgress}%`;
+      document.getElementById('p2BarPct').innerText = `${globalProgress}%`;
+      document.getElementById('p2BarFill').style.width = `${globalProgress}%`;
+      document.getElementById('p2HudHex').innerText = `0x${Math.floor(globalProgress * 655.35).toString(16).toUpperCase().padStart(4, '0')}...`;
+      document.getElementById('p2SuccessOverlay').classList.toggle('hidden', !isDone);
+      document.getElementById('p2Laser').style.display = isDone ? 'none' : 'block';
+      document.getElementById('p2HudCenter').style.display = isDone ? 'none' : 'flex';
+
+      // 3. Squirrel Jetpack
+      document.getElementById('p3Pct').innerText = `${globalProgress}%`;
+      document.getElementById('p3FlyingPct').innerText = globalProgress;
+      document.getElementById('p3BarFill').style.width = `${globalProgress}%`;
+      document.getElementById('p3MascotEmoji').innerText = isDone ? '🏆' : '🐿️';
+      document.getElementById('p3SuccessOverlay').classList.toggle('hidden', !isDone);
+      document.getElementById('p3Fire').style.display = isDone ? 'none' : 'block';
+
+      // 4. Glass Fluid
+      document.getElementById('p4Pct').innerText = `${globalProgress}%`;
+      document.getElementById('p4CenterPct').innerText = `${globalProgress}%`;
+      document.getElementById('p4BarFill').style.width = `${globalProgress}%`;
+      document.getElementById('p4CircleNormal').classList.toggle('hidden', isDone);
+      document.getElementById('p4CircleSuccess').classList.toggle('hidden', !isDone);
+      document.getElementById('p4StatusText').innerText = isDone ? 'Envio Concluído' : 'Enviando imagem...';
+
+      // 5. Matrix Terminal
+      document.getElementById('p5Pct').innerText = `${globalProgress}%`;
+      document.getElementById('p5AsciiPct').innerText = `${globalProgress}%`;
+      document.getElementById('p5StreamBytes').innerText = Math.round((globalProgress / 100) * 2048);
+      document.getElementById('p5SuccessOverlay').classList.toggle('hidden', !isDone);
+
+      const totalChars = 20;
+      const filledChars = Math.round((globalProgress / 100) * totalChars);
+      const barStr = '='.repeat(filledChars) + '.'.repeat(totalChars - filledChars);
+      document.getElementById('p5AsciiBar').innerText = barStr;
+    }
+
+    function setManualProgress(val) {
+      if (isSimulating) stopSimulation();
+      updateAllUI(parseInt(val, 10));
+    }
+
+    function toggleUploadSimulation() {
+      if (isSimulating) {
+        stopSimulation();
+      } else {
+        startSimulation();
+      }
+    }
+
+    function startSimulation() {
+      isSimulating = true;
+      document.getElementById('playIcon').innerText = '❚❚';
+      document.getElementById('playText').innerText = 'Pausar';
+      
+      if (globalProgress >= 100) {
+        globalProgress = 0;
+      }
+
+      simulationTimer = setInterval(() => {
+        globalProgress += 2;
+        if (globalProgress >= 100) {
+          globalProgress = 100;
+          updateAllUI(globalProgress);
+          stopSimulation();
+        } else {
+          updateAllUI(globalProgress);
+        }
+      }, 50);
+    }
+
+    function stopSimulation() {
+      isSimulating = false;
+      clearInterval(simulationTimer);
+      document.getElementById('playIcon').innerText = '▶';
+      document.getElementById('playText').innerText = 'Simular Envio';
+    }
+
+    function resetSimulation() {
+      stopSimulation();
+      updateAllUI(0);
+    }
+
+    // Inicialização ao carregar página
+    window.onload = () => {
+      initPixelBlocks();
+    };
+  </script>
+
+</body>
+</html>

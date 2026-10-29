@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "1070608699778",
+    "firebase_url": "https://squirrel-383ea-default-rtdb.firebaseio.com",
+    "project_id": "squirrel-383ea",
+    "storage_bucket": "squirrel-383ea.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1070608699778:android:862eeb3f1160f3234fbf9b",
+        "android_client_info": {
+          "package_name": "com.ecliptia.cx"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1070608699778-8r3pja9gjshd6fqkqifkiosr02gedati.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-brKxE5_bILhjc_xautTinq6ddq_IOZM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1070608699778-8r3pja9gjshd6fqkqifkiosr02gedati.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,7 +1,7 @@
 import { FirebaseApp, getApp, getApps, initializeApp } from "firebase/app";
 // @ts-ignore
 import { Auth, getAuth, initializeAuth, getReactNativePersistence } from "firebase/auth";
-import { initializeFirestore, persistentLocalCache } from "firebase/firestore";
+import { initializeFirestore, memoryLocalCache, getFirestore } from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { firebaseConfig, hasFirebaseConfig } from "../../config/env";
 
@@ -19,16 +19,14 @@ try {
   auth = getAuth(app);
 }
 
-// Configuração do Firestore com suporte offline
+// Configuração do Firestore otimizada para React Native (sem IndexedDB no Android)
+// A persistência offline do app é gerenciada nativamente pelo MMKV / local-storage
 let firestoreDb: any;
 try {
   firestoreDb = initializeFirestore(app, {
-    localCache: persistentLocalCache()
+    localCache: memoryLocalCache(),
   });
 } catch (e) {
-  // Caso de Hot Reload
-  // Precisamos importar o getFirestore normalmente aqui, mas vamos apenas pegar via import se falhar
-  const { getFirestore } = require("firebase/firestore");
   firestoreDb = getFirestore(app);
 }
 

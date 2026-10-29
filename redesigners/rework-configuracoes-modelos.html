@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Rework Completo das Configurações (DNA Oficial)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050508;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 412px;
+      border-radius: 46px;
+      border: 3.5px solid #27272a;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 0 1px #18181b;
+      background-color: #09090c;
+      overflow: hidden;
+      min-height: 860px;
+      max-height: 860px;
+      position: relative;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .switch-track {
+      transition: background-color 0.2s ease;
+    }
+    .switch-thumb {
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-6xl mx-auto pb-32">
+
+  <!-- CABEÇALHO DO PROJETO -->
+  <div class="mb-8 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-black uppercase tracking-widest mb-3 shadow-sm">
+      🐿️ SQUIRREL SYSTEM • REWORK TOTAL DE CONFIGURAÇÕES
+    </div>
+    <h1 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-white">
+      Configurações & Ajustes do Sistema
+    </h1>
+    <p class="text-zinc-400 text-sm mt-2 max-w-2xl mx-auto font-medium leading-relaxed">
+      Unificação dos modais antigos (Identificação + Preferências) em uma experiência única, eliminando opções legadas obsoletas (como pareamento antigo de chat) e incluindo <span class="text-zinc-200 font-bold">todos os controles reais</span> do aplicativo.
+    </p>
+
+    <!-- SELETOR DE CONCEITOS -->
+    <div class="flex items-center justify-center gap-2.5 mt-6 flex-wrap">
+      <button onclick="switchConcept('modelo-1')" id="btn-m1" class="concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-emerald-500 text-black border-emerald-400 shadow-xl">
+        ⭐ 1. Hub Tático Completo (Categorizado)
+      </button>
+      <button onclick="switchConcept('modelo-2')" id="btn-m2" class="concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] text-zinc-400 border-zinc-800 hover:border-zinc-700">
+        📑 2. Abas Rápidas Deslizantes (Tabbed Hub)
+      </button>
+      <button onclick="switchConcept('modelo-3')" id="btn-m3" class="concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] text-zinc-400 border-zinc-800 hover:border-zinc-700">
+        🎛️ 3. Command Center & Preview Ao Vivo
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER DE PREVIEWS -->
+  <div class="flex justify-center items-start gap-8">
+
+    <!-- ========================================================================= -->
+    <!-- MODELO 1: HUB TÁTICO COMPLETO (TODAS AS OPÇÕES OFICIAIS) -->
+    <!-- ========================================================================= -->
+    <div id="modelo-1" class="mobile-frame flex flex-col">
+      <!-- Status Bar Simulado -->
+      <div class="px-7 pt-3.5 pb-2 flex justify-between items-center text-[11px] font-bold text-zinc-500 border-b border-zinc-900/60 bg-[#09090c]">
+        <span class="mono">20:08</span>
+        <div class="flex items-center gap-1.5 text-zinc-400">
+          <i data-lucide="wifi" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <i data-lucide="battery" class="w-4 h-4 text-emerald-400"></i>
+        </div>
+      </div>
+
+      <!-- Top Header -->
+      <div class="p-4 pb-3 bg-[#09090c] border-b border-zinc-900 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="h-10 w-10 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+            <i data-lucide="sliders-horizontal" class="w-5 h-5 text-emerald-400"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-black uppercase tracking-[2px] text-zinc-500">Squirrel</span>
+              <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[8px] font-black">v2.8</span>
+            </div>
+            <h2 class="text-base font-black uppercase text-zinc-100">Ajustes & Caixa</h2>
+          </div>
+        </div>
+        <button class="h-9 w-9 bg-zinc-900 rounded-2xl flex items-center justify-center border border-zinc-800 hover:bg-zinc-800 transition">
+          <i data-lucide="x" class="w-4 h-4 text-zinc-400"></i>
+        </button>
+      </div>
+
+      <!-- Scrollable Content com Todas as Opções -->
+      <div class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-4 pb-8">
+
+        <!-- 1. IDENTIFICAÇÃO DO CAIXA & OPERADOR (UNIFICADO) -->
+        <div class="bg-[#121216] p-4 rounded-[28px] border border-zinc-800/80 shadow-md">
+          <div class="flex items-center justify-between pb-3 border-b border-zinc-800/60 mb-3">
+            <div class="flex items-center gap-2">
+              <div class="h-7 w-7 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center">
+                <i data-lucide="terminal" class="w-3.5 h-3.5 text-amber-400"></i>
+              </div>
+              <span class="text-xs font-black uppercase text-zinc-200">Identificação Operacional</span>
+            </div>
+            <span class="text-[9px] font-mono font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">TURNO ATIVO</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="bg-[#09090c] p-3 rounded-2xl border border-zinc-800/80">
+              <span class="text-[9px] font-black uppercase text-zinc-500 block mb-1">ID do Caixa</span>
+              <div class="flex items-center justify-between">
+                <input type="text" value="2701" class="bg-transparent text-sm font-black mono text-zinc-100 w-full outline-none">
+                <i data-lucide="hash" class="w-3.5 h-3.5 text-zinc-600"></i>
+              </div>
+            </div>
+            <div class="bg-[#09090c] p-3 rounded-2xl border border-zinc-800/80">
+              <span class="text-[9px] font-black uppercase text-zinc-500 block mb-1">ID do Operador</span>
+              <div class="flex items-center justify-between">
+                <input type="text" value="1306" class="bg-transparent text-sm font-black mono text-zinc-100 w-full outline-none">
+                <i data-lucide="user-check" class="w-3.5 h-3.5 text-zinc-600"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. PERSONALIZAÇÃO VISUAL DO PAINEL -->
+        <div class="bg-[#121216] p-4 rounded-[28px] border border-zinc-800/80 shadow-md space-y-3.5">
+          <div class="flex items-center gap-2 pb-2 border-b border-zinc-800/60">
+            <div class="h-7 w-7 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center">
+              <i data-lucide="layout-grid" class="w-3.5 h-3.5 text-purple-400"></i>
+            </div>
+            <span class="text-xs font-black uppercase text-zinc-200">Layout & Interface</span>
+          </div>
+
+          <!-- Formato do Malote -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <span class="text-[10px] font-black uppercase text-zinc-400">Disposição do Malote</span>
+              <span class="text-[9px] font-mono text-purple-400 font-bold" id="label-malote">Lado a Lado</span>
+            </div>
+            <div class="bg-[#09090c] p-1 rounded-2xl border border-zinc-800 flex gap-1">
+              <button onclick="setMalote('grid')" id="malote-grid" class="flex-1 py-2 rounded-xl text-[11px] font-black uppercase transition bg-purple-500 text-black shadow">
+                Lado a Lado
+              </button>
+              <button onclick="setMalote('stack')" id="malote-stack" class="flex-1 py-2 rounded-xl text-[11px] font-black uppercase transition text-zinc-400 hover:text-white">
+                Empilhado
+              </button>
+            </div>
+          </div>
+
+          <!-- Saídas & Canhotos -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <span class="text-[10px] font-black uppercase text-zinc-400">Indicadores (Saídas & Canhotos)</span>
+              <span class="text-[9px] font-mono text-purple-400 font-bold" id="label-indicadores">Dock Flutuante</span>
+            </div>
+            <div class="bg-[#09090c] p-1 rounded-2xl border border-zinc-800 flex gap-1">
+              <button onclick="setIndicador('dock')" id="ind-dock" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition bg-purple-500 text-black shadow">
+                Dock
+              </button>
+              <button onclick="setIndicador('focus')" id="ind-focus" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition text-zinc-400 hover:text-white">
+                Foco Nº
+              </button>
+              <button onclick="setIndicador('rows')" id="ind-rows" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition text-zinc-400 hover:text-white">
+                Linhas
+              </button>
+            </div>
+          </div>
+
+          <!-- Escala de Fonte -->
+          <div>
+            <div class="flex justify-between items-center mb-1.5">
+              <span class="text-[10px] font-black uppercase text-zinc-400">Tamanho da Tipografia</span>
+              <span class="text-[9px] font-mono text-purple-400 font-bold" id="label-fonte">Padrão</span>
+            </div>
+            <div class="bg-[#09090c] p-1 rounded-2xl border border-zinc-800 flex gap-1">
+              <button onclick="setFont('compact')" id="font-compact" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition text-zinc-400 hover:text-white">
+                A- Compacto
+              </button>
+              <button onclick="setFont('normal')" id="font-normal" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition bg-purple-500 text-black shadow">
+                A Padrão
+              </button>
+              <button onclick="setFont('large')" id="font-large" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition text-zinc-400 hover:text-white">
+                A+ Grande
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. DIGITAÇÃO & HAPTIC FEEDBACK -->
+        <div class="bg-[#121216] p-4 rounded-[28px] border border-zinc-800/80 shadow-md space-y-3.5">
+          <div class="flex items-center gap-2 pb-2 border-b border-zinc-800/60">
+            <div class="h-7 w-7 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center">
+              <i data-lucide="calculator" class="w-3.5 h-3.5 text-cyan-400"></i>
+            </div>
+            <span class="text-xs font-black uppercase text-zinc-200">Digitação & Sensibilidade</span>
+          </div>
+
+          <!-- Estilo de Digitação -->
+          <div>
+            <span class="text-[10px] font-black uppercase text-zinc-400 block mb-2">Entrada de Valores Monetários</span>
+            <div class="grid grid-cols-2 gap-2">
+              <div onclick="setMoneyMode('rtl')" id="money-rtl" class="cursor-pointer bg-[#09090c] p-3 rounded-2xl border-2 border-emerald-500 bg-emerald-500/10 transition">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs font-black uppercase text-emerald-400">Nubank</span>
+                  <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-400"></i>
+                </div>
+                <span class="text-[9px] text-zinc-400 font-medium leading-tight block">Preenchimento automático da direita p/ esquerda.</span>
+              </div>
+              <div onclick="setMoneyMode('manual')" id="money-manual" class="cursor-pointer bg-[#09090c] p-3 rounded-2xl border-2 border-zinc-800 hover:border-zinc-700 transition">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="text-xs font-black uppercase text-zinc-300">Livre</span>
+                  <i data-lucide="circle" class="w-3.5 h-3.5 text-zinc-600"></i>
+                </div>
+                <span class="text-[9px] text-zinc-400 font-medium leading-tight block">Vírgula manual onde você desejar posicionar.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Switch Haptic & Intensidade -->
+          <div class="pt-2 border-t border-zinc-800/60 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="h-8 w-8 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                  <i data-lucide="zap" class="w-4 h-4 text-cyan-400"></i>
+                </div>
+                <div>
+                  <span class="text-xs font-black uppercase text-zinc-200 block">Vibração Tátil (Haptic)</span>
+                  <span class="text-[9px] text-zinc-500 font-medium">Feedback físico em lançamentos e toques</span>
+                </div>
+              </div>
+              <div onclick="toggleSwitch(this)" class="switch-track w-11 h-6 bg-cyan-500 rounded-full p-0.5 cursor-pointer relative">
+                <div class="switch-thumb w-5 h-5 bg-white rounded-full shadow-md transform translate-x-5"></div>
+              </div>
+            </div>
+
+            <!-- Níveis de Intensidade -->
+            <div class="bg-[#09090c] p-1 rounded-2xl border border-zinc-800 flex gap-1">
+              <button onclick="setHapticIntensity('light')" id="hap-light" class="flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase transition text-zinc-400">Leve</button>
+              <button onclick="setHapticIntensity('medium')" id="hap-medium" class="flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase transition bg-cyan-500 text-black shadow">Médio</button>
+              <button onclick="setHapticIntensity('heavy')" id="hap-heavy" class="flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase transition text-zinc-400">Forte</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. OPERACIONAL & LEMBRETES DE FECHAMENTO -->
+        <div class="bg-[#121216] p-4 rounded-[28px] border border-zinc-800/80 shadow-md space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-zinc-800/60">
+            <div class="flex items-center gap-2">
+              <div class="h-7 w-7 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center">
+                <i data-lucide="clock" class="w-3.5 h-3.5 text-blue-400"></i>
+              </div>
+              <span class="text-xs font-black uppercase text-zinc-200">Operacional & Horários</span>
+            </div>
+            <span class="text-[9px] font-mono text-blue-400 font-bold">Notificações</span>
+          </div>
+
+          <!-- Lembretes de Fechamento -->
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="bg-[#09090c] p-3 rounded-2xl border border-zinc-800">
+              <span class="text-[9px] font-black uppercase text-zinc-500 block mb-1">Segunda a Sexta</span>
+              <div class="flex items-center gap-2">
+                <i data-lucide="bell" class="w-3.5 h-3.5 text-blue-400"></i>
+                <input type="text" value="17:00" class="bg-transparent text-sm font-black mono text-zinc-100 outline-none w-full">
+              </div>
+            </div>
+            <div class="bg-[#09090c] p-3 rounded-2xl border border-zinc-800">
+              <span class="text-[9px] font-black uppercase text-zinc-500 block mb-1">Sábado</span>
+              <div class="flex items-center gap-2">
+                <i data-lucide="bell" class="w-3.5 h-3.5 text-blue-400"></i>
+                <input type="text" value="12:00" class="bg-transparent text-sm font-black mono text-zinc-100 outline-none w-full">
+              </div>
+            </div>
+          </div>
+
+          <!-- Valor Padrão Gás do Povo -->
+          <div class="bg-[#09090c] p-3 rounded-2xl border border-zinc-800 flex items-center justify-between">
+            <div>
+              <span class="text-[9px] font-black uppercase text-zinc-500 block">Valor Padrão Gás do Povo</span>
+              <span class="text-xs font-black text-zinc-200 font-mono">R$ 120,36</span>
+            </div>
+            <button class="px-2.5 py-1 rounded-xl bg-zinc-800 text-[9px] font-black text-zinc-300 uppercase">Alterar</button>
+          </div>
+        </div>
+
+        <!-- 5. MÓDULOS DO SISTEMA (POS & CONVÊNIOS & BUSCA) -->
+        <div class="bg-[#121216] p-4 rounded-[28px] border border-zinc-800/80 shadow-md space-y-3">
+          <div class="flex items-center gap-2 pb-2 border-b border-zinc-800/60">
+            <div class="h-7 w-7 rounded-xl bg-pink-500/15 border border-pink-500/30 flex items-center justify-center">
+              <i data-lucide="layers" class="w-3.5 h-3.5 text-pink-400"></i>
+            </div>
+            <span class="text-xs font-black uppercase text-zinc-200">Módulos do Sistema</span>
+          </div>
+
+          <!-- Switch POS Cartões -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="h-8 w-8 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center">
+                <i data-lucide="credit-card" class="w-4 h-4 text-pink-400"></i>
+              </div>
+              <div>
+                <span class="text-xs font-black uppercase text-zinc-200 block">Módulo POS Cartões</span>
+                <span class="text-[9px] text-zinc-500 font-medium">Controle de maquininhas e comprovantes</span>
+              </div>
+            </div>
+            <div onclick="toggleSwitch(this)" class="switch-track w-11 h-6 bg-pink-500 rounded-full p-0.5 cursor-pointer relative">
+              <div class="switch-thumb w-5 h-5 bg-white rounded-full shadow-md transform translate-x-5"></div>
+            </div>
+          </div>
+
+          <!-- Switch Convênios -->
+          <div class="flex items-center justify-between pt-2 border-t border-zinc-800/40">
+            <div class="flex items-center gap-2.5">
+              <div class="h-8 w-8 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                <i data-lucide="users" class="w-4 h-4 text-indigo-400"></i>
+              </div>
+              <div>
+                <span class="text-xs font-black uppercase text-zinc-200 block">Módulo Convênios</span>
+                <span class="text-[9px] text-zinc-500 font-medium">Contas e clientes conveniados</span>
+              </div>
+            </div>
+            <div onclick="toggleSwitch(this)" class="switch-track w-11 h-6 bg-indigo-500 rounded-full p-0.5 cursor-pointer relative">
+              <div class="switch-thumb w-5 h-5 bg-white rounded-full shadow-md transform translate-x-5"></div>
+            </div>
+          </div>
+
+          <!-- Switch Barra de Busca -->
+          <div class="flex items-center justify-between pt-2 border-t border-zinc-800/40">
+            <div class="flex items-center gap-2.5">
+              <div class="h-8 w-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                <i data-lucide="search" class="w-4 h-4 text-amber-400"></i>
+              </div>
+              <div>
+                <span class="text-xs font-black uppercase text-zinc-200 block">Barra de Busca Rápida</span>
+                <span class="text-[9px] text-zinc-500 font-medium">Filtrar lançamentos no topo do painel</span>
+              </div>
+            </div>
+            <div onclick="toggleSwitch(this)" class="switch-track w-11 h-6 bg-zinc-800 rounded-full p-0.5 cursor-pointer relative">
+              <div class="switch-thumb w-5 h-5 bg-zinc-400 rounded-full shadow-md transform translate-x-0"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. REDE MULTI-CAIXA & LOJA (SINCRONIA POS) -->
+        <div class="bg-[#121216] p-4 rounded-[28px] border border-zinc-800/80 shadow-md space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-zinc-800/60">
+            <div class="flex items-center gap-2">
+              <div class="h-7 w-7 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+                <i data-lucide="network" class="w-3.5 h-3.5 text-emerald-400"></i>
+              </div>
+              <span class="text-xs font-black uppercase text-zinc-200">Rede Multi-Caixa</span>
+            </div>
+            <span class="text-[8px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">CONECTADO</span>
+          </div>
+
+          <div class="bg-[#09090c] p-3 rounded-2xl border border-zinc-800/80 flex items-center justify-between">
+            <div>
+              <span class="text-xs font-black text-zinc-100 uppercase block">LOJA MATRIZ 01</span>
+              <span class="text-[9px] text-zinc-500 font-mono">Cód: SQR270 • 3 caixas em tempo real</span>
+            </div>
+            <button class="h-7 px-3 bg-red-500/15 border border-red-500/30 rounded-xl text-red-400 text-[9px] font-black uppercase">
+              Sair
+            </button>
+          </div>
+        </div>
+
+        <!-- 7. SEGURANÇA BIOMÉTRICA & PIN ADMIN -->
+        <div class="bg-[#121216] p-4 rounded-[28px] border border-zinc-800/80 shadow-md space-y-3">
+          <div class="flex items-center gap-2 pb-2 border-b border-zinc-800/60">
+            <div class="h-7 w-7 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+            </div>
+            <span class="text-xs font-black uppercase text-zinc-200">Segurança & Acesso</span>
+          </div>
+
+          <!-- Switch Biometria -->
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div class="h-8 w-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                <i data-lucide="fingerprint" class="w-4 h-4 text-emerald-400"></i>
+              </div>
+              <div>
+                <span class="text-xs font-black uppercase text-zinc-200 block">Biometria (Digital / FaceID)</span>
+                <span class="text-[9px] text-zinc-500 font-medium">Exigir autenticação ao abrir o app</span>
+              </div>
+            </div>
+            <div onclick="toggleSwitch(this)" class="switch-track w-11 h-6 bg-zinc-800 rounded-full p-0.5 cursor-pointer relative">
+              <div class="switch-thumb w-5 h-5 bg-zinc-400 rounded-full shadow-md transform translate-x-0"></div>
+            </div>
+          </div>
+
+          <!-- Status do Administrador Master -->
+          <div class="bg-[#09090c] p-3 rounded-2xl border border-zinc-800 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="crown" class="w-4 h-4 text-amber-400"></i>
+              <div>
+                <span class="text-xs font-black text-zinc-200 uppercase block">Modo Administrador</span>
+                <span class="text-[9px] text-zinc-500">Autenticado via PIN Master</span>
+              </div>
+            </div>
+            <span class="px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-400 text-[8px] font-black font-mono">ATIVO</span>
+          </div>
+        </div>
+
+        <!-- 8. DADOS & MANUTENÇÃO DO DISPOSITIVO -->
+        <div class="bg-[#121216] p-4 rounded-[28px] border border-zinc-800/80 shadow-md space-y-3">
+          <div class="flex items-center gap-2 pb-2 border-b border-zinc-800/60">
+            <div class="h-7 w-7 rounded-xl bg-zinc-700/30 border border-zinc-700/50 flex items-center justify-center">
+              <i data-lucide="database" class="w-3.5 h-3.5 text-zinc-300"></i>
+            </div>
+            <span class="text-xs font-black uppercase text-zinc-200">Dados & Armazenamento</span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button class="py-2.5 px-3 rounded-2xl bg-[#09090c] border border-zinc-800 flex items-center justify-center gap-1.5 text-zinc-300 text-[10px] font-black uppercase active:scale-95 transition">
+              <i data-lucide="download" class="w-3.5 h-3.5 text-zinc-400"></i>
+              Exportar Backup
+            </button>
+            <button class="py-2.5 px-3 rounded-2xl bg-[#09090c] border border-zinc-800 flex items-center justify-center gap-1.5 text-red-400 text-[10px] font-black uppercase active:scale-95 transition">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5 text-red-400"></i>
+              Limpar Cache
+            </button>
+          </div>
+        </div>
+
+        <!-- BOTÃO SALVAR / CONCLUIR -->
+        <button class="w-full py-4 rounded-2xl bg-zinc-100 text-black font-black uppercase tracking-wider text-xs shadow-xl active:scale-[0.98] transition">
+          Salvar & Concluir Ajustes
+        </button>
+
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODELO 2: ABAS RÁPIDAS DESLIZANTES (TABBED HUB) -->
+    <!-- ========================================================================= -->
+    <div id="modelo-2" class="mobile-frame flex flex-col hidden">
+      <!-- Status Bar Simulado -->
+      <div class="px-7 pt-3.5 pb-2 flex justify-between items-center text-[11px] font-bold text-zinc-500 border-b border-zinc-900/60 bg-[#09090c]">
+        <span class="mono">20:08</span>
+        <div class="flex items-center gap-1.5 text-zinc-400">
+          <i data-lucide="wifi" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <i data-lucide="battery" class="w-4 h-4 text-indigo-400"></i>
+        </div>
+      </div>
+
+      <!-- Header com Barra de Abas -->
+      <div class="p-4 pb-0 bg-[#09090c] border-b border-zinc-900">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-2.5">
+            <div class="h-9 w-9 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center">
+              <i data-lucide="sliders" class="w-4 h-4 text-indigo-400"></i>
+            </div>
+            <div>
+              <span class="text-[9px] font-black uppercase tracking-[2px] text-zinc-500">Central de Ajustes</span>
+              <h2 class="text-sm font-black uppercase text-zinc-100">Preferências</h2>
+            </div>
+          </div>
+          <button class="h-8 w-8 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-800">
+            <i data-lucide="x" class="w-3.5 h-3.5 text-zinc-400"></i>
+          </button>
+        </div>
+
+        <!-- Barra de Abas Estilo Pílula -->
+        <div class="flex gap-1.5 pb-3 overflow-x-auto no-scrollbar">
+          <button onclick="setTabM2('geral')" id="tab-m2-geral" class="px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase whitespace-nowrap bg-indigo-500 text-white shadow">
+            Layout & Painel
+          </button>
+          <button onclick="setTabM2('operacional')" id="tab-m2-operacional" class="px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase whitespace-nowrap bg-[#121216] text-zinc-400 border border-zinc-800">
+            Caixa & Terminal
+          </button>
+          <button onclick="setTabM2('modulos')" id="tab-m2-modulos" class="px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase whitespace-nowrap bg-[#121216] text-zinc-400 border border-zinc-800">
+            Módulos & Rede
+          </button>
+          <button onclick="setTabM2('seguranca')" id="tab-m2-seguranca" class="px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase whitespace-nowrap bg-[#121216] text-zinc-400 border border-zinc-800">
+            Segurança
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab Content: Geral & Painel -->
+      <div id="m2-content-geral" class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-3.5 pb-8">
+        <div class="bg-[#121216] p-4 rounded-3xl border border-zinc-800 space-y-3">
+          <span class="text-[10px] font-black uppercase tracking-wider text-indigo-400">Formato do Malote</span>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="bg-[#09090c] p-3 rounded-2xl border-2 border-indigo-500 bg-indigo-500/10">
+              <span class="text-xs font-black text-white block mb-0.5">Lado a Lado</span>
+              <span class="text-[8px] text-zinc-400">2 colunas compactas</span>
+            </div>
+            <div class="bg-[#09090c] p-3 rounded-2xl border-2 border-zinc-800">
+              <span class="text-xs font-black text-zinc-400 block mb-0.5">Empilhado</span>
+              <span class="text-[8px] text-zinc-500">1 coluna vertical</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-[#121216] p-4 rounded-3xl border border-zinc-800 space-y-3">
+          <span class="text-[10px] font-black uppercase tracking-wider text-indigo-400">Sensibilidade Tátil</span>
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-xs font-black text-zinc-200 block">Vibração Haptic</span>
+              <span class="text-[9px] text-zinc-500">Ao pressionar botões e confirmar</span>
+            </div>
+            <div onclick="toggleSwitch(this)" class="switch-track w-11 h-6 bg-indigo-500 rounded-full p-0.5 cursor-pointer relative">
+              <div class="switch-thumb w-5 h-5 bg-white rounded-full shadow transform translate-x-5"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-[#121216] p-4 rounded-3xl border border-zinc-800 space-y-3">
+          <span class="text-[10px] font-black uppercase tracking-wider text-indigo-400">Escala de Interface</span>
+          <div class="flex gap-2">
+            <button class="flex-1 py-2.5 rounded-2xl bg-[#09090c] border border-zinc-800 text-xs font-bold text-zinc-400">A- Compacto</button>
+            <button class="flex-1 py-2.5 rounded-2xl bg-indigo-500 text-xs font-black text-white shadow">A Padrão</button>
+            <button class="flex-1 py-2.5 rounded-2xl bg-[#09090c] border border-zinc-800 text-xs font-bold text-zinc-400">A+ Grande</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODELO 3: COMMAND CENTER & PREVIEW AO VIVO -->
+    <!-- ========================================================================= -->
+    <div id="modelo-3" class="mobile-frame flex flex-col hidden">
+      <!-- Status Bar Simulado -->
+      <div class="px-7 pt-3.5 pb-2 flex justify-between items-center text-[11px] font-bold text-zinc-500 border-b border-zinc-900/60 bg-[#09090c]">
+        <span class="mono">20:08</span>
+        <div class="flex items-center gap-1.5 text-zinc-400">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-400"></i>
+          <i data-lucide="battery-charging" class="w-4 h-4 text-emerald-400"></i>
+        </div>
+      </div>
+
+      <!-- Top Header -->
+      <div class="p-4 pb-3 bg-[#09090c] border-b border-zinc-900 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="h-9 w-9 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center">
+            <i data-lucide="cpu" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <div>
+            <span class="text-[9px] font-black uppercase tracking-[2px] text-zinc-500">Command Center</span>
+            <h2 class="text-sm font-black uppercase text-zinc-100">Painel de Controle</h2>
+          </div>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span class="text-[9px] font-mono text-emerald-400 font-black">ONLINE</span>
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="flex-1 overflow-y-auto no-scrollbar p-4 space-y-3.5 pb-8">
+        <!-- Live Mini Preview -->
+        <div class="bg-[#121216] p-3.5 rounded-3xl border border-zinc-800 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[9px] font-black uppercase tracking-wider text-zinc-400">Preview em Tempo Real</span>
+            <span class="text-[8px] font-mono text-amber-400 font-bold">Modo: Lado a Lado</span>
+          </div>
+          <div class="bg-[#09090c] p-2.5 rounded-2xl border border-zinc-900 flex gap-2">
+            <div class="flex-1 bg-zinc-900/80 p-2 rounded-xl border border-zinc-800/80">
+              <span class="text-[8px] text-zinc-500 font-bold block">DINHEIRO</span>
+              <span class="text-[11px] font-black text-emerald-400 font-mono">R$ 610,26</span>
+            </div>
+            <div class="flex-1 bg-zinc-900/80 p-2 rounded-xl border border-zinc-800/80">
+              <span class="text-[8px] text-zinc-500 font-bold block">PIX</span>
+              <span class="text-[11px] font-black text-cyan-400 font-mono">R$ 403,07</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2x2 Feature Grid -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="bg-[#121216] p-3.5 rounded-2xl border border-zinc-800">
+            <div class="flex justify-between items-start mb-2">
+              <i data-lucide="layout" class="w-4 h-4 text-purple-400"></i>
+              <div onclick="toggleSwitch(this)" class="switch-track w-8 h-4.5 bg-purple-500 rounded-full p-0.5 cursor-pointer relative">
+                <div class="switch-thumb w-3.5 h-3.5 bg-white rounded-full shadow transform translate-x-3.5"></div>
+              </div>
+            </div>
+            <span class="text-[11px] font-black uppercase text-zinc-200 block">Grade Dupla</span>
+            <span class="text-[8px] text-zinc-500 font-medium">Layout lado a lado</span>
+          </div>
+
+          <div class="bg-[#121216] p-3.5 rounded-2xl border border-zinc-800">
+            <div class="flex justify-between items-start mb-2">
+              <i data-lucide="zap" class="w-4 h-4 text-amber-400"></i>
+              <div onclick="toggleSwitch(this)" class="switch-track w-8 h-4.5 bg-amber-500 rounded-full p-0.5 cursor-pointer relative">
+                <div class="switch-thumb w-3.5 h-3.5 bg-white rounded-full shadow transform translate-x-3.5"></div>
+              </div>
+            </div>
+            <span class="text-[11px] font-black uppercase text-zinc-200 block">Haptics Pro</span>
+            <span class="text-[8px] text-zinc-500 font-medium">Feedback médio</span>
+          </div>
+
+          <div class="bg-[#121216] p-3.5 rounded-2xl border border-zinc-800">
+            <div class="flex justify-between items-start mb-2">
+              <i data-lucide="shield" class="w-4 h-4 text-emerald-400"></i>
+              <div onclick="toggleSwitch(this)" class="switch-track w-8 h-4.5 bg-zinc-800 rounded-full p-0.5 cursor-pointer relative">
+                <div class="switch-thumb w-3.5 h-3.5 bg-zinc-400 rounded-full shadow transform translate-x-0"></div>
+              </div>
+            </div>
+            <span class="text-[11px] font-black uppercase text-zinc-200 block">Biometria</span>
+            <span class="text-[8px] text-zinc-500 font-medium">Desativada</span>
+          </div>
+
+          <div class="bg-[#121216] p-3.5 rounded-2xl border border-zinc-800">
+            <div class="flex justify-between items-start mb-2">
+              <i data-lucide="credit-card" class="w-4 h-4 text-cyan-400"></i>
+              <div onclick="toggleSwitch(this)" class="switch-track w-8 h-4.5 bg-cyan-500 rounded-full p-0.5 cursor-pointer relative">
+                <div class="switch-thumb w-3.5 h-3.5 bg-white rounded-full shadow transform translate-x-3.5"></div>
+              </div>
+            </div>
+            <span class="text-[11px] font-black uppercase text-zinc-200 block">POS Cartões</span>
+            <span class="text-[8px] text-zinc-500 font-medium">Módulo ativo</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function switchConcept(id) {
+      document.getElementById('modelo-1').classList.add('hidden');
+      document.getElementById('modelo-2').classList.add('hidden');
+      document.getElementById('modelo-3').classList.add('hidden');
+
+      document.getElementById(id).classList.remove('hidden');
+
+      const btns = ['btn-m1', 'btn-m2', 'btn-m3'];
+      btns.forEach(b => {
+        const el = document.getElementById(b);
+        el.className = "concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] text-zinc-400 border-zinc-800 hover:border-zinc-700";
+      });
+
+      const activeBtn = id === 'modelo-1' ? 'btn-m1' : (id === 'modelo-2' ? 'btn-m2' : 'btn-m3');
+      const activeColor = id === 'modelo-1' ? 'bg-emerald-500 text-black border-emerald-400' : (id === 'modelo-2' ? 'bg-indigo-500 text-white border-indigo-400' : 'bg-amber-500 text-black border-amber-400');
+      document.getElementById(activeBtn).className = `concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all ${activeColor} shadow-xl`;
+    }
+
+    function toggleSwitch(el) {
+      const thumb = el.querySelector('.switch-thumb');
+      const isChecked = el.classList.contains('bg-emerald-500') || el.classList.contains('bg-cyan-500') || el.classList.contains('bg-indigo-500') || el.classList.contains('bg-purple-500') || el.classList.contains('bg-amber-500') || el.classList.contains('bg-pink-500');
+
+      if (isChecked) {
+        el.className = "switch-track w-11 h-6 bg-zinc-800 rounded-full p-0.5 cursor-pointer relative";
+        thumb.className = "switch-thumb w-5 h-5 bg-zinc-400 rounded-full shadow-md transform translate-x-0";
+      } else {
+        el.className = "switch-track w-11 h-6 bg-emerald-500 rounded-full p-0.5 cursor-pointer relative";
+        thumb.className = "switch-thumb w-5 h-5 bg-white rounded-full shadow-md transform translate-x-5";
+      }
+    }
+
+    function setMalote(mode) {
+      const g = document.getElementById('malote-grid');
+      const s = document.getElementById('malote-stack');
+      const lbl = document.getElementById('label-malote');
+      if (mode === 'grid') {
+        g.className = "flex-1 py-2 rounded-xl text-[11px] font-black uppercase transition bg-purple-500 text-black shadow";
+        s.className = "flex-1 py-2 rounded-xl text-[11px] font-black uppercase transition text-zinc-400 hover:text-white";
+        lbl.innerText = "Lado a Lado";
+      } else {
+        s.className = "flex-1 py-2 rounded-xl text-[11px] font-black uppercase transition bg-purple-500 text-black shadow";
+        g.className = "flex-1 py-2 rounded-xl text-[11px] font-black uppercase transition text-zinc-400 hover:text-white";
+        lbl.innerText = "Empilhado";
+      }
+    }
+
+    function setIndicador(ind) {
+      ['dock', 'focus', 'rows'].forEach(i => {
+        const el = document.getElementById('ind-' + i);
+        if (i === ind) {
+          el.className = "flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition bg-purple-500 text-black shadow";
+        } else {
+          el.className = "flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition text-zinc-400 hover:text-white";
+        }
+      });
+      document.getElementById('label-indicadores').innerText = ind === 'dock' ? 'Dock Flutuante' : (ind === 'focus' ? 'Foco Nº' : 'Linhas');
+    }
+
+    function setFont(f) {
+      ['compact', 'normal', 'large'].forEach(i => {
+        const el = document.getElementById('font-' + i);
+        if (i === f) {
+          el.className = "flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition bg-purple-500 text-black shadow";
+        } else {
+          el.className = "flex-1 py-2 rounded-xl text-[10px] font-black uppercase transition text-zinc-400 hover:text-white";
+        }
+      });
+      document.getElementById('label-fonte').innerText = f === 'compact' ? 'Compacto' : (f === 'normal' ? 'Padrão' : 'Grande');
+    }
+
+    function setMoneyMode(mode) {
+      const rtl = document.getElementById('money-rtl');
+      const manual = document.getElementById('money-manual');
+      if (mode === 'rtl') {
+        rtl.className = "cursor-pointer bg-[#09090c] p-3 rounded-2xl border-2 border-emerald-500 bg-emerald-500/10 transition";
+        rtl.querySelector('span').className = "text-xs font-black uppercase text-emerald-400";
+        manual.className = "cursor-pointer bg-[#09090c] p-3 rounded-2xl border-2 border-zinc-800 hover:border-zinc-700 transition";
+        manual.querySelector('span').className = "text-xs font-black uppercase text-zinc-300";
+      } else {
+        manual.className = "cursor-pointer bg-[#09090c] p-3 rounded-2xl border-2 border-emerald-500 bg-emerald-500/10 transition";
+        manual.querySelector('span').className = "text-xs font-black uppercase text-emerald-400";
+        rtl.className = "cursor-pointer bg-[#09090c] p-3 rounded-2xl border-2 border-zinc-800 hover:border-zinc-700 transition";
+        rtl.querySelector('span').className = "text-xs font-black uppercase text-zinc-300";
+      }
+    }
+
+    function setHapticIntensity(level) {
+      ['light', 'medium', 'heavy'].forEach(l => {
+        const el = document.getElementById('hap-' + l);
+        if (l === level) {
+          el.className = "flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase transition bg-cyan-500 text-black shadow";
+        } else {
+          el.className = "flex-1 py-1.5 rounded-xl text-[10px] font-black uppercase transition text-zinc-400";
+        }
+      });
+    }
+
+    function setTabM2(tab) {
+      ['geral', 'operacional', 'modulos', 'seguranca'].forEach(t => {
+        const btn = document.getElementById('tab-m2-' + t);
+        if (btn) {
+          if (t === tab) {
+            btn.className = "px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase whitespace-nowrap bg-indigo-500 text-white shadow";
+          } else {
+            btn.className = "px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase whitespace-nowrap bg-[#121216] text-zinc-400 border border-zinc-800";
+          }
+        }
+      });
+    }
+  </script>
+</body>
+</html>

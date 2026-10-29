@@ -30,9 +30,6 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
-.env*.local
-
 # typescript
 *.tsbuildinfo
 
@@ -40,4 +37,16 @@ yarn-error.*
 /ios
 /android
 
+# local env files
 .env
+.env.*
+.env*.local
+!.env.example
+
+# server & credentials
+server/
+server.rar
+*firebase-adminsdk*.json
+*service-account*.json
+google-service-account.json
+credentials.json

@@ -7,8 +7,7 @@ interface MoneyInputProps extends Omit<TextInputProps, "value" | "onChangeText">
   onChangeValue: (value: number) => void;
 }
 
-export function MoneyInput({ value, onChangeValue, ...props }: MoneyInputProps) {
-  const [localValue, setLocalValue] = useState("");
+function MoneyInputComponent({ value, onChangeValue, ...props }: MoneyInputProps) {
   const { settings } = useAppSettings();
   const mode = settings.moneyInputMode || "rtl";
 
@@ -27,20 +26,23 @@ export function MoneyInput({ value, onChangeValue, ...props }: MoneyInputProps) 
      return isNaN(parsed) ? 0 : parsed;
   };
 
-  useEffect(() => {
+  // Sincronização síncrona instantânea (0ms) sem useEffect lag
+  const [prevValue, setPrevValue] = useState(value);
+  const [prevMode, setPrevMode] = useState(mode);
+  const [localValue, setLocalValue] = useState(() => (value === 0 ? "" : formatRTL(value)));
+
+  if (prevValue !== value || prevMode !== mode) {
+    setPrevValue(value);
+    setPrevMode(mode);
     if (mode === "rtl") {
       setLocalValue(value === 0 ? "" : formatRTL(value));
     } else {
-      setLocalValue((prev) => {
-        const currentParsed = prev === "" ? 0 : parseManual(prev);
-        if (currentParsed !== value) {
-          if (value === 0) return "";
-          return formatRTL(value);
-        }
-        return prev;
-      });
+      const currentParsed = localValue === "" ? 0 : parseManual(localValue);
+      if (currentParsed !== value) {
+        setLocalValue(value === 0 ? "" : formatRTL(value));
+      }
     }
-  }, [value, mode]);
+  }
 
   const handleChangeText = (text: string) => {
     if (!text) {
@@ -50,8 +52,9 @@ export function MoneyInput({ value, onChangeValue, ...props }: MoneyInputProps) 
     }
 
     if (mode === "rtl") {
-      // Modo Nubank (Direita para Esquerda)
-      const digits = text.replace(/\D/g, "");
+      // Modo Nubank (Direita para Esquerda) - Limita a 11 dígitos (máx R$ 999.999.999,99)
+      const rawDigits = text.replace(/\D/g, "");
+      const digits = rawDigits.slice(0, 11);
       if (!digits) {
         setLocalValue("");
         onChangeValue(0);
@@ -80,11 +83,13 @@ export function MoneyInput({ value, onChangeValue, ...props }: MoneyInputProps) 
       }
       
       const finalParts = cleanText.split(",");
+      // Limita a parte inteira a 9 dígitos e decimais a 2
+      finalParts[0] = (finalParts[0] || "").slice(0, 9);
       if (finalParts.length === 2 && finalParts[1].length > 2) {
-        cleanText = finalParts[0] + "," + finalParts[1].substring(0, 2);
+        finalParts[1] = finalParts[1].substring(0, 2);
       }
       
-      const displayParts = cleanText.split(",");
+      const displayParts = finalParts;
       displayParts[0] = displayParts[0]
         .replace(/^0+(?=\d)/, "")
         .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
@@ -103,14 +108,18 @@ export function MoneyInput({ value, onChangeValue, ...props }: MoneyInputProps) 
 
   return (
     <TextInput
+      placeholder="0,00"
+      placeholderTextColor="#52525b"
+      cursorColor="#f4f4f5"
+      selectionColor="#3f3f46"
+      maxLength={14}
       {...props}
+      style={[{ paddingVertical: 0, paddingHorizontal: 0, includeFontPadding: false }, props.style]}
       value={localValue}
       onChangeText={handleChangeText}
       keyboardType="numeric"
-      placeholder="0,00"
-      placeholderTextColor="#27272a"
-      cursorColor="#f4f4f5"
-      selectionColor="#3f3f46"
     />
   );
 }
+
+export const MoneyInput = React.memo(MoneyInputComponent);

@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Propostas de Design para o Topo da Tela Inicial</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@700;800&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .squircle {
+      border-radius: 28px;
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8 max-w-5xl mx-auto pb-24">
+
+  <!-- CABEÇALHO DA PÁGINA -->
+  <div class="mb-8 text-center md:text-left">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-black uppercase tracking-widest mb-2">
+      🐿️ Squirrel v2.0 • Propostas de Design
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      Parte Superior da Tela Inicial (Header + Totais)
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1">
+      Baseado nos dados reais de hoje: <b>Total R$ 7.340,98</b> (Espécie R$ 1.051,00 • Pix R$ 6.289,98 • Quebra -R$ 0,09).
+    </p>
+  </div>
+
+  <!-- GRID DE OPÇÕES -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+    <!-- ========================================================================= -->
+    <!-- OPÇÃO A: BALANÇA INTEGRADA (Visual Unificado & Barra de Proporção) -->
+    <!-- ========================================================================= -->
+    <div class="bg-[#0e0e11] border-2 border-emerald-500/30 rounded-[36px] p-5 shadow-2xl relative overflow-hidden flex flex-col justify-between">
+      <div class="absolute top-4 right-4 bg-emerald-500 text-black text-[9px] font-black uppercase px-2.5 py-1 rounded-full">
+        Opção A
+      </div>
+
+      <div>
+        <h2 class="text-sm font-black uppercase tracking-wider text-emerald-400 mb-1">Balança Integrada</h2>
+        <p class="text-[11px] text-zinc-500 mb-5 leading-relaxed">
+          Total do sistema como âncora e a divisão física (Papel vs Pix) em duas colunas conectadas com barra de proporção.
+        </p>
+
+        <!-- MOCKUP TELA -->
+        <div class="bg-[#09090b] border border-zinc-800 rounded-[28px] p-4 shadow-inner">
+          
+          <!-- Header do App -->
+          <div class="flex items-center justify-between pb-3 mb-3 border-b border-zinc-800/80">
+            <div>
+              <div class="text-xs font-black text-white uppercase tracking-tighter">CAIXA</div>
+              <div class="text-[9px] font-black uppercase tracking-wider text-zinc-500">27 AGO • 2701</div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="h-7 w-7 rounded-xl bg-zinc-800/80 flex items-center justify-center text-xs">👻</span>
+              <span class="h-7 w-7 rounded-xl bg-zinc-800/80 flex items-center justify-center text-xs">📅</span>
+              <span class="h-7 w-7 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-xs">🔓</span>
+              <span class="h-7 w-7 rounded-xl bg-zinc-800/80 flex items-center justify-center text-xs text-zinc-400">⋯</span>
+            </div>
+          </div>
+
+          <!-- Card Principal de Totais -->
+          <div class="bg-[#141418] border border-zinc-800/90 rounded-[24px] p-4 mb-3">
+            
+            <!-- Topo do Card: Total e Status de Quebra -->
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[9px] font-black uppercase tracking-widest text-zinc-500">Total do Sistema</span>
+              <span class="text-[9px] font-black px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-red-400">
+                -0,09 Quebra
+              </span>
+            </div>
+
+            <!-- Número Gigante do Sistema -->
+            <div class="text-2xl font-black text-white tracking-tighter mono mb-3">
+              R$ 7.340<span class="text-zinc-500 text-lg">,98</span>
+            </div>
+
+            <!-- Barra de Proporção Visual -->
+            <div class="h-2 w-full bg-zinc-800 rounded-full flex overflow-hidden mb-3">
+              <div style="width: 14.3%" class="bg-amber-400" title="14% Papel"></div>
+              <div style="width: 85.7%" class="bg-indigo-400" title="86% Pix"></div>
+            </div>
+
+            <!-- 2 Colunas Conectadas: Espécie vs Pix -->
+            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-zinc-800/50">
+              
+              <!-- Coluna 1: Espécie -->
+              <div class="bg-[#09090b] p-2.5 rounded-xl border border-zinc-800/50">
+                <div class="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-amber-400 mb-0.5">
+                  <span>💵</span> Papel (Gaveta)
+                </div>
+                <div class="text-sm font-black text-zinc-100 mono">
+                  R$ 1.051<span class="text-zinc-500 text-[10px]">,00</span>
+                </div>
+                <div class="text-[8px] text-zinc-500 font-bold mt-0.5">14% do envelope</div>
+              </div>
+
+              <!-- Coluna 2: Pix -->
+              <div class="bg-[#09090b] p-2.5 rounded-xl border border-zinc-800/50">
+                <div class="flex items-center gap-1 text-[8px] font-black uppercase tracking-wider text-indigo-400 mb-0.5">
+                  <span>📱</span> Pix (Repasse)
+                </div>
+                <div class="text-sm font-black text-indigo-300 mono">
+                  R$ 6.289<span class="text-indigo-400/60 text-[10px]">,98</span>
+                </div>
+                <div class="text-[8px] text-zinc-500 font-bold mt-0.5">12 trocas de balcão</div>
+              </div>
+
+            </div>
+
+          </div>
+
+          <!-- Métricas Rápidas Compactas -->
+          <div class="grid grid-cols-3 gap-1.5 text-center">
+            <div class="bg-[#141418] py-2 px-1 rounded-xl border border-zinc-800/50">
+              <div class="text-[8px] font-black text-zinc-500 uppercase">Saídas</div>
+              <div class="text-xs font-black text-zinc-300 mono">R$ 0,00</div>
+            </div>
+            <div class="bg-[#141418] py-2 px-1 rounded-xl border border-zinc-800/50">
+              <div class="text-[8px] font-black text-zinc-500 uppercase">Vendas</div>
+              <div class="text-xs font-black text-emerald-400 mono">22 itens</div>
+            </div>
+            <div class="bg-[#141418] py-2 px-1 rounded-xl border border-zinc-800/50">
+              <div class="text-[8px] font-black text-zinc-500 uppercase">Checklist</div>
+              <div class="text-xs font-black text-blue-400 mono">100% OK</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-zinc-800 text-[11px] text-zinc-400">
+        <b>Pontos Fortes:</b> Mostra com clareza imediata a proporção de papel vs Pix em um único bloco sem poluir.
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- OPÇÃO B: COCKPIT INDUSTRIAL (Cards Separados com Alto Contraste) -->
+    <!-- ========================================================================= -->
+    <div class="bg-[#0e0e11] border border-zinc-800 hover:border-zinc-700 rounded-[36px] p-5 shadow-2xl relative overflow-hidden flex flex-col justify-between">
+      <div class="absolute top-4 right-4 bg-zinc-800 text-zinc-300 text-[9px] font-black uppercase px-2.5 py-1 rounded-full">
+        Opção B
+      </div>
+
+      <div>
+        <h2 class="text-sm font-black uppercase tracking-wider text-white mb-1">Cockpit Industrial</h2>
+        <p class="text-[11px] text-zinc-500 mb-5 leading-relaxed">
+          Cards separados com foco cirúrgico nos 3 valores sagrados do fechamento, direto e sem firula.
+        </p>
+
+        <!-- MOCKUP TELA -->
+        <div class="bg-[#09090b] border border-zinc-800 rounded-[28px] p-4 shadow-inner">
+          
+          <!-- Header do App -->
+          <div class="flex items-center justify-between pb-3 mb-3 border-b border-zinc-800/80">
+            <div class="flex items-center gap-2">
+              <div class="h-2 w-2 rounded-full bg-emerald-500"></div>
+              <div>
+                <div class="text-xs font-black text-white uppercase tracking-tighter">CAIXA 2701</div>
+                <div class="text-[8px] font-black uppercase tracking-wider text-zinc-500">Hoje • 27/08</div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="h-7 w-7 rounded-xl bg-zinc-800/80 flex items-center justify-center text-xs">👻</span>
+              <span class="h-7 w-7 rounded-xl bg-zinc-800/80 flex items-center justify-center text-xs">📅</span>
+              <span class="h-7 w-7 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-xs">🔓</span>
+              <span class="h-7 w-7 rounded-xl bg-zinc-800/80 flex items-center justify-center text-xs text-zinc-400">⋯</span>
+            </div>
+          </div>
+
+          <!-- Card 1: Total Sistema (Cheio) -->
+          <div class="bg-[#141418] border border-zinc-800 rounded-[20px] p-3.5 mb-2 flex items-center justify-between">
+            <div>
+              <div class="text-[8px] font-black uppercase tracking-widest text-zinc-500">Meta do Sistema</div>
+              <div class="text-xl font-black text-white mono">R$ 7.340,98</div>
+            </div>
+            <div class="text-right">
+              <div class="text-[8px] font-black uppercase tracking-widest text-red-400">Sobra / Falta</div>
+              <div class="text-xs font-black text-red-400 mono">-R$ 0,09</div>
+            </div>
+          </div>
+
+          <!-- Cards 2 e 3 Lado a Lado: Espécie vs Pix -->
+          <div class="grid grid-cols-2 gap-2 mb-3">
+            
+            <!-- Card Papel -->
+            <div class="bg-[#18181e] border border-amber-500/30 rounded-[20px] p-3">
+              <div class="text-[8px] font-black uppercase tracking-wider text-amber-400 mb-1 flex items-center justify-between">
+                <span>Espécie</span>
+                <span class="text-[10px]">💵</span>
+              </div>
+              <div class="text-base font-black text-white mono">
+                R$ 1.051<span class="text-zinc-500 text-[10px]">,00</span>
+              </div>
+              <div class="text-[8px] font-bold text-zinc-500 mt-1 uppercase">Na gaveta física</div>
+            </div>
+
+            <!-- Card Pix -->
+            <div class="bg-[#18181e] border border-indigo-500/30 rounded-[20px] p-3">
+              <div class="text-[8px] font-black uppercase tracking-wider text-indigo-400 mb-1 flex items-center justify-between">
+                <span>Pix Repasse</span>
+                <span class="text-[10px]">📱</span>
+              </div>
+              <div class="text-base font-black text-indigo-300 mono">
+                R$ 6.289<span class="text-indigo-400/60 text-[10px]">,98</span>
+              </div>
+              <div class="text-[8px] font-bold text-indigo-400/70 mt-1 uppercase">Conta / Celular</div>
+            </div>
+
+          </div>
+
+          <!-- Tag de Fechamento do Malote -->
+          <div class="bg-zinc-900/80 border border-zinc-800 p-2.5 rounded-xl flex items-center justify-between text-[9px] font-black uppercase">
+            <span class="text-zinc-400">Envelope Total:</span>
+            <span class="text-white mono">R$ 1.051 (Papel) + R$ 6.289,98 (Pix)</span>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-zinc-800 text-[11px] text-zinc-400">
+        <b>Pontos Fortes:</b> Visual mais modular, cada valor tem sua própria "caixa forte".
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- OPÇÃO C: O ENVELOPE FÍSICO (Simulação do Malote do Depósito) -->
+    <!-- ========================================================================= -->
+    <div class="bg-[#0e0e11] border border-zinc-800 hover:border-zinc-700 rounded-[36px] p-5 shadow-2xl relative overflow-hidden flex flex-col justify-between">
+      <div class="absolute top-4 right-4 bg-zinc-800 text-zinc-300 text-[9px] font-black uppercase px-2.5 py-1 rounded-full">
+        Opção C
+      </div>
+
+      <div>
+        <h2 class="text-sm font-black uppercase tracking-wider text-white mb-1">O Envelope Físico</h2>
+        <p class="text-[11px] text-zinc-500 mb-5 leading-relaxed">
+          Desenhado exatamente como o papel do malote que você preenche à caneta para entregar ao responsável do depósito.
+        </p>
+
+        <!-- MOCKUP TELA -->
+        <div class="bg-[#09090b] border border-zinc-800 rounded-[28px] p-4 shadow-inner">
+          
+          <!-- Header do App -->
+          <div class="flex items-center justify-between pb-3 mb-3 border-b border-zinc-800/80">
+            <div>
+              <div class="text-xs font-black text-white uppercase tracking-tighter">SQUIRREL</div>
+              <div class="text-[8px] font-black uppercase tracking-wider text-zinc-500">PDV 2701 • 27 AGO</div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="h-7 w-7 rounded-xl bg-zinc-800/80 flex items-center justify-center text-xs">👻</span>
+              <span class="h-7 w-7 rounded-xl bg-zinc-800/80 flex items-center justify-center text-xs">📅</span>
+              <span class="h-7 w-7 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-xs">🔓</span>
+              <span class="h-7 w-7 rounded-xl bg-zinc-800/80 flex items-center justify-center text-xs text-zinc-400">⋯</span>
+            </div>
+          </div>
+
+          <!-- O Envelope Escuro -->
+          <div class="bg-[#18181b] border-2 border-zinc-700/60 rounded-[24px] p-4 mb-3 relative">
+            <div class="text-[8px] font-black uppercase tracking-[3px] text-zinc-400 mb-3 text-center border-b border-zinc-700/40 pb-1.5">
+              ✉️ PRESTAÇÃO DE CONTAS • MALOTE
+            </div>
+
+            <!-- Linha 1: Total -->
+            <div class="flex items-center justify-between py-1.5 border-b border-zinc-800">
+              <span class="text-[10px] font-black uppercase text-zinc-400">1. TOTAL SISTEMA:</span>
+              <span class="text-base font-black text-white mono">R$ 7.340,98</span>
+            </div>
+
+            <!-- Linha 2: Espécie -->
+            <div class="flex items-center justify-between py-1.5 border-b border-zinc-800">
+              <span class="text-[10px] font-black uppercase text-amber-400">2. EM ESPÉCIE (SACO):</span>
+              <span class="text-base font-black text-amber-300 mono">R$ 1.051,00</span>
+            </div>
+
+            <!-- Linha 3: Pix -->
+            <div class="flex items-center justify-between py-1.5">
+              <span class="text-[10px] font-black uppercase text-indigo-400">3. PIX (CONTA):</span>
+              <span class="text-base font-black text-indigo-300 mono">R$ 6.289,98</span>
+            </div>
+
+          </div>
+
+          <!-- Termômetro de Quebra / Gaveta -->
+          <div class="flex items-center justify-between bg-[#121215] border border-zinc-800 p-2.5 rounded-xl text-[9px] font-black uppercase">
+            <span class="text-zinc-500">Status Gaveta:</span>
+            <span class="text-red-400">-R$ 0,09 de Quebra</span>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-zinc-800 text-[11px] text-zinc-400">
+        <b>Pontos Fortes:</b> É um espelho direto do malote físico. Bateu o olho, copiou pro papel.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RODAPÉ DE CONTROLE -->
+  <div class="mt-10 p-6 bg-[#0e0e11] border border-zinc-800 rounded-[32px] text-center max-w-2xl mx-auto">
+    <div class="text-xs font-black uppercase tracking-widest text-emerald-400 mb-2">
+      Pasta Organizada: /redesigners/
+    </div>
+    <p class="text-xs text-zinc-400 leading-relaxed mb-2">
+      Arquivo salvo em <code class="text-emerald-400 bg-zinc-800 px-2 py-0.5 rounded">redesigners/mockup-header.html</code>
+    </p>
+  </div>
+
+</body>
+</html>

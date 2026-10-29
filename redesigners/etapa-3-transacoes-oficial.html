@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Transações (Layout Atual Aprimorado)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 430px;
+      height: 920px;
+      border-radius: 44px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.95), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-6xl mx-auto pb-32">
+
+  <!-- CABEÇALHO DA APRESENTAÇÃO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      📋 ESTRUTURA OFICIAL FIEL AO APP ATUAL
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      Transações (Layout Atual Lapidado)
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-2xl mx-auto font-medium">
+      100% da anatomia, seções, inputs e botões originais do seu app, com o acabamento gráfico refinado e as proporções perfeitas do <b>Painel Principal</b>.
+    </p>
+  </div>
+
+  <!-- CONTAINER DO CELULAR -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- 1. CABEÇALHO OFICIAL DO APP -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-5 py-4 flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="text-lg font-black uppercase tracking-tighter text-white">DINHEIRO</span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span class="text-xs font-black text-zinc-400 uppercase tracking-wider">27 AGO • 2701</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-black uppercase">
+            12 Lançamentos
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. CORPO ROLÁVEL (FLATLIST COM LISTHEADERCOMPONENT) -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-6 relative pb-36">
+
+        <!-- =================================================================== -->
+        <!-- FORMULÁRIO PRINCIPAL (ESTRUTURA EXATA DO TRANSACOES-SCREEN.TSX) -->
+        <!-- =================================================================== -->
+        <div id="form-container" class="rounded-[40px] border border-emerald-500/20 bg-[#121216] p-6 shadow-2xl space-y-6">
+          
+          <!-- 1. TOPO DO CARD: TÍTULO + BOTÕES MULTI & CALC -->
+          <div class="flex items-center justify-between">
+            <span id="form-title" class="text-[11px] font-black uppercase tracking-[2px] text-emerald-400">Novo Lançamento</span>
+            <div class="flex items-center gap-2">
+              <button onclick="toggleModoAvancado()" id="btn-multi" class="flex items-center gap-2 px-3 py-1.5 rounded-full border bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-white transition-all">
+                <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                <span class="text-[9px] font-black uppercase">Multi</span>
+              </button>
+              <button onclick="toggleCalculadora()" id="btn-calc" class="flex items-center gap-2 px-3 py-1.5 rounded-full border bg-purple-500/10 border-purple-500/30 text-purple-400 transition-all">
+                <i data-lucide="calculator" class="w-3.5 h-3.5"></i>
+                <span class="text-[9px] font-black uppercase">Calc</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. SELETOR DAS 6 CATEGORIAS (FLEX-WRAP ORIGINAL) -->
+          <div class="flex flex-wrap gap-2">
+            <button onclick="selectCat('dinheiro')" id="cat-dinheiro" class="rounded-2xl border px-4 py-3 flex items-center gap-2 bg-zinc-100 border-zinc-100 text-zinc-950 shadow transition-all">
+              <i data-lucide="banknote" class="w-3.5 h-3.5 stroke-[3]"></i>
+              <span class="text-[10px] font-black uppercase">Dinheiro</span>
+            </button>
+            <button onclick="selectCat('entrada_prestacao')" id="cat-entrada_prestacao" class="rounded-2xl border px-4 py-3 flex items-center gap-2 bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-white transition-all">
+              <i data-lucide="arrow-down-circle" class="w-3.5 h-3.5"></i>
+              <span class="text-[10px] font-black uppercase">Entrada</span>
+            </button>
+            <button onclick="selectCat('multiplo')" id="cat-multiplo" class="rounded-2xl border px-4 py-3 flex items-center gap-2 bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-white transition-all">
+              <i data-lucide="split" class="w-3.5 h-3.5"></i>
+              <span class="text-[10px] font-black uppercase">Misto</span>
+            </button>
+            <button onclick="selectCat('compra_vista')" id="cat-compra_vista" class="rounded-2xl border px-4 py-3 flex items-center gap-2 bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-white transition-all">
+              <i data-lucide="shopping-cart" class="w-3.5 h-3.5"></i>
+              <span class="text-[10px] font-black uppercase">À Vista</span>
+            </button>
+            <button onclick="selectCat('sangria')" id="cat-sangria" class="rounded-2xl border px-4 py-3 flex items-center gap-2 bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-red-400 transition-all">
+              <i data-lucide="arrow-up-circle" class="w-3.5 h-3.5"></i>
+              <span class="text-[10px] font-black uppercase">Sangria</span>
+            </button>
+            <button onclick="selectCat('cancelamento')" id="cat-cancelamento" class="rounded-2xl border px-4 py-3 flex items-center gap-2 bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-red-400 transition-all">
+              <i data-lucide="x-circle" class="w-3.5 h-3.5"></i>
+              <span class="text-[10px] font-black uppercase">Cancel</span>
+            </button>
+          </div>
+
+          <!-- 3. SUB-TIPO DE ENTRADA (QUANDO FOR PRESTAÇÃO) -->
+          <div id="subtipo-container" class="hidden -mt-2 bg-[#09090c]/80 p-4 rounded-3xl border border-zinc-800/80 space-y-3">
+            <div class="text-[9px] font-black uppercase text-zinc-500 ml-1">Tipo de Entrada</div>
+            <div class="flex flex-wrap gap-2">
+              <button onclick="setSubTipo('Renegociação')" id="sub-reneg" class="rounded-xl border px-4 py-2 bg-[#121216] border-zinc-800 text-zinc-400 hover:text-white text-[10px] font-black uppercase transition-all">Renegociação</button>
+              <button onclick="setSubTipo('Quitação')" id="sub-quit" class="rounded-xl border px-4 py-2 bg-[#121216] border-zinc-800 text-zinc-400 hover:text-white text-[10px] font-black uppercase transition-all">Quitação</button>
+              <button onclick="setSubTipo('Entrada (Compra)')" id="sub-ent" class="rounded-xl border px-4 py-2 bg-blue-500 border-blue-500 text-white text-[10px] font-black uppercase shadow transition-all">Entrada (Compra)</button>
+            </div>
+          </div>
+
+          <!-- 4. CORPO DO FORMULÁRIO (MODO NORMAL vs MODO MULTI) -->
+          <div id="normal-form-body" class="space-y-4">
+            
+            <!-- VALOR DO SISTEMA -->
+            <div>
+              <label class="block mb-2 ml-2 text-[10px] font-black uppercase text-emerald-400/80" id="label-valor-sistema">Valor do Sistema</label>
+              <div class="rounded-[24px] border border-emerald-500/40 bg-[#09090c] px-6 py-5 flex items-center shadow-inner">
+                <span class="text-zinc-500 text-lg font-bold mr-2">R$</span>
+                <input type="text" id="input-valor-sistema" value="436,23" oninput="recalcAll()" class="bg-transparent text-2xl font-black mono text-zinc-100 focus:outline-none w-full" />
+              </div>
+            </div>
+
+            <!-- VINCULAR REGISTRO ANTERIOR -->
+            <div>
+              <button onclick="toggleVincular()" id="btn-vincular" class="w-full flex items-center justify-between px-6 py-4 rounded-[24px] border bg-[#09090c] border-zinc-800 text-zinc-400 hover:border-zinc-700 transition-all">
+                <div class="flex items-center gap-3">
+                  <i data-lucide="link" class="w-4 h-4 text-zinc-500" id="icon-vincular"></i>
+                  <span class="font-black text-[10px] uppercase text-zinc-400" id="text-vincular">Vincular</span>
+                </div>
+                <span class="text-blue-400 font-bold text-[9px] uppercase" id="action-vincular">Selecionar</span>
+              </button>
+
+              <div id="box-vincular-lista" class="hidden mt-2 bg-[#09090c] rounded-[24px] border border-zinc-800 p-3 max-h-[220px] overflow-y-auto space-y-2">
+                <input type="text" placeholder="BUSCAR VENDA..." class="bg-[#121216] border border-zinc-800 rounded-xl px-4 py-3 text-white font-bold text-[9px] w-full uppercase focus:outline-none" />
+                <div onclick="setVinculo('Venda Balcão #40921 - R$ 150,00')" class="px-4 py-2.5 border-b border-zinc-800/50 flex justify-between items-center cursor-pointer hover:bg-zinc-900 rounded-lg">
+                  <span class="text-zinc-300 font-bold text-xs">Venda Balcão Balas</span>
+                  <span class="text-zinc-500 font-black text-xs mono">R$ 150,00</span>
+                </div>
+                <div onclick="setVinculo('Renegociação João Silva - R$ 280,00')" class="px-4 py-2.5 border-b border-zinc-800/50 flex justify-between items-center cursor-pointer hover:bg-zinc-900 rounded-lg">
+                  <span class="text-zinc-300 font-bold text-xs">Renegociação João</span>
+                  <span class="text-zinc-500 font-black text-xs mono">R$ 280,00</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- LINHA DE DESCRIÇÃO & CONTRATO -->
+            <div class="flex gap-3 w-full" id="linha-desc-contrato">
+              <div class="flex-[1.5] min-w-0" id="wrap-desc">
+                <input type="text" id="input-desc" placeholder="Descrição" value="Deise" class="w-full rounded-[24px] border border-emerald-500/20 bg-[#09090c] px-6 py-5 text-zinc-200 font-bold text-sm focus:outline-none focus:border-zinc-700" />
+              </div>
+              <div class="flex-1 min-w-0" id="wrap-contrato">
+                <input type="text" id="input-contrato" placeholder="Contrato" value="#1082" class="w-full rounded-[24px] border border-emerald-500/20 bg-[#09090c] px-4 py-5 text-zinc-400 font-black text-xs text-center uppercase focus:outline-none focus:border-zinc-700" />
+              </div>
+            </div>
+
+          </div>
+
+          <!-- MODO AVANÇADO MULTI-LINHAS (PAGAMENTOS.MAP) -->
+          <div id="multi-form-body" class="hidden space-y-3">
+            <div class="p-5 rounded-[32px] border border-zinc-800/60 bg-[#09090c]/40 space-y-4">
+              <div class="flex justify-between items-center">
+                <span class="text-[9px] font-black uppercase text-zinc-500">Valor #1</span>
+              </div>
+              <div class="rounded-2xl border border-zinc-700 bg-[#09090c] px-5 py-4 flex items-center">
+                <span class="text-zinc-500 text-base font-bold mr-2">R$</span>
+                <input type="text" value="800,00" class="bg-transparent text-xl font-black mono text-zinc-100 focus:outline-none w-full" />
+              </div>
+              <div class="flex gap-2 w-full">
+                <input type="text" value="Dilone" placeholder="Desc." class="flex-[2] rounded-xl border border-zinc-800 bg-[#09090c] px-4 py-3 text-zinc-200 font-bold text-xs focus:outline-none" />
+                <input type="text" value="#4092" placeholder="Contr." class="flex-1 rounded-xl border border-zinc-800 bg-[#09090c] px-3 py-3 text-zinc-400 font-black text-[10px] text-center uppercase focus:outline-none" />
+              </div>
+            </div>
+
+            <div class="p-5 rounded-[32px] border border-zinc-800/60 bg-[#09090c]/40 space-y-4">
+              <div class="flex justify-between items-center">
+                <span class="text-[9px] font-black uppercase text-zinc-500">Valor #2</span>
+                <button class="text-red-400 p-1"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+              </div>
+              <div class="rounded-2xl border border-zinc-700 bg-[#09090c] px-5 py-4 flex items-center">
+                <span class="text-zinc-500 text-base font-bold mr-2">R$</span>
+                <input type="text" value="1.200,00" class="bg-transparent text-xl font-black mono text-zinc-100 focus:outline-none w-full" />
+              </div>
+              <div class="flex gap-2 w-full">
+                <input type="text" value="Dilone" placeholder="Desc." class="flex-[2] rounded-xl border border-zinc-800 bg-[#09090c] px-4 py-3 text-zinc-200 font-bold text-xs focus:outline-none" />
+                <input type="text" value="#4093" placeholder="Contr." class="flex-1 rounded-xl border border-zinc-800 bg-[#09090c] px-3 py-3 text-zinc-400 font-black text-[10px] text-center uppercase focus:outline-none" />
+              </div>
+            </div>
+
+            <button class="w-full py-4 border-2 border-dashed border-blue-500/30 rounded-[24px] flex items-center justify-center bg-blue-500/5 gap-2 text-blue-400 font-black text-[10px] uppercase">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Adicionar Pagamento</span>
+            </button>
+          </div>
+
+          <!-- 5. BLOCO DE ACERTO DE CONTAS (QUANDO NÃO FOR SAÍDA) -->
+          <div id="bloco-acerto-contas" class="bg-[#09090c]/50 p-5 rounded-[32px] border border-zinc-800/50 space-y-4">
+            <div class="text-[9px] font-black uppercase text-zinc-500 text-center">Acerto de Contas</div>
+
+            <!-- MODO CALCULADORA (RECEBIDO E TROCO DADO) -->
+            <div id="wrap-calc" class="flex gap-3">
+              <div class="flex-1 min-w-0">
+                <label class="block mb-2 ml-2 text-[9px] font-black uppercase text-zinc-400">Recebido</label>
+                <div class="rounded-2xl border border-zinc-700 bg-[#09090c] px-4 py-4 flex items-center">
+                  <span class="text-zinc-500 text-sm font-bold mr-1.5">R$</span>
+                  <input type="text" id="input-recebido" value="438,00" oninput="recalcAll()" class="bg-transparent text-lg font-black mono text-zinc-100 focus:outline-none w-full" />
+                </div>
+              </div>
+              <div class="flex-1 min-w-0">
+                <label class="block mb-2 ml-2 text-[9px] font-black uppercase text-zinc-400">Troco Dado</label>
+                <div class="rounded-2xl border border-zinc-700 bg-[#09090c] px-4 py-4 flex items-center">
+                  <span class="text-zinc-500 text-sm font-bold mr-1.5">R$</span>
+                  <input type="text" id="input-troco-dado" value="0,00" oninput="recalcAll()" class="bg-transparent text-lg font-black mono text-zinc-100 focus:outline-none w-full" />
+                </div>
+              </div>
+            </div>
+
+            <!-- MODO SIMPLES (FICOU NA GAVETA) -->
+            <div id="wrap-simples" class="hidden">
+              <label class="block mb-2 ml-2 text-[9px] font-black uppercase text-zinc-400 text-center">Ficou na Gaveta</label>
+              <div class="rounded-2xl border border-zinc-700 bg-[#09090c] px-5 py-4 flex items-center justify-center">
+                <span class="text-zinc-500 text-base font-bold mr-2">R$</span>
+                <input type="text" id="input-ficou-gaveta" value="438,00" oninput="recalcAll()" class="bg-transparent text-xl font-black mono text-zinc-100 text-center focus:outline-none" />
+              </div>
+            </div>
+
+            <!-- CARD DE FEEDBACK VISUAL DE SOBRA / FALTA -->
+            <div id="feedback-sobra-box" class="rounded-3xl border border-emerald-500/30 bg-emerald-500/5 p-5">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div id="sobra-label" class="text-[9px] uppercase font-black text-emerald-400">Sobra</div>
+                  <div id="sobra-value" class="text-2xl font-black text-emerald-300 mono leading-tight">+ R$ 1,77</div>
+                </div>
+                <div class="text-right">
+                  <div class="text-[8px] font-black text-zinc-500 uppercase">Gaveta Final</div>
+                  <div id="gaveta-final-value" class="text-sm font-black text-zinc-300 mono">R$ 438,00</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 6. BOTÃO SALVAR PRINCIPAL -->
+          <div class="flex gap-2">
+            <button onclick="salvarLançamento()" id="btn-submit" class="flex-1 rounded-[24px] py-5 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-2xl active:scale-[0.98] transition-all">
+              <span id="btn-submit-text">Registrar Lançamento</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- BUSCA (SETTINGS.SEARCHENABLED) -->
+        <!-- =================================================================== -->
+        <div class="rounded-[32px] border border-zinc-800 bg-[#121216] p-6 shadow-sm space-y-4">
+          <div class="flex items-center gap-3 ml-1">
+            <i data-lucide="search" class="w-3.5 h-3.5 text-pink-400"></i>
+            <span class="text-[10px] font-black uppercase tracking-[3px] text-zinc-500">Busca</span>
+          </div>
+          <input type="text" oninput="filtrarFeed(this.value)" placeholder="Valor ou descrição..." class="w-full rounded-2xl border border-zinc-700 bg-[#09090c] px-6 py-5 text-zinc-100 font-bold text-base focus:outline-none focus:border-zinc-500" />
+        </div>
+
+        <!-- =================================================================== -->
+        <!-- HISTÓRICO DE HOJE (LISTAGEM DE TRANSAÇÕES) -->
+        <!-- =================================================================== -->
+        <div class="space-y-4">
+          <div class="ml-2 text-[11px] font-black uppercase tracking-[3px] text-zinc-600">Histórico de Hoje</div>
+
+          <div id="feed-container" class="space-y-4">
+            
+            <!-- Card 1: Manoel -->
+            <div class="feed-card rounded-[32px] bg-[#121216] p-6 border border-zinc-800 overflow-hidden shadow-sm">
+              <div class="flex items-center justify-between">
+                <div class="flex-1 flex items-center gap-4 min-w-0">
+                  <div class="h-12 w-12 items-center justify-center rounded-2xl bg-[#09090c] border border-emerald-500/20 flex flex-shrink-0">
+                    <i data-lucide="banknote" class="w-5 h-5 text-emerald-400"></i>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                      <span class="text-[10px] font-black uppercase tracking-widest text-emerald-400">16:49:30 • Dinheiro</span>
+                    </div>
+                    <div class="text-xl font-black text-zinc-100 tracking-tighter mono">+R$ 984,75</div>
+                    <div class="flex items-center gap-2 mt-1 flex-wrap">
+                      <div class="px-1.5 py-0.5 rounded border bg-emerald-500/10 border-emerald-500/20">
+                        <span class="text-[8px] font-black uppercase text-emerald-400">+ R$ 0,25</span>
+                      </div>
+                      <span class="text-[10px] font-bold text-zinc-400 uppercase truncate">Manoel</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex gap-2 ml-4 flex-shrink-0">
+                  <button class="h-10 w-10 items-center justify-center rounded-xl bg-zinc-800/50 border border-zinc-700/50 flex text-zinc-400 hover:text-white"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                  <button class="h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20 flex text-red-400 hover:bg-red-500/20"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: Dilone (Múltiplo) -->
+            <div class="feed-card rounded-[32px] bg-[#121216] p-6 border border-zinc-800 overflow-hidden shadow-sm">
+              <div class="flex items-center justify-between">
+                <div class="flex-1 flex items-center gap-4 min-w-0">
+                  <div class="h-12 w-12 items-center justify-center rounded-2xl bg-[#09090c] border border-orange-500/20 flex flex-shrink-0">
+                    <i data-lucide="split" class="w-5 h-5 text-orange-400"></i>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                      <span class="text-[10px] font-black uppercase tracking-widest text-orange-400">15:25:03 • Misto</span>
+                      <div class="bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">
+                        <span class="text-[8px] font-black text-zinc-400">#4092</span>
+                      </div>
+                    </div>
+                    <div class="text-xl font-black text-zinc-100 tracking-tighter mono">+R$ 800,00</div>
+                    <div class="flex items-center gap-2 mt-1">
+                      <span class="text-[10px] font-bold text-zinc-400 uppercase truncate">Dilone (Carnês Família)</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex gap-2 ml-4 flex-shrink-0">
+                  <button class="h-10 w-10 items-center justify-center rounded-xl bg-zinc-800/50 border border-zinc-700/50 flex text-zinc-400 hover:text-white"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                  <button class="h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20 flex text-red-400 hover:bg-red-500/20"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3: Entrada (Compra) / Daniel -->
+            <div class="feed-card rounded-[32px] bg-[#121216] p-6 border border-zinc-800 overflow-hidden shadow-sm">
+              <div class="flex items-center justify-between">
+                <div class="flex-1 flex items-center gap-4 min-w-0">
+                  <div class="h-12 w-12 items-center justify-center rounded-2xl bg-[#09090c] border border-blue-500/20 flex flex-shrink-0">
+                    <i data-lucide="arrow-down-circle" class="w-5 h-5 text-blue-400"></i>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                      <span class="text-[10px] font-black uppercase tracking-widest text-blue-400">14:05:50 • Entrada</span>
+                    </div>
+                    <div class="text-xl font-black text-zinc-100 tracking-tighter mono">+R$ 500,00</div>
+                    <div class="flex items-center gap-2 mt-1">
+                      <span class="text-[10px] font-bold text-zinc-400 uppercase truncate">Entrada (Compra) / Daniel</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex gap-2 ml-4 flex-shrink-0">
+                  <button class="h-10 w-10 items-center justify-center rounded-xl bg-zinc-800/50 border border-zinc-700/50 flex text-zinc-400 hover:text-white"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                  <button class="h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20 flex text-red-400 hover:bg-red-500/20"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 4: Sangria Gasolina -->
+            <div class="feed-card rounded-[32px] bg-[#121216] p-6 border border-zinc-800 overflow-hidden shadow-sm">
+              <div class="flex items-center justify-between">
+                <div class="flex-1 flex items-center gap-4 min-w-0">
+                  <div class="h-12 w-12 items-center justify-center rounded-2xl bg-[#09090c] border border-red-500/20 flex flex-shrink-0">
+                    <i data-lucide="arrow-up-circle" class="w-5 h-5 text-red-400"></i>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1 flex-wrap">
+                      <span class="text-[10px] font-black uppercase tracking-widest text-red-400">13:47:12 • Sangria</span>
+                    </div>
+                    <div class="text-xl font-black text-red-400 tracking-tighter mono">-R$ 50,00</div>
+                    <div class="flex items-center gap-2 mt-1">
+                      <span class="text-[10px] font-bold text-zinc-400 uppercase truncate">Despesa Gasolina / Terceirizado</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="flex gap-2 ml-4 flex-shrink-0">
+                  <button class="h-10 w-10 items-center justify-center rounded-xl bg-zinc-800/50 border border-zinc-700/50 flex text-zinc-400 hover:text-white"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                  <button class="h-10 w-10 items-center justify-center rounded-xl bg-red-500/10 border border-red-500/20 flex text-red-400 hover:bg-red-500/20"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 3. BARRA FLUTUANTE OFICIAL (COM ABA DINHEIRO ATIVA) -->
+      <div class="absolute bottom-6 left-0 right-0 px-3 z-50 flex items-center justify-center pointer-events-auto">
+        <div class="bg-[#141418]/95 backdrop-blur-2xl border border-zinc-700/80 rounded-full p-1.5 px-2 flex items-center gap-1 shadow-[0_20px_50px_rgba(0,0,0,0.95)]">
+          <button class="h-10 w-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white"><i data-lucide="layout-dashboard" class="w-4 h-4"></i></button>
+          <button class="flex items-center gap-2 py-2 px-4 rounded-full bg-white text-zinc-950 shadow-md font-black">
+            <i data-lucide="banknote" class="w-4 h-4 stroke-[2.5]"></i>
+            <span class="text-[10.5px] uppercase tracking-tight font-sans">Dinheiro</span>
+          </button>
+          <button class="h-10 w-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white"><i data-lucide="credit-card" class="w-4 h-4"></i></button>
+          <button class="h-10 w-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white"><i data-lucide="building-2" class="w-4 h-4"></i></button>
+          <button class="h-10 w-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white relative">
+            <i data-lucide="check-square" class="w-4 h-4"></i>
+            <span class="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-blue-500 text-[8.5px] font-black text-white shadow-sm">22</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    let currentCat = 'dinheiro';
+    let isModoAvancado = false;
+    let isCalculadora = true;
+    let subTipo = 'Entrada (Compra)';
+    let vinculoSelecionado = null;
+
+    function selectCat(cat) {
+      currentCat = cat;
+      const subtipoBox = document.getElementById('subtipo-container');
+      const blocoAcerto = document.getElementById('bloco-acerto-contas');
+      const btnSubmit = document.getElementById('btn-submit');
+      const formContainer = document.getElementById('form-container');
+      const labelValor = document.getElementById('label-valor-sistema');
+
+      // Reset botões de categorias
+      document.querySelectorAll('.cat-btn').forEach(b => {
+        b.className = 'rounded-2xl border px-4 py-3 flex items-center gap-2 bg-[#09090c] border-zinc-800 text-zinc-400 hover:text-white transition-all';
+      });
+
+      const selectedBtn = document.getElementById('cat-' + cat);
+
+      if (cat === 'dinheiro') {
+        selectedBtn.className = 'rounded-2xl border px-4 py-3 flex items-center gap-2 bg-zinc-100 border-zinc-100 text-zinc-950 shadow transition-all';
+        formContainer.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+        btnSubmit.className = 'flex-1 rounded-[24px] py-5 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-2xl active:scale-[0.98] transition-all';
+        labelValor.className = 'block mb-2 ml-2 text-[10px] font-black uppercase text-emerald-400/80';
+        subtipoBox.classList.add('hidden');
+        blocoAcerto.classList.remove('hidden');
+      } else if (cat === 'entrada_prestacao') {
+        selectedBtn.className = 'rounded-2xl border px-4 py-3 flex items-center gap-2 bg-blue-500 border-blue-500 text-white shadow transition-all';
+        formContainer.style.borderColor = 'rgba(59, 130, 246, 0.2)';
+        btnSubmit.className = 'flex-1 rounded-[24px] py-5 bg-blue-500 hover:bg-blue-400 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-2xl active:scale-[0.98] transition-all';
+        labelValor.className = 'block mb-2 ml-2 text-[10px] font-black uppercase text-blue-400/80';
+        subtipoBox.classList.remove('hidden');
+        blocoAcerto.classList.remove('hidden');
+      } else if (cat === 'multiplo') {
+        selectedBtn.className = 'rounded-2xl border px-4 py-3 flex items-center gap-2 bg-orange-500 border-orange-500 text-white shadow transition-all';
+        formContainer.style.borderColor = 'rgba(249, 115, 22, 0.2)';
+        btnSubmit.className = 'flex-1 rounded-[24px] py-5 bg-orange-500 hover:bg-orange-400 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-2xl active:scale-[0.98] transition-all';
+        labelValor.className = 'block mb-2 ml-2 text-[10px] font-black uppercase text-orange-400/80';
+        subtipoBox.classList.add('hidden');
+        blocoAcerto.classList.remove('hidden');
+      } else if (cat === 'compra_vista') {
+        selectedBtn.className = 'rounded-2xl border px-4 py-3 flex items-center gap-2 bg-zinc-200 border-zinc-200 text-zinc-950 shadow transition-all';
+        formContainer.style.borderColor = 'rgba(244, 244, 245, 0.2)';
+        btnSubmit.className = 'flex-1 rounded-[24px] py-5 bg-zinc-100 hover:bg-white text-zinc-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-2xl active:scale-[0.98] transition-all';
+        labelValor.className = 'block mb-2 ml-2 text-[10px] font-black uppercase text-zinc-300';
+        subtipoBox.classList.add('hidden');
+        blocoAcerto.classList.remove('hidden');
+      } else if (cat === 'sangria' || cat === 'cancelamento') {
+        selectedBtn.className = 'rounded-2xl border px-4 py-3 flex items-center gap-2 bg-red-500 border-red-500 text-white shadow transition-all';
+        formContainer.style.borderColor = 'rgba(239, 68, 68, 0.2)';
+        btnSubmit.className = 'flex-1 rounded-[24px] py-5 bg-red-500 hover:bg-red-400 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-2xl active:scale-[0.98] transition-all';
+        labelValor.className = 'block mb-2 ml-2 text-[10px] font-black uppercase text-red-400/80';
+        subtipoBox.classList.add('hidden');
+        blocoAcerto.classList.add('hidden'); // Sangria / cancelamento não tem acerto de troco
+      }
+    }
+
+    function setSubTipo(tipo) {
+      subTipo = tipo;
+      document.getElementById('input-desc').value = tipo + ' / ';
+      document.getElementById('sub-reneg').className = tipo === 'Renegociação' ? 'rounded-xl border px-4 py-2 bg-blue-500 border-blue-500 text-white text-[10px] font-black uppercase shadow' : 'rounded-xl border px-4 py-2 bg-[#121216] border-zinc-800 text-zinc-400 hover:text-white text-[10px] font-black uppercase';
+      document.getElementById('sub-quit').className = tipo === 'Quitação' ? 'rounded-xl border px-4 py-2 bg-blue-500 border-blue-500 text-white text-[10px] font-black uppercase shadow' : 'rounded-xl border px-4 py-2 bg-[#121216] border-zinc-800 text-zinc-400 hover:text-white text-[10px] font-black uppercase';
+      document.getElementById('sub-ent').className = tipo === 'Entrada (Compra)' ? 'rounded-xl border px-4 py-2 bg-blue-500 border-blue-500 text-white text-[10px] font-black uppercase shadow' : 'rounded-xl border px-4 py-2 bg-[#121216] border-zinc-800 text-zinc-400 hover:text-white text-[10px] font-black uppercase';
+    }
+
+    function toggleModoAvancado() {
+      isModoAvancado = !isModoAvancado;
+      const normalBody = document.getElementById('normal-form-body');
+      const multiBody = document.getElementById('multi-form-body');
+      const btn = document.getElementById('btn-multi');
+
+      if (isModoAvancado) {
+        normalBody.classList.add('hidden');
+        multiBody.classList.remove('hidden');
+        btn.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full border bg-blue-500/10 border-blue-500/30 text-blue-400';
+      } else {
+        normalBody.classList.remove('hidden');
+        multiBody.classList.add('hidden');
+        btn.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full border bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-white';
+      }
+    }
+
+    function toggleCalculadora() {
+      isCalculadora = !isCalculadora;
+      const wrapCalc = document.getElementById('wrap-calc');
+      const wrapSimples = document.getElementById('wrap-simples');
+      const btn = document.getElementById('btn-calc');
+
+      if (isCalculadora) {
+        wrapCalc.classList.remove('hidden');
+        wrapSimples.classList.add('hidden');
+        btn.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full border bg-purple-500/10 border-purple-500/30 text-purple-400';
+      } else {
+        wrapCalc.classList.add('hidden');
+        wrapSimples.classList.remove('hidden');
+        btn.className = 'flex items-center gap-2 px-3 py-1.5 rounded-full border bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-white';
+      }
+    }
+
+    function toggleVincular() {
+      const box = document.getElementById('box-vincular-lista');
+      box.classList.toggle('hidden');
+    }
+
+    function setVinculo(nome) {
+      vinculoSelecionado = nome;
+      document.getElementById('text-vincular').innerText = 'Vinculado';
+      document.getElementById('text-vincular').className = 'font-black text-[10px] uppercase text-blue-400';
+      document.getElementById('btn-vincular').className = 'w-full flex items-center justify-between px-6 py-4 rounded-[24px] border bg-blue-500/10 border-blue-500/30 text-blue-400';
+      document.getElementById('icon-vincular').className = 'w-4 h-4 text-blue-400';
+      document.getElementById('action-vincular').innerText = 'Remover';
+      document.getElementById('box-vincular-lista').classList.add('hidden');
+    }
+
+    function recalcAll() {
+      const vSisStr = document.getElementById('input-valor-sistema').value.replace(',', '.');
+      const vRecStr = document.getElementById('input-recebido').value.replace(',', '.');
+      const vTrocoStr = document.getElementById('input-troco-dado').value.replace(',', '.');
+
+      const vSis = parseFloat(vSisStr) || 0;
+      const vRec = parseFloat(vRecStr) || 0;
+      const vTroco = parseFloat(vTrocoStr) || 0;
+
+      const ficouGaveta = vRec - vTroco;
+      const sobra = ficouGaveta - vSis;
+
+      const box = document.getElementById('feedback-sobra-box');
+      const label = document.getElementById('sobra-label');
+      const val = document.getElementById('sobra-value');
+      const gaveta = document.getElementById('gaveta-final-value');
+
+      gaveta.innerText = 'R$ ' + ficouGaveta.toFixed(2).replace('.', ',');
+
+      if (sobra > 0.001) {
+        box.className = 'rounded-3xl border border-emerald-500/30 bg-emerald-500/5 p-5';
+        label.innerText = 'Sobra';
+        label.className = 'text-[9px] uppercase font-black text-emerald-400';
+        val.innerText = '+ R$ ' + sobra.toFixed(2).replace('.', ',');
+        val.className = 'text-2xl font-black text-emerald-300 mono leading-tight';
+      } else if (sobra < -0.001) {
+        box.className = 'rounded-3xl border border-red-500/30 bg-red-500/5 p-5';
+        label.innerText = 'Falta';
+        label.className = 'text-[9px] uppercase font-black text-red-400';
+        val.innerText = '- R$ ' + Math.abs(sobra).toFixed(2).replace('.', ',');
+        val.className = 'text-2xl font-black text-red-400 mono leading-tight';
+      } else {
+        box.className = 'rounded-3xl border border-blue-500/30 bg-blue-500/5 p-5';
+        label.innerText = 'Exato';
+        label.className = 'text-[9px] uppercase font-black text-blue-400';
+        val.innerText = 'R$ 0,00';
+        val.className = 'text-2xl font-black text-blue-300 mono leading-tight';
+      }
+    }
+
+    function salvarLançamento() {
+      alert('Lançamento Registrado com Sucesso!');
+    }
+
+    function filtrarFeed(q) {
+      const query = q.toLowerCase();
+      document.querySelectorAll('.feed-card').forEach(c => {
+        const t = c.innerText.toLowerCase();
+        c.style.display = t.includes(query) ? 'block' : 'none';
+      });
+    }
+
+    lucide.createIcons();
+  </script>
+</body>
+</html>

@@ -27,6 +27,20 @@ export async function getCredentials() {
   return { email, pass };
 }
 
+export async function updateStoredPassword(newPass: string) {
+  const creds = await getCredentials();
+  if (creds && creds.email) {
+    await saveCredentials(creds.email, newPass);
+  }
+}
+
+export async function updateStoredEmail(newEmail: string) {
+  const creds = await getCredentials();
+  if (creds && creds.pass) {
+    await saveCredentials(newEmail, creds.pass);
+  }
+}
+
 export async function saveUid(uid: string) {
   if (Platform.OS === 'web') {
     localStorage.setItem(KEY_UID, uid);
@@ -52,4 +66,34 @@ export async function clearCredentials() {
   await SecureStore.deleteItemAsync(KEY_EMAIL);
   await SecureStore.deleteItemAsync(KEY_PASS);
   await SecureStore.deleteItemAsync(KEY_UID);
+}
+
+const KEY_BO_USER = 'squirrel_bo_user';
+const KEY_BO_PASS = 'squirrel_bo_pass';
+
+export async function saveBackofficeCredentials(user: string, pass: string): Promise<void> {
+  if (Platform.OS === 'web') {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(KEY_BO_USER, user);
+      localStorage.setItem(KEY_BO_PASS, pass);
+    }
+    return;
+  }
+  await SecureStore.setItemAsync(KEY_BO_USER, user);
+  await SecureStore.setItemAsync(KEY_BO_PASS, pass);
+}
+
+export async function getBackofficeCredentials(): Promise<{ user: string; pass: string }> {
+  if (Platform.OS === 'web') {
+    if (typeof localStorage !== 'undefined') {
+      return {
+        user: localStorage.getItem(KEY_BO_USER) || '',
+        pass: localStorage.getItem(KEY_BO_PASS) || '',
+      };
+    }
+    return { user: '', pass: '' };
+  }
+  const user = await SecureStore.getItemAsync(KEY_BO_USER);
+  const pass = await SecureStore.getItemAsync(KEY_BO_PASS);
+  return { user: user || '', pass: pass || '' };
 }

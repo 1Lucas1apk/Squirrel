@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Rework da Aba de Opções (DNA Oficial)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050508;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 410px;
+      border-radius: 46px;
+      border: 3.5px solid #27272a;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 0 1px #18181b;
+      background-color: #09090c;
+      overflow: hidden;
+      min-height: 760px;
+      position: relative;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .btn-tactile:active {
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-6xl mx-auto pb-32">
+
+  <!-- CABEÇALHO DO PROJETO -->
+  <div class="mb-8 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-black uppercase tracking-widest mb-3 shadow-sm">
+      🐿️ SQUIRREL CORE • DESIGN DNA OFICIAL
+    </div>
+    <h1 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-white">
+      Rework da Aba de Opções (...)
+    </h1>
+    <p class="text-zinc-400 text-sm mt-2 max-w-2xl mx-auto font-medium leading-relaxed">
+      Projetado com o mesmo DNA exato do <span class="text-zinc-200 font-bold">Painel</span>, <span class="text-zinc-200 font-bold">Transações</span> e <span class="text-zinc-200 font-bold">Fantasmas</span>: superfícies <code class="text-amber-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">#121216</code> e <code class="text-amber-400 text-xs bg-zinc-900 px-1.5 py-0.5 rounded">#09090c</code>, caixas de ícone 48x48 temáticas, respiros generosos e tipografia tática.
+    </p>
+
+    <!-- SELETOR DE CONCEITOS -->
+    <div class="flex items-center justify-center gap-2.5 mt-6 flex-wrap">
+      <button onclick="switchConcept('modelo-1')" id="btn-m1" class="concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-amber-500 text-black border-amber-400 shadow-xl">
+        ⭐ 1. Terminal Operacional (DNA Padrão)
+      </button>
+      <button onclick="switchConcept('modelo-2')" id="btn-m2" class="concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] text-zinc-400 border-zinc-800 hover:border-zinc-700">
+        📑 2. Sub-Abas Rápidas (Tabbed Hub)
+      </button>
+      <button onclick="switchConcept('modelo-3')" id="btn-m3" class="concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] text-zinc-400 border-zinc-800 hover:border-zinc-700">
+        🎛️ 3. Command Grid & Status Ao Vivo
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER MOBILE FRAME -->
+  <div class="flex flex-col items-center justify-center">
+    
+    <div class="mobile-frame relative flex flex-col justify-end bg-black/90">
+      
+      <!-- BACKGROUND OVERLAY -->
+      <div class="absolute inset-0 bg-[#050508] opacity-95"></div>
+
+      <!-- ========================================================================= -->
+      <!-- MODELO 1: TERMINAL OPERACIONAL (DNA OFICIAL DO SQUIRREL) -->
+      <!-- ========================================================================= -->
+      <div id="view-modelo-1" class="concept-view relative w-full bg-[#0d0d12] rounded-t-[40px] border-t border-zinc-800 shadow-2xl p-4 md:p-5 pt-3 max-h-[92vh] overflow-y-auto no-scrollbar">
+        <!-- Handle Bar -->
+        <div class="w-12 h-1.5 rounded-full bg-zinc-800 mx-auto mb-4"></div>
+
+        <!-- TOP BAR: HEADER DO MODAL -->
+        <div class="flex items-center justify-between pb-3 mb-4 px-1 border-b border-zinc-900">
+          <div class="flex items-center gap-2.5">
+            <div class="h-6 w-6 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+              <i data-lucide="sliders" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+            </div>
+            <span class="text-xs font-black uppercase tracking-[2px] text-zinc-300">Central de Operações</span>
+          </div>
+          <button class="h-8 w-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- 1. HERO CARD: STATUS DO CAIXA & OPERADOR (DNA DO PAINEL) -->
+        <div class="bg-[#121216] border border-amber-500/40 rounded-[32px] p-4.5 mb-4 shadow-xl space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3.5">
+              <div class="h-12 w-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="store" class="w-6 h-6 text-amber-400"></i>
+              </div>
+              <div>
+                <div class="text-[10px] font-black uppercase tracking-[2px] text-amber-400">TERMINAL ATIVO</div>
+                <div class="text-base font-black text-white uppercase tracking-tight">CAIXA 01 • TURNO ABERTO</div>
+              </div>
+            </div>
+
+            <div class="px-3 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+              <span class="text-[10px] font-black text-emerald-300 uppercase">ONLINE</span>
+            </div>
+          </div>
+
+          <!-- Mini Faixa com Dados Rápidos do Turno -->
+          <div class="bg-[#09090c] p-3 px-3.5 rounded-2xl border border-zinc-800/90 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <i data-lucide="calendar" class="w-4 h-4 text-zinc-500"></i>
+              <span class="text-xs font-bold text-zinc-300">27 de Agosto de 2026</span>
+            </div>
+            <div class="flex items-center gap-1 text-[11px] font-mono font-bold text-zinc-400">
+              <span>ID:</span>
+              <span class="text-zinc-200 font-black">#2701</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. CARD: INTELIGÊNCIA & ANÁLISES (DOIS CARDS HERO 48x48) -->
+        <div class="bg-[#121216] border border-zinc-800 rounded-[32px] p-4.5 mb-4 shadow-xl space-y-3">
+          <div class="flex items-center justify-between px-1">
+            <div class="flex items-center gap-2">
+              <div class="h-6 w-6 rounded-lg bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+              </div>
+              <span class="text-xs font-black uppercase tracking-[1.5px] text-zinc-300">Inteligência & Insights</span>
+            </div>
+          </div>
+
+          <!-- Grid 2x1 com Ícones Grandes e Badges -->
+          <div class="space-y-2.5">
+            <!-- Retrospectiva / Você Sabia? -->
+            <button class="btn-tactile w-full bg-[#09090c] p-3.5 px-4 rounded-2xl border border-amber-500/30 flex items-center justify-between text-left hover:border-amber-500/60 transition-all shadow-sm">
+              <div class="flex items-center gap-3.5 flex-1 min-w-0">
+                <div class="h-12 w-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="sparkles" class="w-6 h-6 text-amber-300"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 mb-0.5">
+                    <span class="text-xs font-black text-white uppercase tracking-wider">Você Sabia? (Retrospectiva)</span>
+                  </div>
+                  <span class="text-[10px] font-medium text-zinc-400 block truncate">Curiosidades, médias e destaques do caixa</span>
+                </div>
+              </div>
+              <div class="px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 ml-2 flex-shrink-0">
+                <span class="text-[9px] font-black text-amber-300 uppercase">ABRIR</span>
+              </div>
+            </button>
+
+            <!-- Mapa de Movimentação -->
+            <button class="btn-tactile w-full bg-[#09090c] p-3.5 px-4 rounded-2xl border border-blue-500/30 flex items-center justify-between text-left hover:border-blue-500/60 transition-all shadow-sm">
+              <div class="flex items-center gap-3.5 flex-1 min-w-0">
+                <div class="h-12 w-12 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="activity" class="w-6 h-6 text-blue-300"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-1.5 mb-0.5">
+                    <span class="text-xs font-black text-white uppercase tracking-wider">Mapa de Movimentação</span>
+                  </div>
+                  <span class="text-[10px] font-medium text-zinc-400 block truncate">Fluxo financeiro, horários de pico e gráficos</span>
+                </div>
+              </div>
+              <div class="px-2.5 py-1 rounded-xl bg-blue-500/15 border border-blue-500/30 ml-2 flex-shrink-0">
+                <span class="text-[9px] font-black text-blue-300 uppercase">ABRIR</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 3. CARD: EXPORTAÇÃO, BACKUPS & RESTAURAÇÃO (DNA DAS TRANSAÇÕES) -->
+        <div class="bg-[#121216] border border-zinc-800 rounded-[32px] p-4.5 mb-4 shadow-xl space-y-3">
+          <div class="flex items-center justify-between px-1">
+            <div class="flex items-center gap-2">
+              <div class="h-6 w-6 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                <i data-lucide="database" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+              </div>
+              <span class="text-xs font-black uppercase tracking-[1.5px] text-zinc-300">Auditoria & Backups</span>
+            </div>
+          </div>
+
+          <div class="space-y-2.5">
+            <!-- Compartilhar Relatório -->
+            <button class="btn-tactile w-full bg-[#09090c] p-3.5 px-4 rounded-2xl border border-zinc-800 flex items-center justify-between text-left hover:border-purple-500/40 transition-all">
+              <div class="flex items-center gap-3.5 flex-1 min-w-0">
+                <div class="h-11 w-11 rounded-2xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="file-text" class="w-5 h-5 text-purple-300"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-black text-zinc-100 uppercase tracking-wider block">Compartilhar Relatório</span>
+                  <span class="text-[10px] font-medium text-zinc-400 block truncate">PDF formatado para impressão ou WhatsApp</span>
+                </div>
+              </div>
+              <div class="px-2.5 py-1 rounded-xl bg-purple-500/15 border border-purple-500/30 ml-2 flex-shrink-0">
+                <span class="text-[9px] font-black text-purple-300 uppercase">PDF</span>
+              </div>
+            </button>
+
+            <!-- Exportar Backup Local -->
+            <button class="btn-tactile w-full bg-[#09090c] p-3.5 px-4 rounded-2xl border border-zinc-800 flex items-center justify-between text-left hover:border-emerald-500/40 transition-all">
+              <div class="flex items-center gap-3.5 flex-1 min-w-0">
+                <div class="h-11 w-11 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="download" class="w-5 h-5 text-emerald-300"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-black text-zinc-100 uppercase tracking-wider block">Exportar Backup Local</span>
+                  <span class="text-[10px] font-medium text-zinc-400 block truncate">Arquivo de segurança com todas as vendas</span>
+                </div>
+              </div>
+              <div class="px-2.5 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 ml-2 flex-shrink-0">
+                <span class="text-[9px] font-black text-emerald-300 uppercase">JSON</span>
+              </div>
+            </button>
+
+            <!-- Reverter Snapshots -->
+            <button class="btn-tactile w-full bg-[#09090c] p-3.5 px-4 rounded-2xl border border-zinc-800 flex items-center justify-between text-left hover:border-amber-500/40 transition-all">
+              <div class="flex items-center gap-3.5 flex-1 min-w-0">
+                <div class="h-11 w-11 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="history" class="w-5 h-5 text-amber-300"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-black text-zinc-100 uppercase tracking-wider block">Reverter Dados (Snapshots)</span>
+                  <span class="text-[10px] font-medium text-zinc-400 block truncate">Restaurar checkpoints de segurança do turno</span>
+                </div>
+              </div>
+              <div class="px-2.5 py-1 rounded-xl bg-amber-500/15 border border-amber-500/30 ml-2 flex-shrink-0">
+                <span class="text-[9px] font-black text-amber-300 uppercase">RESTORE</span>
+              </div>
+            </button>
+
+            <!-- Compartilhar Diagnóstico -->
+            <button class="btn-tactile w-full bg-[#09090c] p-3.5 px-4 rounded-2xl border border-zinc-800 flex items-center justify-between text-left hover:border-cyan-500/40 transition-all">
+              <div class="flex items-center gap-3.5 flex-1 min-w-0">
+                <div class="h-11 w-11 rounded-2xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="terminal" class="w-5 h-5 text-cyan-300"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span class="text-xs font-black text-zinc-100 uppercase tracking-wider block">Compartilhar Diagnóstico</span>
+                  <span class="text-[10px] font-medium text-zinc-400 block truncate">Logs técnicos de rede, banco e sincronização</span>
+                </div>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-600"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4. CARD: CONFIGURAÇÕES & CRÉDITOS (DNA DE FANTASMAS) -->
+        <div class="bg-[#121216] border border-zinc-800 rounded-[32px] p-4.5 mb-4 shadow-xl space-y-3">
+          <div class="flex items-center justify-between px-1">
+            <div class="flex items-center gap-2">
+              <div class="h-6 w-6 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-300">
+                <i data-lucide="settings" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+              </div>
+              <span class="text-xs font-black uppercase tracking-[1.5px] text-zinc-300">Sistema & Terminal</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <!-- ID do Caixa -->
+            <button class="btn-tactile p-3 rounded-2xl bg-[#09090c] border border-zinc-800 flex flex-col items-center justify-center gap-1.5 text-center hover:border-zinc-600">
+              <i data-lucide="user" class="w-4 h-4 text-zinc-400"></i>
+              <span class="text-[10px] font-black uppercase text-zinc-200 leading-tight">ID Caixa</span>
+            </button>
+
+            <!-- Configs App -->
+            <button class="btn-tactile p-3 rounded-2xl bg-[#09090c] border border-zinc-800 flex flex-col items-center justify-center gap-1.5 text-center hover:border-zinc-600">
+              <i data-lucide="sliders-horizontal" class="w-4 h-4 text-purple-400"></i>
+              <span class="text-[10px] font-black uppercase text-zinc-200 leading-tight">Ajustes</span>
+            </button>
+
+            <!-- Créditos / Eudaimonia -->
+            <button class="btn-tactile p-3 rounded-2xl bg-[#09090c] border border-zinc-800 flex flex-col items-center justify-center gap-1.5 text-center hover:border-zinc-600">
+              <i data-lucide="heart" class="w-4 h-4 text-pink-400"></i>
+              <span class="text-[10px] font-black uppercase text-zinc-200 leading-tight">Créditos</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 5. AÇÕES DE SESSÃO: BOTÕES HERO (56px) -->
+        <div class="space-y-2.5 mb-2">
+          <!-- Botão Primário: Sair deste Dia (Pausar Turno) -->
+          <button class="btn-tactile w-full h-14 rounded-2xl bg-zinc-100 items-center justify-center flex items-center gap-2 active:bg-zinc-200 shadow-2xl">
+            <i data-lucide="pause-circle" class="w-5 h-5 text-zinc-950 stroke-[2.5]"></i>
+            <span class="font-black uppercase text-zinc-950 text-xs tracking-wider">
+              Sair Deste Dia (Manter Aberto)
+            </span>
+          </button>
+
+          <!-- Botão Secundário: Logout -->
+          <button class="btn-tactile w-full h-12 rounded-2xl bg-red-500/10 border border-red-500/25 items-center justify-center flex items-center gap-2 hover:bg-red-500/20 text-red-400">
+            <i data-lucide="log-out" class="w-4 h-4 text-red-400"></i>
+            <span class="font-black uppercase text-xs tracking-wider">
+              Encerrar Sessão (Logout)
+            </span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- MODELO 2: TABBED HUB (SUB-ABAS RÁPIDAS NO TOPO) -->
+      <!-- ========================================================================= -->
+      <div id="view-modelo-2" class="concept-view hidden relative w-full bg-[#0d0d12] rounded-t-[40px] border-t border-zinc-800 shadow-2xl p-4 md:p-5 pt-3 max-h-[92vh] overflow-y-auto no-scrollbar">
+        <!-- Handle Bar -->
+        <div class="w-12 h-1.5 rounded-full bg-zinc-800 mx-auto mb-4"></div>
+
+        <div class="flex items-center justify-between pb-2 mb-3 px-1">
+          <div>
+            <div class="text-[10px] font-black uppercase tracking-[3px] text-zinc-500">PAINEL DE FERRAMENTAS</div>
+            <div class="text-base font-black text-white uppercase">Gestão & Utilitários</div>
+          </div>
+          <button class="h-8 w-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- SELETOR DE SUB-ABAS (CHIPS DINÂMICOS DO SQUIRREL) -->
+        <div class="flex items-center gap-2 mb-4 bg-[#09090c] p-1.5 rounded-2xl border border-zinc-800">
+          <button onclick="setSubTab('analises')" id="subtab-btn-analises" class="subtab-btn flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-amber-500 text-black shadow-md">
+            Análises
+          </button>
+          <button onclick="setSubTab('backups')" id="subtab-btn-backups" class="subtab-btn flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-zinc-400 hover:text-white">
+            Backups
+          </button>
+          <button onclick="setSubTab('ajustes')" id="subtab-btn-ajustes" class="subtab-btn flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-zinc-400 hover:text-white">
+            Ajustes
+          </button>
+        </div>
+
+        <!-- CONTEÚDO DA SUB-ABA 1: ANÁLISES -->
+        <div id="subtab-view-analises" class="subtab-content space-y-3">
+          <div class="bg-[#121216] p-5 rounded-[32px] border border-amber-500/30 space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="h-12 w-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center">
+                  <i data-lucide="sparkles" class="w-6 h-6 text-amber-400"></i>
+                </div>
+                <div>
+                  <div class="text-[10px] font-black uppercase tracking-widest text-amber-400">INTELIGÊNCIA SQUIRREL</div>
+                  <div class="text-sm font-black text-white uppercase">Retrospectiva & Fatos</div>
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-zinc-300 leading-relaxed bg-[#09090c] p-4 rounded-2xl border border-zinc-800/80">
+              Veja fatos estatísticos, horário de maior volume e comparativo de médias do dia.
+            </p>
+            <button class="btn-tactile w-full h-12 rounded-2xl bg-amber-500 text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+              Abrir Retrospectiva
+            </button>
+          </div>
+
+          <div class="bg-[#121216] p-5 rounded-[32px] border border-blue-500/30 space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="h-12 w-12 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center">
+                  <i data-lucide="line-chart" class="w-6 h-6 text-blue-400"></i>
+                </div>
+                <div>
+                  <div class="text-[10px] font-black uppercase tracking-widest text-blue-400">ANALYTICS DO CAIXA</div>
+                  <div class="text-sm font-black text-white uppercase">Mapa de Movimentação</div>
+                </div>
+              </div>
+            </div>
+            <p class="text-xs text-zinc-300 leading-relaxed bg-[#09090c] p-4 rounded-2xl border border-zinc-800/80">
+              Gráficos de fluxo por minuto, proporção de cartões/dinheiro e volume em tempo real.
+            </p>
+            <button class="btn-tactile w-full h-12 rounded-2xl bg-blue-500 text-white font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2">
+              <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+              Abrir Analytics
+            </button>
+          </div>
+        </div>
+
+        <!-- CONTEÚDO DA SUB-ABA 2: BACKUPS -->
+        <div id="subtab-view-backups" class="subtab-content hidden space-y-3">
+          <div class="bg-[#121216] p-4.5 rounded-[32px] border border-zinc-800 space-y-2.5">
+            <button class="btn-tactile w-full p-4 rounded-2xl bg-[#09090c] border border-zinc-800 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <i data-lucide="file-text" class="w-5 h-5 text-purple-400"></i>
+                <span class="text-xs font-black uppercase text-white">Relatório Completo</span>
+              </div>
+              <span class="px-2.5 py-1 rounded-lg bg-purple-500/15 text-purple-300 text-[10px] font-black uppercase">PDF</span>
+            </button>
+
+            <button class="btn-tactile w-full p-4 rounded-2xl bg-[#09090c] border border-zinc-800 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <i data-lucide="database" class="w-5 h-5 text-emerald-400"></i>
+                <span class="text-xs font-black uppercase text-white">Exportar Dados</span>
+              </div>
+              <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300 text-[10px] font-black uppercase">JSON</span>
+            </button>
+
+            <button class="btn-tactile w-full p-4 rounded-2xl bg-[#09090c] border border-zinc-800 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <i data-lucide="history" class="w-5 h-5 text-amber-400"></i>
+                <span class="text-xs font-black uppercase text-white">Restaurar Snapshots</span>
+              </div>
+              <span class="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-300 text-[10px] font-black uppercase">RESTORE</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- CONTEÚDO DA SUB-ABA 3: AJUSTES -->
+        <div id="subtab-view-ajustes" class="subtab-content hidden space-y-3">
+          <div class="bg-[#121216] p-4.5 rounded-[32px] border border-zinc-800 space-y-2.5">
+            <button class="btn-tactile w-full p-4 rounded-2xl bg-[#09090c] border border-zinc-800 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <i data-lucide="user" class="w-5 h-5 text-zinc-300"></i>
+                <span class="text-xs font-black uppercase text-white">Identificação do Caixa</span>
+              </div>
+              <span class="text-xs font-mono font-black text-amber-400">#2701</span>
+            </button>
+
+            <button class="btn-tactile w-full p-4 rounded-2xl bg-[#09090c] border border-zinc-800 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <i data-lucide="sliders" class="w-5 h-5 text-purple-400"></i>
+                <span class="text-xs font-black uppercase text-white">Preferências do App</span>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-600"></i>
+            </button>
+
+            <button class="btn-tactile w-full p-4 rounded-2xl bg-[#09090c] border border-zinc-800 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <i data-lucide="heart" class="w-5 h-5 text-pink-400"></i>
+                <span class="text-xs font-black uppercase text-white">Créditos & Eudaimonia</span>
+              </div>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-600"></i>
+            </button>
+          </div>
+
+          <button class="btn-tactile w-full h-14 rounded-2xl bg-zinc-100 text-zinc-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2">
+            <i data-lucide="pause-circle" class="w-5 h-5"></i>
+            Sair do Dia
+          </button>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- MODELO 3: COMMAND GRID COM STATUS AO VIVO -->
+      <!-- ========================================================================= -->
+      <div id="view-modelo-3" class="concept-view hidden relative w-full bg-[#0d0d12] rounded-t-[40px] border-t border-zinc-800 shadow-2xl p-4 md:p-5 pt-3 max-h-[92vh] overflow-y-auto no-scrollbar">
+        <!-- Handle Bar -->
+        <div class="w-12 h-1.5 rounded-full bg-zinc-800 mx-auto mb-4"></div>
+
+        <div class="text-center mb-4">
+          <div class="text-[10px] font-black uppercase tracking-[3px] text-zinc-500">CENTRAL TÁTICA</div>
+          <div class="text-lg font-black text-white uppercase">Painel de Comandos</div>
+        </div>
+
+        <!-- GRID ESCULTURAL DE ALTA EFICIÊNCIA -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
+          <!-- 1. Retrospectiva -->
+          <div class="bg-[#121216] p-4 rounded-3xl border border-amber-500/40 space-y-3">
+            <div class="h-11 w-11 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center">
+              <i data-lucide="sparkles" class="w-5 h-5 text-amber-300"></i>
+            </div>
+            <div>
+              <div class="text-xs font-black text-white uppercase">Você Sabia?</div>
+              <div class="text-[10px] text-zinc-400 font-medium">Insights rápidos</div>
+            </div>
+          </div>
+
+          <!-- 2. Analytics -->
+          <div class="bg-[#121216] p-4 rounded-3xl border border-blue-500/40 space-y-3">
+            <div class="h-11 w-11 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center">
+              <i data-lucide="activity" class="w-5 h-5 text-blue-300"></i>
+            </div>
+            <div>
+              <div class="text-xs font-black text-white uppercase">Analytics</div>
+              <div class="text-[10px] text-zinc-400 font-medium">Fluxo & Picos</div>
+            </div>
+          </div>
+
+          <!-- 3. Relatório PDF -->
+          <div class="bg-[#121216] p-4 rounded-3xl border border-zinc-800 space-y-3">
+            <div class="h-11 w-11 rounded-2xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center">
+              <i data-lucide="file-text" class="w-5 h-5 text-purple-300"></i>
+            </div>
+            <div>
+              <div class="text-xs font-black text-white uppercase">Relatório</div>
+              <div class="text-[10px] text-zinc-400 font-medium">Exportar PDF</div>
+            </div>
+          </div>
+
+          <!-- 4. Backup Local -->
+          <div class="bg-[#121216] p-4 rounded-3xl border border-zinc-800 space-y-3">
+            <div class="h-11 w-11 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center">
+              <i data-lucide="database" class="w-5 h-5 text-emerald-300"></i>
+            </div>
+            <div>
+              <div class="text-xs font-black text-white uppercase">Backup</div>
+              <div class="text-[10px] text-zinc-400 font-medium">Arquivo JSON</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD CONECTIVIDADE & DIAGNÓSTICO -->
+        <div class="bg-[#121216] p-4 rounded-3xl border border-zinc-800 mb-4 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="h-10 w-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 flex items-center justify-center">
+              <i data-lucide="terminal" class="w-4.5 h-4.5 text-cyan-400"></i>
+            </div>
+            <div>
+              <div class="text-xs font-black text-white uppercase">Diagnóstico do App</div>
+              <div class="text-[10px] text-zinc-400 font-medium">Logs de sincronização e banco</div>
+            </div>
+          </div>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-600"></i>
+        </div>
+
+        <button class="btn-tactile w-full h-14 rounded-2xl bg-zinc-100 text-zinc-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 mb-2">
+          <i data-lucide="log-out" class="w-4.5 h-4.5 text-zinc-950"></i>
+          Sair Deste Dia
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function switchConcept(id) {
+      document.querySelectorAll('.concept-view').forEach(el => el.classList.add('hidden'));
+      const target = document.getElementById('view-' + id);
+      if (target) target.classList.remove('hidden');
+
+      document.querySelectorAll('.concept-btn').forEach(btn => {
+        btn.className = 'concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] text-zinc-400 border-zinc-800 hover:border-zinc-700';
+      });
+
+      const activeBtn = document.getElementById('btn-' + id.replace('modelo-', 'm'));
+      if (activeBtn) {
+        activeBtn.className = 'concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-amber-500 text-black border-amber-400 shadow-xl';
+      }
+
+      setTimeout(() => lucide.createIcons(), 50);
+    }
+
+    function setSubTab(tabName) {
+      document.querySelectorAll('.subtab-content').forEach(el => el.classList.add('hidden'));
+      const target = document.getElementById('subtab-view-' + tabName);
+      if (target) target.classList.remove('hidden');
+
+      document.querySelectorAll('.subtab-btn').forEach(btn => {
+        btn.className = 'subtab-btn flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-zinc-400 hover:text-white';
+      });
+
+      const activeBtn = document.getElementById('subtab-btn-' + tabName);
+      if (activeBtn) {
+        activeBtn.className = 'subtab-btn flex-1 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-amber-500 text-black shadow-md';
+      }
+
+      setTimeout(() => lucide.createIcons(), 50);
+    }
+  </script>
+</body>
+</html>

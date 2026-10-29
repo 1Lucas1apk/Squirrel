@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Onde colocar "22 baixas"?</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 420px;
+      border-radius: 40px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-5xl mx-auto pb-24">
+
+  <!-- CABEÇALHO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      📍 POSICIONAMENTO: "22 BAIXAS"
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      Escolha o Lugar Perfeito para as Baixas
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-xl mx-auto font-medium">
+      Veja como cada uma das 4 posições se comporta no card principal:
+    </p>
+
+    <!-- SELETOR DE POSIÇÃO -->
+    <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2 bg-[#121216] p-1.5 rounded-2xl border border-zinc-800 max-w-2xl mx-auto">
+      <button onclick="setPos(1)" id="btn-pos1" class="py-2 rounded-xl text-xs font-black bg-blue-500 text-white shadow transition-all">
+        1. Subtítulo do Valor
+      </button>
+      <button onclick="setPos(2)" id="btn-pos2" class="py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        2. Abaixo da Barra
+      </button>
+      <button onclick="setPos(3)" id="btn-pos3" class="py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        3. No Topo do Saco
+      </button>
+      <button onclick="setPos(4)" id="btn-pos4" class="py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        4. Badge Duplo Topo
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER CENTRAL -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- CABEÇALHO -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-4 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-lg font-black uppercase tracking-tighter text-white">CAIXA</span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span class="text-[11px] font-black text-zinc-400 uppercase">27 AGO</span>
+        </div>
+        <div id="pos-indicator" class="text-xs font-black text-blue-400 uppercase bg-blue-500/10 px-2.5 py-1 rounded-xl border border-blue-500/20">
+          Posição 1: Subtítulo
+        </div>
+      </div>
+
+      <!-- CORPO -->
+      <div class="p-3.5 space-y-3">
+        
+        <!-- CARD PRINCIPAL DINÂMICO -->
+        <div id="card-hero-container" class="bg-[#121216] border border-zinc-800/80 rounded-[30px] p-4 shadow-2xl">
+          <!-- Renderizado via JS -->
+        </div>
+
+        <!-- DOCK DE SAÍDAS & CANHOTOS -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-3 px-4 flex items-center shadow-lg min-h-[74px] opacity-70">
+          <div class="flex-1 px-1">
+            <div class="text-[12px] font-bold text-zinc-300 uppercase">Saídas</div>
+            <div class="text-[20px] font-black text-white mono">R$ 0,00</div>
+          </div>
+          <div class="w-[1px] h-12 bg-zinc-800 self-center mx-2.5"></div>
+          <div class="flex-1 px-1">
+            <div class="text-[12px] font-bold text-blue-400 uppercase">Canhotos</div>
+            <div class="text-[20px] font-black text-blue-300 mono">22 de 22</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    let currentPos = 1;
+
+    function setPos(p) {
+      currentPos = p;
+
+      for (let i = 1; i <= 4; i++) {
+        const btn = document.getElementById('btn-pos' + i);
+        if (i === p) {
+          btn.className = 'py-2 rounded-xl text-xs font-black bg-blue-500 text-white shadow transition-all';
+        } else {
+          btn.className = 'py-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all';
+        }
+      }
+
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById('card-hero-container');
+      const ind = document.getElementById('pos-indicator');
+
+      if (currentPos === 1) {
+        // POSIÇÃO 1: SUBTÍTULO ELEGANTE LOGO ABAIXO DO VALOR HERO
+        ind.innerText = 'Posição 1: Subtítulo do Valor';
+        container.innerHTML = `
+          <!-- Topo do Card: Apenas Total + Badge de Quebra -->
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <i data-lucide="monitor" class="w-4 h-4 text-zinc-400"></i>
+              <span class="text-[12px] font-black uppercase tracking-[2px] text-zinc-300">Total do Caixa</span>
+            </div>
+            <span class="text-[11.5px] font-black px-2.5 py-0.5 rounded-full bg-red-500/15 border border-red-500/40 text-red-300 flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-400"></i>
+              -R$ 0,09 Quebra
+            </span>
+          </div>
+
+          <!-- Total Hero Grande -->
+          <div class="mt-1">
+            <div class="flex items-baseline font-black tracking-tight mono leading-none">
+              <span class="text-zinc-400 text-[22px] font-bold mr-1">R$</span>
+              <span class="text-[40px] text-white font-black">7.340</span>
+              <span class="text-zinc-300 text-[28px] font-extrabold">,98</span>
+            </div>
+            <!-- SUBTÍTULO DISCRETO & ELEGANTE -->
+            <div class="text-[11.5px] text-zinc-400 font-bold mt-1 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              22 vendas / baixas registradas
+            </div>
+          </div>
+
+          <!-- Barra de Proporção -->
+          <div class="h-2 w-full bg-zinc-900 rounded-full flex overflow-hidden my-3 p-0.5 border border-zinc-800/80">
+            <div style="width: 14.3%" class="bg-amber-400 rounded-full mr-0.5"></div>
+            <div style="width: 85.7%" class="bg-indigo-400 rounded-full"></div>
+          </div>
+
+          ${renderMaloteLines()}
+        `;
+      } else if (currentPos === 2) {
+        // POSIÇÃO 2: ABAIXO DA BARRA VISUAL (CENTRALIZADO COM O RESUMO)
+        ind.innerText = 'Posição 2: Abaixo da Barra';
+        container.innerHTML = `
+          <!-- Topo do Card -->
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <i data-lucide="monitor" class="w-4 h-4 text-zinc-400"></i>
+              <span class="text-[12px] font-black uppercase tracking-[2px] text-zinc-300">Total do Caixa</span>
+            </div>
+            <span class="text-[11.5px] font-black px-2.5 py-0.5 rounded-full bg-red-500/15 border border-red-500/40 text-red-300 flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-400"></i>
+              -R$ 0,09 Quebra
+            </span>
+          </div>
+
+          <!-- Total Hero Grande -->
+          <div class="my-1">
+            <div class="flex items-baseline font-black tracking-tight mono leading-none">
+              <span class="text-zinc-400 text-[22px] font-bold mr-1">R$</span>
+              <span class="text-[40px] text-white font-black">7.340</span>
+              <span class="text-zinc-300 text-[28px] font-extrabold">,98</span>
+            </div>
+          </div>
+
+          <!-- Barra de Proporção -->
+          <div class="h-2 w-full bg-zinc-900 rounded-full flex overflow-hidden mt-3 mb-1.5 p-0.5 border border-zinc-800/80">
+            <div style="width: 14.3%" class="bg-amber-400 rounded-full mr-0.5"></div>
+            <div style="width: 85.7%" class="bg-indigo-400 rounded-full"></div>
+          </div>
+
+          <!-- TEXTO DE STATUS INTEGRADO ABAIXO DA BARRA -->
+          <div class="flex items-center justify-between text-[11px] font-bold text-zinc-400 mb-3 px-1">
+            <span class="text-amber-400/90">14% Espécie</span>
+            <span class="px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 font-extrabold">
+              22 baixas no turno
+            </span>
+            <span class="text-indigo-400/90">86% Pix</span>
+          </div>
+
+          ${renderMaloteLines()}
+        `;
+      } else if (currentPos === 3) {
+        // POSIÇÃO 3: NO CABEÇALHO DA COMPOSIÇÃO DO MALOTE
+        ind.innerText = 'Posição 3: No Topo do Malote';
+        container.innerHTML = `
+          <!-- Topo do Card -->
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <i data-lucide="monitor" class="w-4 h-4 text-zinc-400"></i>
+              <span class="text-[12px] font-black uppercase tracking-[2px] text-zinc-300">Total do Caixa</span>
+            </div>
+            <span class="text-[11.5px] font-black px-2.5 py-0.5 rounded-full bg-red-500/15 border border-red-500/40 text-red-300 flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-400"></i>
+              -R$ 0,09 Quebra
+            </span>
+          </div>
+
+          <!-- Total Hero Grande -->
+          <div class="my-1 mb-2.5">
+            <div class="flex items-baseline font-black tracking-tight mono leading-none">
+              <span class="text-zinc-400 text-[22px] font-bold mr-1">R$</span>
+              <span class="text-[40px] text-white font-black">7.340</span>
+              <span class="text-zinc-300 text-[28px] font-extrabold">,98</span>
+            </div>
+          </div>
+
+          <!-- Barra de Proporção -->
+          <div class="h-2 w-full bg-zinc-900 rounded-full flex overflow-hidden mb-3 p-0.5 border border-zinc-800/80">
+            <div style="width: 14.3%" class="bg-amber-400 rounded-full mr-0.5"></div>
+            <div style="width: 85.7%" class="bg-indigo-400 rounded-full"></div>
+          </div>
+
+          <!-- RÓTULO DO MALOTE COM AS BAIXAS -->
+          <div class="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-zinc-500 pt-1 pb-2 border-t border-zinc-800/80">
+            <span>Composição do Malote</span>
+            <span class="text-zinc-300 font-extrabold">22 baixas</span>
+          </div>
+
+          ${renderMaloteLines(true)}
+        `;
+      } else if (currentPos === 4) {
+        // POSIÇÃO 4: BADGE DUPLO NO TOPO DIREITO
+        ind.innerText = 'Posição 4: Badge Duplo Topo';
+        container.innerHTML = `
+          <!-- Topo do Card: Total na esquerda, e na direita dois pills elegantes -->
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <i data-lucide="monitor" class="w-4 h-4 text-zinc-400"></i>
+              <span class="text-[12px] font-black uppercase tracking-[2px] text-zinc-300">Total do Caixa</span>
+            </div>
+            
+            <div class="flex items-center gap-1.5">
+              <span class="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-300 shadow-sm">
+                22 baixas
+              </span>
+              <span class="text-[11.5px] font-black px-2.5 py-0.5 rounded-full bg-red-500/15 border border-red-500/40 text-red-300 flex items-center gap-1 shadow-sm">
+                <i data-lucide="alert-triangle" class="w-3 h-3 text-red-400"></i>
+                -0,09
+              </span>
+            </div>
+          </div>
+
+          <!-- Total Hero Grande -->
+          <div class="my-1.5 mb-3.5">
+            <div class="flex items-baseline font-black tracking-tight mono leading-none">
+              <span class="text-zinc-400 text-[22px] font-bold mr-1">R$</span>
+              <span class="text-[40px] text-white font-black">7.340</span>
+              <span class="text-zinc-300 text-[28px] font-extrabold">,98</span>
+            </div>
+          </div>
+
+          <!-- Barra de Proporção -->
+          <div class="h-2 w-full bg-zinc-900 rounded-full flex overflow-hidden mb-3.5 p-0.5 border border-zinc-800/80">
+            <div style="width: 14.3%" class="bg-amber-400 rounded-full mr-0.5"></div>
+            <div style="width: 85.7%" class="bg-indigo-400 rounded-full"></div>
+          </div>
+
+          ${renderMaloteLines()}
+        `;
+      }
+
+      lucide.createIcons();
+    }
+
+    function renderMaloteLines(noBorder) {
+      return `
+        <div class="space-y-2.5 ${noBorder ? '' : 'pt-3 border-t border-zinc-800/80'}">
+          <!-- Dinheiro no Saco -->
+          <div class="bg-[#09090c] p-3 px-3.5 rounded-2xl border border-zinc-800/90 flex items-center justify-between min-h-[62px]">
+            <div class="flex items-center gap-3">
+              <div class="h-9 w-9 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="banknote" class="w-4.5 h-4.5 text-amber-300"></i>
+              </div>
+              <div>
+                <div class="text-[13px] font-black text-amber-400 uppercase tracking-tight">Dinheiro no Saco</div>
+                <div class="text-[11px] text-zinc-400 font-medium">14% do malote</div>
+              </div>
+            </div>
+            <div class="flex items-baseline font-black mono tracking-tight">
+              <span class="text-zinc-400 text-xs font-bold mr-0.5">R$</span>
+              <span class="text-[20px] text-white font-black">1.051</span>
+              <span class="text-zinc-300 text-sm font-bold">,00</span>
+            </div>
+          </div>
+
+          <!-- Pix a Transferir -->
+          <div class="bg-[#09090c] p-3 px-3.5 rounded-2xl border border-zinc-800/90 flex items-center justify-between min-h-[62px]">
+            <div class="flex items-center gap-3">
+              <div class="h-9 w-9 rounded-xl bg-indigo-500/10 border border-indigo-500/25 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="smartphone" class="w-4.5 h-4.5 text-indigo-300"></i>
+              </div>
+              <div>
+                <div class="text-[13px] font-black text-indigo-300 uppercase tracking-tight">Pix a Transferir</div>
+                <div class="text-[11px] text-indigo-300/80 font-medium">12 transações</div>
+              </div>
+            </div>
+            <div class="flex items-baseline font-black mono tracking-tight">
+              <span class="text-indigo-400/80 text-xs font-bold mr-0.5">R$</span>
+              <span class="text-[20px] text-indigo-200 font-black">6.289</span>
+              <span class="text-indigo-300 text-sm font-bold">,98</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    render();
+  </script>
+</body>
+</html>

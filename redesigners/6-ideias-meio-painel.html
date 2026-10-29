@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — 6 Ideias Perfeitas para o Meio da Tela</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 420px;
+      border-radius: 40px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-6xl mx-auto pb-28">
+
+  <!-- CABEÇALHO DA PÁGINA -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      🎯 MATANDO 3 COELHOS EM 1 TIRO: ATIVIDADES • BATE-PAPO • RESUMO
+    </div>
+    <h1 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-white">
+      6 Propostas de Design para o Meio da Tela
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-2xl mx-auto font-medium">
+      Veja como transformar o feed confuso, o mural antigo e os textos repetitivos em uma central moderna, veloz e sem poluição:
+    </p>
+
+    <!-- SELETOR DAS 6 IDEIAS -->
+    <div class="mt-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 bg-[#121216] p-2 rounded-2xl border border-zinc-800 max-w-4xl mx-auto">
+      <button onclick="setIdea(1)" id="btn-idea1" class="py-2.5 px-2 rounded-xl text-xs font-black bg-indigo-500 text-white shadow transition-all">
+        1. Central Timeline
+      </button>
+      <button onclick="setIdea(2)" id="btn-idea2" class="py-2.5 px-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        2. Abas no Meio (Tabs)
+      </button>
+      <button onclick="setIdea(3)" id="btn-idea3" class="py-2.5 px-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        3. Grid Duplo (50/50)
+      </button>
+      <button onclick="setIdea(4)" id="btn-idea4" class="py-2.5 px-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        4. Ticker Flutuante
+      </button>
+      <button onclick="setIdea(5)" id="btn-idea5" class="py-2.5 px-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        5. Feed Executivo
+      </button>
+      <button onclick="setIdea(6)" id="btn-idea6" class="py-2.5 px-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        6. Mini-Widgets Pro
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER CENTRAL -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- CABEÇALHO DO APP -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-4 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-lg font-black uppercase tracking-tighter text-white">CAIXA</span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span class="text-[11px] font-black text-zinc-400 uppercase">27 AGO</span>
+        </div>
+        <div id="idea-tag" class="text-xs font-black text-indigo-400 uppercase bg-indigo-500/10 px-2.5 py-1 rounded-xl border border-indigo-500/20">
+          Ideia 1: Central Timeline
+        </div>
+      </div>
+
+      <!-- CORPO COM O TOPO APROVADO + MEIO DINÂMICO -->
+      <div class="p-3.5 space-y-3">
+        
+        <!-- RESUMO DO TOPO (CONTEXTO) -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-[26px] p-3.5 opacity-60">
+          <div class="flex justify-between items-center text-xs text-zinc-400">
+            <span class="font-bold uppercase tracking-wider">Total do Caixa</span>
+            <span class="mono font-black text-white text-sm">R$ 7.340,98</span>
+          </div>
+        </div>
+
+        <!-- DIVISOR COM IDENTIDADE -->
+        <div class="flex items-center gap-2 px-1 pt-1">
+          <i data-lucide="layers" class="w-3.5 h-3.5 text-zinc-500"></i>
+          <span class="text-[11px] font-black uppercase tracking-[2px] text-zinc-500">O Meio da Tela</span>
+          <div class="flex-1 h-px bg-zinc-800"></div>
+        </div>
+
+        <!-- CONTAINER DINÂMICO DAS 6 IDEIAS -->
+        <div id="idea-container">
+          <!-- Renderizado via JS -->
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- DESCRIÇÃO DA IDEIA ATUAL -->
+    <div id="idea-description" class="mt-6 max-w-xl text-center bg-[#121216] p-4 rounded-2xl border border-zinc-800 text-xs text-zinc-300">
+      <!-- Injetado via JS -->
+    </div>
+
+  </div>
+
+  <script>
+    let currentIdea = 1;
+    let activeTab = 'chat'; // Para Ideia 2
+
+    function setIdea(n) {
+      currentIdea = n;
+
+      for (let i = 1; i <= 6; i++) {
+        const btn = document.getElementById('btn-idea' + i);
+        if (i === n) {
+          btn.className = 'py-2.5 px-2 rounded-xl text-xs font-black bg-indigo-500 text-white shadow transition-all';
+        } else {
+          btn.className = 'py-2.5 px-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all';
+        }
+      }
+
+      render();
+    }
+
+    function setInnerTab(t) {
+      activeTab = t;
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById('idea-container');
+      const tag = document.getElementById('idea-tag');
+      const desc = document.getElementById('idea-description');
+
+      if (currentIdea === 1) {
+        // ==========================================
+        // IDEIA 1: CENTRAL TIMELINE UNIFICADA (CHAT NO TOPO + ATIVIDADES VIVAS)
+        // ==========================================
+        tag.innerText = 'Ideia 1: Central Timeline';
+        tag.className = 'text-xs font-black text-indigo-400 uppercase bg-indigo-500/10 px-2.5 py-1 rounded-xl border border-indigo-500/20';
+        desc.innerHTML = `<b>Ideia 1 — Central Timeline Inteligente:</b> Um card nobre de <b>Bate-papo</b> no topo com o último recado da equipe e botão de responder, seguido pela <b>Linha do Tempo</b> das últimas ações. Zero textos longos repetitivos.`;
+
+        container.innerHTML = `
+          <!-- 1. BATE-PAPO DA EQUIPE -->
+          <div class="bg-[#121216] border border-indigo-500/30 rounded-2xl p-3 px-3.5 shadow-lg">
+            <div class="flex items-center justify-between mb-1.5">
+              <div class="flex items-center gap-2">
+                <div class="h-6 w-6 rounded-lg bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center">
+                  <i data-lucide="message-square" class="w-3.5 h-3.5 text-indigo-400"></i>
+                </div>
+                <span class="text-[11.5px] font-black uppercase text-indigo-300 tracking-wider">Bate-papo do Caixa</span>
+                <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+              </div>
+              <span class="text-[10px] text-zinc-500 font-bold">14:32</span>
+            </div>
+
+            <div class="bg-[#09090c] p-2.5 rounded-xl border border-zinc-800/80 flex items-center justify-between gap-2">
+              <div class="flex-1">
+                <span class="text-[11px] font-bold text-zinc-300"><b>Maria:</b> "Fulano do gás vem buscar o troco às 16h!"</span>
+              </div>
+              <button class="px-2.5 py-1 rounded-lg bg-indigo-500/20 text-indigo-300 text-[11px] font-black hover:bg-indigo-500/30 active:scale-95 transition-all">
+                Responder
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. FEED DE ATIVIDADES RECENTES (ÚLTIMOS LANÇAMENTOS) -->
+          <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-3.5 shadow-lg space-y-2.5">
+            <div class="flex items-center justify-between mb-1">
+              <div class="flex items-center gap-2">
+                <i data-lucide="activity" class="w-4 h-4 text-zinc-400"></i>
+                <span class="text-[11.5px] font-black uppercase text-zinc-300 tracking-wider">Últimas Movimentações</span>
+              </div>
+              <span class="text-[10.5px] text-zinc-500 font-bold">Hoje</span>
+            </div>
+
+            <!-- Item 1: Venda Dinheiro -->
+            <div class="flex items-center justify-between p-2 rounded-xl bg-[#09090c] border border-zinc-800/60">
+              <div class="flex items-center gap-2.5">
+                <div class="h-7 w-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                  <i data-lucide="arrow-down-left" class="w-3.5 h-3.5 text-emerald-400"></i>
+                </div>
+                <div>
+                  <div class="text-xs font-bold text-zinc-200">Venda no Dinheiro</div>
+                  <div class="text-[10px] text-zinc-500">Há 4 min • Baixa #22</div>
+                </div>
+              </div>
+              <span class="mono text-xs font-black text-emerald-400">+R$ 45,00</span>
+            </div>
+
+            <!-- Item 2: Pix -->
+            <div class="flex items-center justify-between p-2 rounded-xl bg-[#09090c] border border-zinc-800/60">
+              <div class="flex items-center gap-2.5">
+                <div class="h-7 w-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
+                  <i data-lucide="smartphone" class="w-3.5 h-3.5 text-indigo-400"></i>
+                </div>
+                <div>
+                  <div class="text-xs font-bold text-zinc-200">Pix Recebido (Cliente)</div>
+                  <div class="text-[10px] text-zinc-500">Há 18 min • Baixa #21</div>
+                </div>
+              </div>
+              <span class="mono text-xs font-black text-indigo-300">+R$ 120,50</span>
+            </div>
+
+            <!-- Item 3: Sangria / Retirada -->
+            <div class="flex items-center justify-between p-2 rounded-xl bg-[#09090c] border border-zinc-800/60">
+              <div class="flex items-center gap-2.5">
+                <div class="h-7 w-7 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                  <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-red-400"></i>
+                </div>
+                <div>
+                  <div class="text-xs font-bold text-zinc-200">Sangria p/ Cofre</div>
+                  <div class="text-[10px] text-zinc-500">Há 1h • Autorizado</div>
+                </div>
+              </div>
+              <span class="mono text-xs font-black text-red-400">-R$ 500,00</span>
+            </div>
+
+          </div>
+        `;
+      } else if (currentIdea === 2) {
+        // ==========================================
+        // IDEIA 2: ABAS NO MEIO (SEGMENTED CONTROL)
+        // ==========================================
+        tag.innerText = 'Ideia 2: Abas no Meio';
+        tag.className = 'text-xs font-black text-purple-400 uppercase bg-purple-500/10 px-2.5 py-1 rounded-xl border border-purple-500/20';
+        desc.innerHTML = `<b>Ideia 2 — Abas de Controle Rápido:</b> O operador alterna entre <b>Bate-papo</b>, <b>Atividades</b> e <b>Auditoria</b> sem gastar espaço vertical. A tela nunca fica comprida!`;
+
+        let tabContent = '';
+        if (activeTab === 'chat') {
+          tabContent = `
+            <div class="space-y-2">
+              <div class="bg-[#09090c] p-3 rounded-2xl border border-zinc-800 flex items-start gap-2.5">
+                <div class="h-7 w-7 rounded-full bg-purple-500/20 flex items-center justify-center text-xs font-bold text-purple-300">M</div>
+                <div class="flex-1">
+                  <div class="flex justify-between items-center">
+                    <span class="text-[11px] font-black text-purple-400 uppercase">Maria (Gerente)</span>
+                    <span class="text-[10px] text-zinc-500">14:32</span>
+                  </div>
+                  <p class="text-xs text-zinc-300 mt-0.5">"Meninas, conferir os comprovantes do POS antes das 17h!"</p>
+                </div>
+              </div>
+
+              <div class="flex gap-2">
+                <input type="text" placeholder="Digite uma mensagem rápida..." class="flex-1 bg-[#09090c] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none" />
+                <button class="px-3.5 py-2 rounded-xl bg-purple-500 text-white text-xs font-black active:scale-95">Enviar</button>
+              </div>
+            </div>
+          `;
+        } else if (activeTab === 'feed') {
+          tabContent = `
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-xs p-2 rounded-xl bg-[#09090c] border border-zinc-800/60">
+                <span class="text-zinc-300">Venda em Espécie</span>
+                <span class="mono font-bold text-emerald-400">+R$ 80,00</span>
+              </div>
+              <div class="flex items-center justify-between text-xs p-2 rounded-xl bg-[#09090c] border border-zinc-800/60">
+                <span class="text-zinc-300">Pix Caixa</span>
+                <span class="mono font-bold text-indigo-300">+R$ 210,00</span>
+              </div>
+              <div class="flex items-center justify-between text-xs p-2 rounded-xl bg-[#09090c] border border-zinc-800/60">
+                <span class="text-zinc-300">Cancelamento #18</span>
+                <span class="mono font-bold text-red-400">-R$ 15,00</span>
+              </div>
+            </div>
+          `;
+        } else {
+          tabContent = `
+            <div class="p-3 rounded-2xl bg-[#09090c] border border-zinc-800/60 text-center space-y-1">
+              <i data-lucide="shield-check" class="w-6 h-6 text-emerald-400 mx-auto"></i>
+              <div class="text-xs font-bold text-zinc-200">Caixa 100% Auditado</div>
+              <div class="text-[10.5px] text-zinc-500">Nenhum erro de lançamento detectado hoje.</div>
+            </div>
+          `;
+        }
+
+        container.innerHTML = `
+          <!-- ABAS -->
+          <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-1 flex gap-1 shadow-lg">
+            <button onclick="setInnerTab('chat')" class="flex-1 py-2 rounded-xl text-xs font-black ${activeTab === 'chat' ? 'bg-purple-500 text-white shadow' : 'text-zinc-400 hover:text-white'} transition-all">
+              💬 Bate-papo (1)
+            </button>
+            <button onclick="setInnerTab('feed')" class="flex-1 py-2 rounded-xl text-xs font-black ${activeTab === 'feed' ? 'bg-purple-500 text-white shadow' : 'text-zinc-400 hover:text-white'} transition-all">
+              ⚡ Atividades
+            </button>
+            <button onclick="setInnerTab('audit')" class="flex-1 py-2 rounded-xl text-xs font-black ${activeTab === 'audit' ? 'bg-purple-500 text-white shadow' : 'text-zinc-400 hover:text-white'} transition-all">
+              🛡️ Auditoria
+            </button>
+          </div>
+
+          <!-- CORPO DA ABA ATIVA -->
+          <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-3.5 shadow-lg mt-2">
+            ${tabContent}
+          </div>
+        `;
+      } else if (currentIdea === 3) {
+        // ==========================================
+        // IDEIA 3: GRID DUPLO (50% BATE-PAPO / 50% ÚLTIMA AÇÃO)
+        // ==========================================
+        tag.innerText = 'Ideia 3: Grid Duplo (50/50)';
+        tag.className = 'text-xs font-black text-blue-400 uppercase bg-blue-500/10 px-2.5 py-1 rounded-xl border border-blue-500/20';
+        desc.innerHTML = `<b>Ideia 3 — Grid Duplo Compacto:</b> Bate-papo de um lado e Última Ação do outro lado. Tudo visível de relance em apenas <b>90px</b> de altura!`;
+
+        container.innerHTML = `
+          <div class="grid grid-cols-2 gap-2.5">
+            
+            <!-- Card 1: Bate-papo -->
+            <button class="bg-[#121216] border border-indigo-500/30 rounded-2xl p-3 text-left flex flex-col justify-between min-h-[96px] active:scale-98 transition-all">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <i data-lucide="message-square" class="w-3.5 h-3.5 text-indigo-400"></i>
+                  <span class="text-[11px] font-black uppercase text-indigo-300">Bate-papo</span>
+                </div>
+                <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+              </div>
+              <div>
+                <p class="text-[11px] text-zinc-300 font-medium line-clamp-2">"Troco do gás às 16h..."</p>
+                <span class="text-[10px] text-indigo-300/80 font-bold mt-1 block">Toque p/ abrir ›</span>
+              </div>
+            </button>
+
+            <!-- Card 2: Última Atividade -->
+            <button class="bg-[#121216] border border-emerald-500/30 rounded-2xl p-3 text-left flex flex-col justify-between min-h-[96px] active:scale-98 transition-all">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <i data-lucide="activity" class="w-3.5 h-3.5 text-emerald-400"></i>
+                  <span class="text-[11px] font-black uppercase text-emerald-300">Última Ação</span>
+                </div>
+                <span class="text-[10px] text-zinc-500 font-bold">14:28</span>
+              </div>
+              <div>
+                <span class="mono text-[16px] font-black text-emerald-400 block">+R$ 45,00</span>
+                <span class="text-[10.5px] text-zinc-400 font-medium">Venda no Dinheiro ›</span>
+              </div>
+            </button>
+
+          </div>
+        `;
+      } else if (currentIdea === 4) {
+        // ==========================================
+        // IDEIA 4: TICKER FLUTUANTE (TELEGRAM / PILL LIVE)
+        // ==========================================
+        tag.innerText = 'Ideia 4: Ticker Flutuante';
+        tag.className = 'text-xs font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20';
+        desc.innerHTML = `<b>Ideia 4 — Ticker Flutuante Minimalista:</b> Uma única pílula dinâmica que alterna o último recado do bate-papo e a última movimentação. <b>Zero espaço gasto na tela</b>.`;
+
+        container.innerHTML = `
+          <div class="bg-[#121216] border border-amber-500/30 rounded-2xl p-3 px-4 flex items-center justify-between shadow-lg active:scale-98 transition-all cursor-pointer">
+            <div class="flex items-center gap-3 flex-1 mr-2">
+              <div class="h-8 w-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
+                <i data-lucide="bell" class="w-4 h-4 text-amber-400 animate-pulse"></i>
+              </div>
+              <div class="flex-1">
+                <div class="text-[10.5px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                  <span>Bate-papo da Equipe</span>
+                  <span class="text-zinc-500 font-normal">• 14:32</span>
+                </div>
+                <p class="text-xs text-zinc-200 font-bold truncate">Maria: "Fulano vem buscar o troco às 16h!"</p>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-500"></i>
+          </div>
+
+          <div class="text-center pt-2">
+            <span class="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
+              ⭐ Tocar abre o histórico completo e o chat ao vivo
+            </span>
+          </div>
+        `;
+      } else if (currentIdea === 5) {
+        // ==========================================
+        // IDEIA 5: FEED EXECUTIVO PRO
+        // ==========================================
+        tag.innerText = 'Ideia 5: Feed Executivo';
+        tag.className = 'text-xs font-black text-cyan-400 uppercase bg-cyan-500/10 px-2.5 py-1 rounded-xl border border-cyan-500/20';
+        desc.innerHTML = `<b>Ideia 5 — Feed Executivo com Bate-papo Integrado:</b> Balão de recado fixo em destaque e lista de auditoria com cores de alta visibilidade para cada tipo de baixa.`;
+
+        container.innerHTML = `
+          <!-- CARD BATE-PAPO DESTACADO -->
+          <div class="bg-[#121216] border border-cyan-500/30 rounded-2xl p-3 px-3.5 shadow-lg mb-2.5">
+            <div class="flex items-center justify-between text-xs text-cyan-400 font-black uppercase mb-1">
+              <span class="flex items-center gap-1.5"><i data-lucide="message-circle" class="w-3.5 h-3.5"></i> Bate-papo / Recado do Dia</span>
+              <button class="text-[10.5px] text-zinc-400 hover:text-white font-bold">Editar</button>
+            </div>
+            <div class="text-xs text-zinc-200 font-medium bg-[#09090c] p-2.5 rounded-xl border border-zinc-800/80">
+              "Fulano vem buscar o troco às 16h..."
+            </div>
+          </div>
+
+          <!-- FEED DE AUDITORIA COMPLETA -->
+          <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-3.5 shadow-lg space-y-2">
+            <div class="flex justify-between items-center text-[11.5px] font-black uppercase text-zinc-300 mb-1">
+              <span>Feed do Caixa</span>
+              <span class="text-zinc-500 text-[10px]">22 lançamentos</span>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="flex justify-between items-center p-2 rounded-xl bg-[#09090c]">
+                <span class="text-xs text-zinc-300">14:28 • Venda Balcão</span>
+                <span class="mono text-xs font-bold text-emerald-400">+R$ 45,00</span>
+              </div>
+              <div class="flex justify-between items-center p-2 rounded-xl bg-[#09090c]">
+                <span class="text-xs text-zinc-300">14:10 • Pix Repasse</span>
+                <span class="mono text-xs font-bold text-indigo-300">+R$ 120,50</span>
+              </div>
+              <div class="flex justify-between items-center p-2 rounded-xl bg-[#09090c]">
+                <span class="text-xs text-zinc-300">13:40 • Sangria Gerência</span>
+                <span class="mono text-xs font-bold text-red-400">-R$ 500,00</span>
+              </div>
+            </div>
+          </div>
+        `;
+      } else if (currentIdea === 6) {
+        // ==========================================
+        // IDEIA 6: MINI-WIDGETS PRO
+        // ==========================================
+        tag.innerText = 'Ideia 6: Mini-Widgets Pro';
+        tag.className = 'text-xs font-black text-emerald-400 uppercase bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20';
+        desc.innerHTML = `<b>Ideia 6 — Mini-Widgets Pro:</b> 3 blocos interativos em formato de widgets: <b>1. Bate-papo</b> • <b>2. Auditoria</b> • <b>3. Movimentações</b>. Modular e super moderno!`;
+
+        container.innerHTML = `
+          <div class="grid grid-cols-3 gap-2">
+            
+            <!-- Widget 1: Bate-papo -->
+            <button class="bg-[#121216] border border-indigo-500/30 rounded-2xl p-2.5 text-center flex flex-col items-center justify-between min-h-[85px] active:scale-95 transition-all">
+              <div class="h-7 w-7 rounded-xl bg-indigo-500/15 flex items-center justify-center text-indigo-400">
+                <i data-lucide="message-square" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <span class="text-[10px] font-black uppercase text-indigo-300 block">Bate-papo</span>
+                <span class="text-[9px] text-zinc-500">1 recado</span>
+              </div>
+            </button>
+
+            <!-- Widget 2: Auditoria -->
+            <button class="bg-[#121216] border border-emerald-500/30 rounded-2xl p-2.5 text-center flex flex-col items-center justify-between min-h-[85px] active:scale-95 transition-all">
+              <div class="h-7 w-7 rounded-xl bg-emerald-500/15 flex items-center justify-center text-emerald-400">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <span class="text-[10px] font-black uppercase text-emerald-300 block">Auditoria</span>
+                <span class="text-[9px] text-zinc-500">0 erros</span>
+              </div>
+            </button>
+
+            <!-- Widget 3: Atividades -->
+            <button class="bg-[#121216] border border-amber-500/30 rounded-2xl p-2.5 text-center flex flex-col items-center justify-between min-h-[85px] active:scale-95 transition-all">
+              <div class="h-7 w-7 rounded-xl bg-amber-500/15 flex items-center justify-center text-amber-400">
+                <i data-lucide="activity" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <span class="text-[10px] font-black uppercase text-amber-300 block">Atividades</span>
+                <span class="text-[9px] text-zinc-500">22 baixas</span>
+              </div>
+            </button>
+
+          </div>
+
+          <div class="text-center pt-2">
+            <span class="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
+              ⭐ Toque em qualquer widget para expandir instantaneamente
+            </span>
+          </div>
+        `;
+      }
+
+      lucide.createIcons();
+    }
+
+    render();
+  </script>
+</body>
+</html>

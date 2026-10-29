@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Calibração do Ajuste da Gaveta</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 420px;
+      border-radius: 40px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-5xl mx-auto pb-28">
+
+  <!-- CABEÇALHO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      🔍 DIAGNÓSTICO E CORREÇÃO DE ALINHAMENTO
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      Calibração: Ajuste da Gaveta
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-xl mx-auto font-medium">
+      Identificamos os 3 motivos do desalinhamento e criamos 3 versões perfeitamente estabilizadas:
+    </p>
+
+    <!-- SELETOR -->
+    <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 bg-[#121216] p-1.5 rounded-2xl border border-zinc-800 max-w-2xl mx-auto">
+      <button onclick="setCalib(1)" id="btn-c1" class="py-2.5 rounded-xl text-xs font-black bg-amber-500 text-zinc-950 shadow transition-all">
+        1. Alinhamento Clássico Bancário (36px)
+      </button>
+      <button onclick="setCalib(2)" id="btn-c2" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        2. Número em Destaque à Direita
+      </button>
+      <button onclick="setCalib(3)" id="btn-c3" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        3. Linha Compacta com Badge +1
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER CENTRAL -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- CABEÇALHO DO APP -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-4 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-lg font-black uppercase tracking-tighter text-white">CAIXA</span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span class="text-[11px] font-black text-zinc-400 uppercase">27 AGO</span>
+        </div>
+        <div id="calib-tag" class="text-xs font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20">
+          Opção 1: Alinhamento Clássico
+        </div>
+      </div>
+
+      <!-- CORPO COM A ESCALA COMPLETA DA TELA -->
+      <div class="p-3.5 space-y-3">
+        
+        <!-- CARD DO DOCK DE SAÍDAS (CONTEXTO ACIMA) -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-3 px-4 flex items-center shadow-lg min-h-[74px] opacity-70">
+          <div class="flex-1 px-1">
+            <div class="text-[12px] font-bold text-zinc-300 uppercase flex items-center gap-1.5">
+              <i data-lucide="arrow-up-right" class="w-4 h-4 text-red-400"></i> Saídas
+            </div>
+            <div class="mono text-[20px] font-black text-white mt-0.5">R$ 0,00</div>
+          </div>
+          <div class="w-px h-10 bg-zinc-800 mx-2.5"></div>
+          <div class="flex-1 px-1">
+            <div class="text-[12px] font-bold text-blue-400 uppercase flex items-center gap-1.5">
+              <i data-lucide="check-square" class="w-4 h-4 text-blue-400"></i> Canhotos
+            </div>
+            <div class="mono text-[20px] font-black text-blue-300 mt-0.5">22 de 22</div>
+          </div>
+        </div>
+
+        <!-- DIVISOR COM LINHA GUIA -->
+        <div class="text-[10px] font-bold uppercase tracking-widest text-zinc-500 text-center flex items-center gap-2">
+          <div class="flex-1 h-px bg-zinc-800"></div>
+          <span>CARD DO AJUSTE DA GAVETA</span>
+          <div class="flex-1 h-px bg-zinc-800"></div>
+        </div>
+
+        <!-- CONTAINER DO AJUSTE DINÂMICO -->
+        <div id="ajuste-container">
+          <!-- Injetado via JS -->
+        </div>
+
+        <!-- POS CARTÕES (CONTEXTO ABAIXO) -->
+        <div class="grid grid-cols-2 gap-2.5 opacity-70">
+          <div class="bg-[#121216] border border-blue-500/30 rounded-2xl p-3.5 min-h-[92px]">
+            <div class="flex items-center gap-2 text-blue-400 text-xs font-black uppercase">
+              <i data-lucide="credit-card" class="w-3.5 h-3.5"></i> POS Cartões
+            </div>
+            <div class="mono text-[20px] font-black text-white mt-1.5">R$ 1.840,50</div>
+            <div class="text-[11px] text-blue-300/80 font-medium">8 comprovantes ›</div>
+          </div>
+          <div class="bg-[#121216] border border-purple-500/30 rounded-2xl p-3.5 min-h-[92px]">
+            <div class="flex items-center gap-2 text-purple-400 text-xs font-black uppercase">
+              <i data-lucide="building-2" class="w-3.5 h-3.5"></i> Convênios
+            </div>
+            <div class="mono text-[20px] font-black text-white mt-1.5">R$ 650,00</div>
+            <div class="text-[11px] text-purple-300/80 font-medium">3 clientes ›</div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- EXPLICAÇÃO DETALHADA -->
+    <div id="calib-description" class="mt-6 max-w-xl text-center bg-[#121216] p-4 rounded-2xl border border-zinc-800 text-xs text-zinc-300">
+      <!-- Injetado via JS -->
+    </div>
+
+  </div>
+
+  <script>
+    let currentCalib = 1;
+    let ajusteVal = 0.00;
+
+    function setCalib(n) {
+      currentCalib = n;
+
+      for (let i = 1; i <= 3; i++) {
+        const btn = document.getElementById('btn-c' + i);
+        if (i === n) {
+          btn.className = 'py-2.5 rounded-xl text-xs font-black bg-amber-500 text-zinc-950 shadow transition-all';
+        } else {
+          btn.className = 'py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all';
+        }
+      }
+
+      render();
+    }
+
+    function addUm() {
+      ajusteVal = Math.round((ajusteVal + 1.00) * 100) / 100;
+      render();
+    }
+
+    function zerar() {
+      ajusteVal = 0.00;
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById('ajuste-container');
+      const tag = document.getElementById('calib-tag');
+      const desc = document.getElementById('calib-description');
+      const isAtivo = Math.abs(ajusteVal) > 0.001;
+
+      if (currentCalib === 1) {
+        // ==========================================
+        // OPÇÃO 1: ALINHAMENTO CLÁSSICO BANCÁRIO (Ícone 36px padrão, texto com baseline alinhada)
+        // ==========================================
+        tag.innerText = 'Opção 1: Alinhamento Clássico Bancário';
+        tag.className = 'text-xs font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20';
+        desc.innerHTML = `<b>Diagnóstico:</b> O ícone anterior tinha 40px (diferente dos 36px do restante da tela) e a caixa de digitação tinha altura fixa descolada do rótulo.<br><b>Solução da Opção 1:</b> Ícone calibrado exatamente em <b>36px</b>, rótulo no topo, número em baseline perfeita e botão <b>+1,00</b> alinhado no centro vertical exato.`;
+
+        container.innerHTML = `
+          <div class="bg-[#121216] ${isAtivo ? 'border-amber-500/40 bg-[#14130e]' : 'border-zinc-800/80'} p-3 px-3.5 rounded-2xl border flex items-center justify-between gap-3 shadow-lg min-h-[66px] transition-all">
+            
+            <div class="flex items-center gap-3 flex-1">
+              <!-- Ícone padrão 36px (idêntico ao Dinheiro no Saco) -->
+              <div class="h-9 w-9 rounded-xl ${isAtivo ? 'bg-amber-500/20 border-amber-500/30 text-amber-300' : 'bg-zinc-900 border-zinc-800 text-zinc-400'} border flex items-center justify-center flex-shrink-0">
+                <i data-lucide="sliders-horizontal" class="w-4.5 h-4.5"></i>
+              </div>
+
+              <!-- Bloco de Texto Estável -->
+              <div class="flex-1">
+                <div class="text-[11px] font-bold uppercase tracking-wider ${isAtivo ? 'text-amber-300' : 'text-zinc-400'} leading-none mb-1">
+                  Ajuste da Gaveta
+                </div>
+                <div class="flex items-baseline font-black mono tracking-tight ${isAtivo ? 'text-amber-300' : 'text-white'} leading-none">
+                  <span class="text-xs font-bold text-zinc-400 mr-0.5">R$</span>
+                  <span class="text-[20px] font-black">${ajusteVal.toFixed(2).replace('.', ',')}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botões à Direita -->
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+              ${isAtivo ? `
+                <button onclick="zerar()" class="px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-xs font-bold text-zinc-400 hover:text-white active:scale-95 transition-all">
+                  Zerar
+                </button>
+              ` : ''}
+              <button onclick="addUm()" class="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-black flex items-center gap-1 hover:bg-amber-500/25 active:scale-95 transition-all shadow">
+                <i data-lucide="plus" class="w-3.5 h-3.5 stroke-[3]"></i> 1,00
+              </button>
+            </div>
+
+          </div>
+        `;
+      } else if (currentCalib === 2) {
+        // ==========================================
+        // OPÇÃO 2: NÚMERO EM DESTAQUE À DIREITA (ESTILO CARTÕES)
+        // ==========================================
+        tag.innerText = 'Opção 2: Layout com Valor na Direita';
+        tag.className = 'text-xs font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20';
+        desc.innerHTML = `<b>Opção 2 — Layout Espelhado:</b> Ícone e título à esquerda com botão <b>+1</b> ao lado, e o valor numérico em destaque na extrema direita. Zero conflito de espaço vertical.`;
+
+        container.innerHTML = `
+          <div class="bg-[#121216] ${isAtivo ? 'border-amber-500/40 bg-[#14130e]' : 'border-zinc-800/80'} p-3 px-3.5 rounded-2xl border flex items-center justify-between min-h-[66px] shadow-lg transition-all">
+            
+            <div class="flex items-center gap-2.5">
+              <div class="h-9 w-9 rounded-xl ${isAtivo ? 'bg-amber-500/20 border-amber-500/30 text-amber-300' : 'bg-zinc-900 border-zinc-800 text-zinc-400'} border flex items-center justify-center flex-shrink-0">
+                <i data-lucide="sliders-horizontal" class="w-4.5 h-4.5"></i>
+              </div>
+              <div>
+                <div class="text-[12.5px] font-black uppercase tracking-tight ${isAtivo ? 'text-amber-300' : 'text-zinc-200'}">
+                  Ajuste da Gaveta
+                </div>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <button onclick="addUm()" class="text-[10.5px] font-black text-amber-400 hover:underline flex items-center gap-0.5">
+                    <i data-lucide="plus" class="w-3 h-3"></i> Adicionar R$ 1,00
+                  </button>
+                  ${isAtivo ? `
+                    <span class="text-zinc-600">•</span>
+                    <button onclick="zerar()" class="text-[10.5px] font-bold text-zinc-400 hover:text-white">
+                      Zerar
+                    </button>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-baseline font-black mono tracking-tight ${isAtivo ? 'text-amber-300' : 'text-white'}">
+              <span class="text-zinc-400 text-xs font-bold mr-0.5">R$</span>
+              <span class="text-[20px] font-black">${ajusteVal.toFixed(2).replace('.', ',')}</span>
+            </div>
+
+          </div>
+        `;
+      } else if (currentCalib === 3) {
+        // ==========================================
+        // OPÇÃO 3: LINHA COMPACTA INTEGRADA (ESTILO DOCK/PILL)
+        // ==========================================
+        tag.innerText = 'Opção 3: Barra Integrada 60px';
+        tag.className = 'text-xs font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20';
+        desc.innerHTML = `<b>Opção 3 — Barra Integrada:</b> Altura compacta de <b>60px</b> com divisor vertical sutil separando o ajuste do botão rápido. Extremamente limpa e simétrica.`;
+
+        container.innerHTML = `
+          <div class="bg-[#121216] ${isAtivo ? 'border-amber-500/40 bg-[#14130e]' : 'border-zinc-800/80'} p-2.5 px-3.5 rounded-2xl border flex items-center justify-between min-h-[60px] shadow-lg transition-all">
+            
+            <div class="flex items-center gap-3">
+              <i data-lucide="sliders-horizontal" class="w-4 h-4 ${isAtivo ? 'text-amber-300' : 'text-zinc-400'}"></i>
+              <div>
+                <span class="text-[10.5px] font-bold uppercase text-zinc-400">Ajuste Manual:</span>
+                <span class="mono font-black text-base ml-1 ${isAtivo ? 'text-amber-300' : 'text-white'}">
+                  R$ ${ajusteVal.toFixed(2).replace('.', ',')}
+                </span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+              ${isAtivo ? `
+                <button onclick="zerar()" class="px-2 py-1 rounded-lg bg-zinc-900 text-[11px] font-bold text-zinc-400 hover:text-white">
+                  Zerar
+                </button>
+              ` : ''}
+              <button onclick="addUm()" class="px-3 py-1 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-black flex items-center gap-1 active:scale-95 transition-all">
+                <i data-lucide="plus" class="w-3 h-3 stroke-[3]"></i> 1,00
+              </button>
+            </div>
+
+          </div>
+        `;
+      }
+
+      lucide.createIcons();
+    }
+
+    render();
+  </script>
+</body>
+</html>

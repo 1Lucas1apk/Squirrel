@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Ajuste Operacional da Vida Real</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 390px;
+      border-radius: 40px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8 max-w-5xl mx-auto pb-24">
+
+  <!-- CABEÇALHO -->
+  <div class="mb-8 text-center">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-black uppercase tracking-widest mb-2">
+      🏪 AJUSTE BASEADO NA SUA REALIDADE DE LOJA
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      Ajuste Prático: Troco Injetado & Diferenças de Balcão
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-xl mx-auto">
+      Feito para o que você explicou: <b>injetar R$ 5 de troco próprio</b>, compensar centavos de esquecimento ou bater o caixa com 1 toque.
+    </p>
+  </div>
+
+  <!-- CONTAINER CENTRAL -->
+  <div class="flex flex-col items-center justify-center">
+
+    <!-- SIMULAÇÃO DO MODAL DE AJUSTE ABERTO -->
+    <div class="mobile-frame p-5 bg-[#0e0e12] border border-zinc-800">
+      
+      <!-- CABEÇALHO DO MODAL -->
+      <div class="flex items-center justify-between pb-3 mb-4 border-b border-zinc-800">
+        <div class="flex items-center gap-2">
+          <div class="h-8 w-8 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+            <i data-lucide="sliders-horizontal" class="w-4 h-4 text-amber-400"></i>
+          </div>
+          <div>
+            <div class="text-sm font-black text-white uppercase tracking-tight">Ajuste de Caixa</div>
+            <div class="text-[10px] text-zinc-500 font-bold uppercase">Troco Injetado & Quebra</div>
+          </div>
+        </div>
+        <button class="h-7 w-7 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- 1. RESUMO DA SITUAÇÃO DO CAIXA -->
+      <div class="bg-[#14141c] p-3 rounded-2xl border border-zinc-800/80 mb-3.5 flex items-center justify-between">
+        <div>
+          <div class="text-[10px] font-bold text-zinc-500 uppercase">Diferença Atual do Caixa</div>
+          <div id="diff-status" class="text-xs font-black text-red-400 flex items-center gap-1 mt-0.5">
+            <i data-lucide="alert-triangle" class="w-3 h-3 text-red-400"></i>
+            -R$ 0,09 Quebra no Físico
+          </div>
+        </div>
+        <button onclick="autoCompensate()" class="px-2.5 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 active:scale-95 text-amber-950 text-[11px] font-black flex items-center gap-1 shadow">
+          <i data-lucide="zap" class="w-3 h-3 fill-amber-950"></i>
+          Compensar
+        </button>
+      </div>
+
+      <!-- 2. CAMPO DE VALOR PRINCIPAL -->
+      <div class="bg-[#14141a] p-3.5 rounded-2xl border border-zinc-800 mb-3.5 text-center">
+        <div class="text-[10px] font-bold text-zinc-400 uppercase mb-1">Valor do Ajuste</div>
+        <div id="val-display" class="text-3xl font-black text-amber-300 mono leading-none tracking-tight">
+          R$ 0,00
+        </div>
+        <div class="text-[10px] text-zinc-500 font-medium mt-1">Toque nos atalhos abaixo ou digite</div>
+      </div>
+
+      <!-- 3. ATALHOS RÁPIDOS 1: TROCO INJETADO (NOTAS) -->
+      <div class="mb-3.5">
+        <div class="text-[10px] font-black text-zinc-400 uppercase mb-1.5 flex items-center gap-1">
+          <i data-lucide="banknote" class="w-3 h-3 text-amber-400"></i>
+          Fundo de Troco Injetado / Notas:
+        </div>
+        <div class="grid grid-cols-4 gap-1.5">
+          <button onclick="addVal(2.00)" class="py-2 rounded-xl bg-[#14141c] border border-zinc-800 hover:bg-zinc-800 active:scale-90 text-xs font-black text-zinc-200">
+            +R$ 2
+          </button>
+          <button onclick="addVal(5.00)" class="py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 active:scale-90 text-xs font-black text-amber-300">
+            +R$ 5
+          </button>
+          <button onclick="addVal(10.00)" class="py-2 rounded-xl bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 active:scale-90 text-xs font-black text-amber-300">
+            +R$ 10
+          </button>
+          <button onclick="addVal(20.00)" class="py-2 rounded-xl bg-[#14141c] border border-zinc-800 hover:bg-zinc-800 active:scale-90 text-xs font-black text-zinc-200">
+            +R$ 20
+          </button>
+        </div>
+      </div>
+
+      <!-- 4. ATALHOS RÁPIDOS 2: CENTAVOS DE ARREDONDAMENTO -->
+      <div class="mb-4">
+        <div class="text-[10px] font-black text-zinc-400 uppercase mb-1.5 flex items-center gap-1">
+          <i data-lucide="coins" class="w-3 h-3 text-zinc-400"></i>
+          Centavos & Moedas:
+        </div>
+        <div class="grid grid-cols-5 gap-1.5">
+          <button onclick="addVal(-0.10)" class="py-1.5 rounded-xl bg-[#14141c] border border-zinc-800 hover:bg-zinc-800 active:scale-90 text-[11px] font-black text-red-400">
+            -10¢
+          </button>
+          <button onclick="addVal(-0.05)" class="py-1.5 rounded-xl bg-[#14141c] border border-zinc-800 hover:bg-zinc-800 active:scale-90 text-[11px] font-black text-red-400">
+            -5¢
+          </button>
+          <button onclick="setVal(0.00)" class="py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 hover:bg-zinc-800 active:scale-90 text-[11px] font-black text-zinc-400">
+            Zerar
+          </button>
+          <button onclick="addVal(0.05)" class="py-1.5 rounded-xl bg-[#14141c] border border-zinc-800 hover:bg-zinc-800 active:scale-90 text-[11px] font-black text-emerald-400">
+            +5¢
+          </button>
+          <button onclick="addVal(0.10)" class="py-1.5 rounded-xl bg-[#14141c] border border-zinc-800 hover:bg-zinc-800 active:scale-90 text-[11px] font-black text-emerald-400">
+            +10¢
+          </button>
+        </div>
+      </div>
+
+      <!-- 5. MOTIVO / NOTA RÁPIDA (OPCIONAL) -->
+      <div class="mb-4">
+        <div class="text-[10px] font-black text-zinc-400 uppercase mb-1.5">Motivo (Opcional):</div>
+        <div class="flex flex-wrap gap-1 mb-2">
+          <button onclick="setMotivo('Troco colocado do bolso')" class="px-2 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[10px] font-bold text-zinc-400 hover:text-white">
+            Troco do bolso
+          </button>
+          <button onclick="setMotivo('Diferença de centavos')" class="px-2 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[10px] font-bold text-zinc-400 hover:text-white">
+            Centavos
+          </button>
+          <button onclick="setMotivo('Recebimento não anotado')" class="px-2 py-1 rounded-lg bg-zinc-900 border border-zinc-800 text-[10px] font-bold text-zinc-400 hover:text-white">
+            Esqueci 1 comprovante
+          </button>
+        </div>
+        <input id="inp-motivo" type="text" placeholder="Ex: Coloquei R$ 5 de troco próprio..." class="w-full bg-[#14141a] border border-zinc-800 rounded-xl px-3 py-2 text-xs font-bold text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-amber-500/50">
+      </div>
+
+      <!-- 6. BOTÃO SALVAR -->
+      <button onclick="salvarAjuste()" class="w-full py-3.5 rounded-2xl bg-amber-400 hover:bg-amber-300 active:scale-95 text-amber-950 font-black uppercase tracking-wider text-xs shadow-xl transition-all">
+        Salvar Ajuste no Caixa
+      </button>
+
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    let valorAtual = 0.00;
+    let diferencaCaixa = -0.09;
+
+    function addVal(val) {
+      valorAtual = Math.round((valorAtual + val) * 100) / 100;
+      updateDisplay();
+    }
+
+    function setVal(val) {
+      valorAtual = val;
+      updateDisplay();
+    }
+
+    function autoCompensate() {
+      valorAtual = -diferencaCaixa;
+      document.getElementById('inp-motivo').value = 'Compensação de diferença do físico';
+      updateDisplay();
+    }
+
+    function setMotivo(texto) {
+      document.getElementById('inp-motivo').value = texto;
+    }
+
+    function updateDisplay() {
+      const disp = document.getElementById('val-display');
+      disp.innerText = (valorAtual < 0 ? '-R$ ' : 'R$ ') + Math.abs(valorAtual).toFixed(2).replace('.', ',');
+
+      if (valorAtual > 0) {
+        disp.className = 'text-3xl font-black text-emerald-400 mono leading-none tracking-tight';
+      } else if (valorAtual < 0) {
+        disp.className = 'text-3xl font-black text-red-400 mono leading-none tracking-tight';
+      } else {
+        disp.className = 'text-3xl font-black text-amber-300 mono leading-none tracking-tight';
+      }
+    }
+
+    function salvarAjuste() {
+      alert(`Ajuste de R$ ${valorAtual.toFixed(2)} salvo com sucesso!`);
+    }
+  </script>
+</body>
+</html>

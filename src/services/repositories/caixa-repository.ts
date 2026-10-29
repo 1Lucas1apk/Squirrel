@@ -10,6 +10,8 @@ import {
   addDoc,
   onSnapshot,
   query,
+  where,
+  limit,
   writeBatch,
 } from "firebase/firestore";
 import {
@@ -34,11 +36,13 @@ import {
   ContagemCedulas,
   LogAlteracao,
   RegistroPOS,
-  RegistroConvenio
+  RegistroConvenio,
+  LedgerEvent
 } from "../../types/domain";
 import { getFirestoreDb, getFirebaseAuth } from "../firebase/client";
 import { getRealtimeDatabase } from "../firebase/realtime";
 import { getUid, saveUid } from "../auth-storage";
+import { getDeviceIdAsync, getNextSequence } from "../device-service";
 
 export type Unsubscribe = () => void;
 
@@ -48,28 +52,24 @@ function isLegacy(id: string) {
 
 export async function getUserIdAsync(): Promise<string> {
   const auth = getFirebaseAuth();
-  if (auth.currentUser) return auth.currentUser.uid;
+  if (auth.currentUser?.uid) return auth.currentUser.uid;
 
-  // Fallback 1: UID salvo no SecureStore (funciona offline)
+  // Fallback 1: UID salvo no SecureStore (0ms de resposta offline imediata!)
   const storedUid = await getUid();
+  if (storedUid) {
+    return storedUid;
+  }
 
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       unsub();
-      // Se temos UID salvo, usa ele ao invés de rejeitar (modo offline)
-      if (storedUid) {
-        console.log("[Repository] Timeout de auth, usando UID do cache local (offline).");
-        resolve(storedUid);
-      } else {
-        reject(new Error("Timeout esperando autenticação. Nenhum UID em cache."));
-      }
-    }, 4000); // Reduzido de 8s para 4s — o fallback cobre o resto
+      reject(new Error("Timeout esperando autenticação. Nenhum UID em cache."));
+    }, 2000);
 
     const unsub = onAuthStateChanged(auth, (user) => {
       if (user) {
         clearTimeout(timeout);
         unsub();
-        // Atualiza o cache para futuras sessões offline
         void saveUid(user.uid);
         resolve(user.uid);
       }
@@ -89,15 +89,15 @@ function toMoney(value: unknown): number {
 function mapTurno(id: string, data: any): Turno {
   const metadados = data.metadados || {};
   const totais = data.totais || {};
-  const contagem = data.contagem_cedulas || null;
+  const contagem = data.contagem_cedulas || data.contagemCedulas || null;
 
   return {
     id,
-    caixaId: data.caixa_id ? String(data.caixa_id) : undefined,
-    operadorId: data.operador_id ? String(data.operador_id) : undefined,
-    dataReferencia: String(data.data_referencia || ""),
-    statusTurno: data.status_turn || data.status_turno || "aberto",
-    ajusteManualSobra: Number(data.ajuste_manual_sobra || 0),
+    caixaId: data.caixa_id || data.caixaId ? String(data.caixa_id || data.caixaId) : undefined,
+    operadorId: data.operador_id || data.operadorId ? String(data.operador_id || data.operadorId) : undefined,
+    dataReferencia: String(data.data_referencia || data.dataReferencia || ""),
+    statusTurno: data.status_turn || data.status_turno || data.statusTurno || "aberto",
+    ajusteManualSobra: Number(data.ajuste_manual_sobra || data.ajusteManualSobra || 0),
     contagem: contagem ? {
       n100: Number(contagem.n100 || 0),
       n50: Number(contagem.n50 || 0),
@@ -110,19 +110,19 @@ function mapTurno(id: string, data: any): Turno {
     totais: {
       sistema: Number(totais.sistema || 0),
       sobra: Number(totais.sobra || 0),
-      gavetaFisico: Number(totais.gaveta_fisico || 0),
-      especieEnvelope: Number(totais.especie_envelope || 0),
-      pixRepasse: Number(totais.pix_repasse || 0),
-      pixNoCaixa: Number(totais.pix_no_caixa || 0),
-      pixDiretoLoja: Number(totais.pix_direto_loja || 0),
-      totalPOS: Number(totais.total_pos || 0),
-      totalConvenio: Number(totais.total_convenio || 0),
+      gavetaFisico: Number(totais.gaveta_fisico || totais.gavetaFisico || 0),
+      especieEnvelope: Number(totais.especie_envelope || totais.especieEnvelope || 0),
+      pixRepasse: Number(totais.pix_repasse || totais.pixRepasse || 0),
+      pixNoCaixa: Number(totais.pix_no_caixa || totais.pixNoCaixa || 0),
+      pixDiretoLoja: Number(totais.pix_direto_loja || totais.pixDiretoLoja || 0),
+      totalPOS: Number(totais.total_pos || totais.totalPOS || 0),
+      totalConvenio: Number(totais.total_convenio || totais.totalConvenio || 0),
     },
-    criadoEm: Number(metadados.criado_em || Date.now()),
-    atualizadoEm: Number(metadados.atualizado_em || Date.now()),
+    criadoEm: Number(metadados.criado_em || data.criadoEm || Date.now()),
+    atualizadoEm: Number(metadados.atualizado_em || data.atualizadoEm || Date.now()),
     repassado: Boolean(data.repassado),
-    notaDia: data.nota_dia ? String(data.nota_dia) : undefined,
-    posRelatorioTotal: data.pos_relatorio_total !== undefined ? Number(data.pos_relatorio_total) : undefined,
+    notaDia: data.nota_dia || data.notaDia ? String(data.nota_dia || data.notaDia) : undefined,
+    posRelatorioTotal: data.pos_relatorio_total !== undefined ? Number(data.pos_relatorio_total) : data.posRelatorioTotal !== undefined ? Number(data.posRelatorioTotal) : undefined,
     excluido: Boolean(data.excluido),
   };
 }
@@ -223,10 +223,26 @@ export async function criarNovoTurno(dataReferencia: string): Promise<Turno> {
 }
 
 export async function buscarUltimoTurnoAberto(): Promise<Turno | null> {
-  // Lista todos e pega o último
-  const turnos = await listarTurnosRecentes();
-  const abertos = turnos.filter(t => t.statusTurno === "aberto");
-  return abertos[0] || null;
+  try {
+    const uid = await getUserIdAsync();
+    const dbFS = getFirestoreDb();
+    const colRef = collection(dbFS, `users/${uid}/turnos`);
+    
+    // Busca direta ultra-rápida (Lê apenas 1 documento aberto em vez de centenas de dias antigos)
+    const q = query(colRef, where("statusTurno", "==", "aberto"), limit(1));
+    const snap = await Promise.race([
+      getDocs(q),
+      new Promise<any>((_, rej) => setTimeout(() => rej(new Error("timeout")), 1500))
+    ]).catch(() => getDocsFromCache(q).catch(() => null));
+
+    if (snap && !snap.empty) {
+      const d = snap.docs[0];
+      return mapTurno(d.id, d.data());
+    }
+  } catch (e) {
+    console.warn("[caixa-repo] Erro na busca rápida do turno aberto:", e);
+  }
+  return null;
 }
 
 export async function listarTurnosRecentes(): Promise<Turno[]> {
@@ -250,20 +266,31 @@ export async function listarTurnosRecentes(): Promise<Turno[]> {
       // Se a internet falhar ou estiver muito lenta, força a leitura do cache offline local
       fsSnap = await getDocsFromCache(colRef);
     }
-    fsSnap.docs.forEach((d: any) => allTurnos.push(mapTurno(d.id, d.data())));
+    fsSnap.docs.forEach((d: any) => {
+      const mapped = mapTurno(d.id, d.data());
+      if (mapped.dataReferencia && mapped.dataReferencia.trim().length >= 8) {
+        allTurnos.push(mapped);
+      }
+    });
   } catch (e) {
     console.warn("Erro ao buscar turnos do Firestore", e);
   }
 
   // Busca do Realtime (Legados)
   try {
-    const rtSnap = await get(ref(dbRTDB, `users/${uid}/turnos`));
-    const raw = (rtSnap.val() as Record<string, any>) || {};
+    const rtSnap = await Promise.race([
+      get(ref(dbRTDB, `users/${uid}/turnos`)),
+      new Promise<any>((_, rej) => setTimeout(() => rej(new Error("rtdb_timeout")), 1000))
+    ]);
+    const raw = (rtSnap?.val() as Record<string, any>) || {};
     Object.entries(raw).forEach(([id, data]) => {
-      allTurnos.push(mapTurno(id, data));
+      const mapped = mapTurno(id, data);
+      if (mapped.dataReferencia && mapped.dataReferencia.trim().length >= 8) {
+        allTurnos.push(mapped);
+      }
     });
   } catch (e) {
-    console.warn("Erro ao buscar turnos do RTDB", e);
+    // RTDB offline ou timeout (ignora silenciosamente)
   }
 
   return allTurnos.sort((a, b) => {
@@ -278,11 +305,27 @@ export async function listarTurnosRecentes(): Promise<Turno[]> {
 export async function buscarTurnoPorId(turnoId: string): Promise<Turno | null> {
   const uid = await getUserIdAsync();
   if (isLegacy(turnoId)) {
-    const snapshot = await get(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`));
-    return snapshot.exists() ? mapTurno(turnoId, snapshot.val()) : null;
+    try {
+      const snapshot = await Promise.race([
+        get(ref(getRealtimeDatabase(), `users/${uid}/turnos/${turnoId}`)),
+        new Promise<any>((_, rej) => setTimeout(() => rej(new Error("timeout")), 1000))
+      ]);
+      return snapshot && snapshot.exists() ? mapTurno(turnoId, snapshot.val()) : null;
+    } catch {
+      return null;
+    }
   } else {
-    const docSnap = await getDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`));
-    return docSnap.exists() ? mapTurno(turnoId, docSnap.data()) : null;
+    const docRef = doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`);
+    let docSnap: any;
+    try {
+      docSnap = await Promise.race([
+        getDoc(docRef),
+        new Promise<any>((_, rej) => setTimeout(() => rej(new Error("timeout")), 1200))
+      ]);
+    } catch {
+      docSnap = await getDoc(docRef).catch(() => null);
+    }
+    return docSnap && docSnap.exists() ? mapTurno(turnoId, docSnap.data()) : null;
   }
 }
 
@@ -446,11 +489,62 @@ export async function atualizarIdentificacao(turnoId: string, caixaId: string, o
   else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}`), payload);
 }
 
+function cleanUndefinedPayload(obj: any): any {
+  if (obj === null || obj === undefined) return null;
+  if (typeof obj !== "object") return obj;
+  if (Array.isArray(obj)) return obj.map(cleanUndefinedPayload);
+  const clean: Record<string, any> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) {
+      clean[k] = typeof v === "object" && v !== null ? cleanUndefinedPayload(v) : v;
+    }
+  }
+  return clean;
+}
+
+export async function publicarEventoLedger(turnoId: string, evento: LedgerEvent): Promise<void> {
+  try {
+    const uid = await getUserIdAsync();
+    const db = getFirestoreDb();
+    const eventRef = doc(db, `users/${uid}/turnos/${turnoId}/ledger_eventos/${evento.id}`);
+    const payload = cleanUndefinedPayload({
+      ...evento,
+      sincronizadoEmServer: Date.now(),
+    });
+    await setDoc(eventRef, payload);
+  } catch (err) {
+    console.log("[LedgerRepo] Erro ao publicar evento de ledger:", err);
+  }
+}
+
+export function ouvirEventosLedger(turnoId: string, onData: (eventos: LedgerEvent[]) => void): Unsubscribe {
+  const db = getFirestoreDb();
+  let unsubDb: (() => void) | null = null;
+
+  void getUserIdAsync().then(uid => {
+    const q = query(collection(db, `users/${uid}/turnos/${turnoId}/ledger_eventos`));
+    unsubDb = onSnapshot(q, (snap) => {
+      const arr = snap.docs.map(d => ({ id: d.id, ...d.data() } as LedgerEvent));
+      onData(arr);
+    }, (err) => {
+      console.log("[LedgerRepo] Erro ao ouvir eventos:", err);
+    });
+  });
+
+  return () => {
+    unsubDb?.();
+  };
+}
+
 export async function adicionarTransacao(turnoId: string, input: any): Promise<string> {
   const uid = await getUserIdAsync();
+  const deviceId = await getDeviceIdAsync();
+  const sequence = getNextSequence();
+  const now = Date.now();
+
   const payload = {
     client_local_id: input.clientLocalId || null,
-    timestamp: Date.now(),
+    timestamp: now,
     natureza_operacao: input.naturezaOperacao,
     categoria: input.categoria,
     descricao: input.descricao,
@@ -461,21 +555,52 @@ export async function adicionarTransacao(turnoId: string, input: any): Promise<s
     status_conferencia: input.statusConferencia || "pendente",
     justificativa_texto: input.justificativaTexto ?? null,
     transacao_vinculada_id: input.transacaoVinculadaId || null,
+    device_id: deviceId,
+    versao: 1,
   };
 
+  let txId: string;
   if (isLegacy(turnoId)) {
     const created = push(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}`));
     await set(created, payload);
-    return created.key as string;
+    txId = created.key as string;
   } else {
     const created = doc(collection(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/transacoes`));
     await setDoc(created, payload);
-    return created.id;
+    txId = created.id;
   }
+
+  // Emite evento imutável no Ledger
+  const eventId = `ev_${now}_${Math.random().toString(36).substring(2, 7)}`;
+  void publicarEventoLedger(turnoId, {
+    id: eventId,
+    turnoId,
+    transacaoId: txId,
+    tipo: input.categoria === "sangria" ? "SANGRIA" : (input.categoria === "suprimento" ? "SUPRIMENTO" : "CRIACAO_TRANSACAO"),
+    naturezaOperacao: input.naturezaOperacao,
+    categoria: input.categoria,
+    descricao: input.descricao,
+    codigoContrato: input.codigoContrato,
+    valorSistema: input.valorSistema,
+    valorRecebidoFisico: input.valorRecebidoFisico,
+    trocoSobra: input.trocoSobra,
+    justificativaTexto: input.justificativaTexto,
+    operadorId: uid,
+    operadorNome: input.operadorNome || "Operador",
+    deviceId,
+    sequence,
+    criadoEmDevice: now,
+  });
+
+  return txId;
 }
 
 export async function editarTransacao(turnoId: string, id: string, input: any): Promise<void> {
   const uid = await getUserIdAsync();
+  const deviceId = await getDeviceIdAsync();
+  const sequence = getNextSequence();
+  const now = Date.now();
+
   const payload: Record<string, any> = {};
   if (input.naturezaOperacao !== undefined) payload.natureza_operacao = input.naturezaOperacao;
   if (input.categoria !== undefined) payload.categoria = input.categoria;
@@ -487,13 +612,42 @@ export async function editarTransacao(turnoId: string, id: string, input: any): 
   if (input.statusConferencia !== undefined) payload.status_conferencia = input.statusConferencia;
   if (input.justificativaTexto !== undefined) payload.justificativa_texto = input.justificativaTexto || null;
   if (input.transacaoVinculadaId !== undefined) payload.transacao_vinculada_id = input.transacaoVinculadaId || null;
+  payload.versao = (input.versao || 1) + 1;
+  payload.device_id = deviceId;
+  payload.atualizado_em = now;
 
   if (isLegacy(turnoId)) await rtdbUpdate(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}/${id}`), payload);
   else await fsUpdateDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/transacoes/${id}`), payload);
+
+  // Emite evento imutável de edição no Ledger com baseVersion para detecção de conflitos causais
+  const eventId = `ev_edit_${now}_${Math.random().toString(36).substring(2, 7)}`;
+  void publicarEventoLedger(turnoId, {
+    id: eventId,
+    turnoId,
+    transacaoId: id,
+    tipo: "EDICAO_TRANSACAO",
+    naturezaOperacao: input.naturezaOperacao,
+    categoria: input.categoria,
+    descricao: input.descricao,
+    valorSistema: input.valorSistema,
+    valorRecebidoFisico: input.valorRecebidoFisico,
+    trocoSobra: input.trocoSobra,
+    operadorId: uid,
+    operadorNome: input.operadorNome || "Operador",
+    deviceId,
+    sequence,
+    baseVersion: input.baseVersion || input.versao || 1,
+    criadoEmDevice: now,
+    motivo: input.motivo || "Edição no caixa",
+  });
 }
 
-export async function removerTransacao(turnoId: string, id: string): Promise<void> {
+export async function removerTransacao(turnoId: string, id: string, motivo?: string): Promise<void> {
   const uid = await getUserIdAsync();
+  const deviceId = await getDeviceIdAsync();
+  const sequence = getNextSequence();
+  const now = Date.now();
+
   if (isLegacy(turnoId)) {
     await Promise.all([
       set(ref(getRealtimeDatabase(), `users/${uid}/transacoes/${turnoId}/${id}`), null),
@@ -501,8 +655,22 @@ export async function removerTransacao(turnoId: string, id: string): Promise<voi
     ]);
   } else {
     await deleteDoc(doc(getFirestoreDb(), `users/${uid}/turnos/${turnoId}/transacoes/${id}`));
-    // No firestore, audioria é flat, não precisamos apagar aqui se não quisermos, ou podemos fazer uma query e apagar
   }
+
+  // Emite evento imutável de cancelamento no Ledger
+  const eventId = `ev_del_${now}_${Math.random().toString(36).substring(2, 7)}`;
+  void publicarEventoLedger(turnoId, {
+    id: eventId,
+    turnoId,
+    transacaoId: id,
+    tipo: "CANCELAMENTO_TRANSACAO",
+    operadorId: uid,
+    operadorNome: "Operador",
+    deviceId,
+    sequence,
+    criadoEmDevice: now,
+    motivo: motivo || "Remoção de transação",
+  });
 }
 
 export async function adicionarFantasma(turnoId: string, input: any): Promise<string> {
@@ -517,8 +685,8 @@ export async function adicionarFantasma(turnoId: string, input: any): Promise<st
     destino_pix: input.destinoPix || null,
     transacao_vinculada_id: input.transacaoVinculadaId || null,
     timestamp: Date.now(),
-    resolvido: false,
-    comprovado_pix: false
+    resolvido: input.resolvido !== undefined ? Boolean(input.resolvido) : false,
+    comprovado_pix: input.comprovadoPix !== undefined ? Boolean(input.comprovadoPix) : false
   };
 
   if (isLegacy(turnoId)) {
@@ -619,24 +787,33 @@ export async function deletarTurnoPermanente(turnoId: string): Promise<void> {
     await set(ref(db, `users/${uid}/fantasmas_lembretes/${turnoId}`), null);
     await set(ref(db, `users/${uid}/registros_pos/${turnoId}`), null);
     await set(ref(db, `users/${uid}/registros_convenio/${turnoId}`), null);
+    await set(ref(db, `users/${uid}/logs_auditoria/${turnoId}`), null);
+    await set(ref(db, `users/${uid}/ledger_eventos/${turnoId}`), null);
   } else {
     const db = getFirestoreDb();
 
-    // Apaga o documento principal do turno
-    await deleteDoc(doc(db, `users/${uid}/turnos/${turnoId}`));
-
-    // Deleta os documentos das subcoleções (buscando e deletando)
-    const subcollections = ["transacoes", "fantasmas_lembretes", "registros_pos", "registros_convenio"];
+    // 1. Deleta os documentos das subcoleções primeiro (com chunking seguro de até 400 itens por batch)
+    const subcollections = ["transacoes", "fantasmas_lembretes", "registros_pos", "registros_convenio", "ledger_eventos", "logs_auditoria"];
     for (const col of subcollections) {
       try {
         const snap = await getDocs(collection(db, `users/${uid}/turnos/${turnoId}/${col}`));
-        const batch = writeBatch(db);
-        snap.forEach(docSnap => batch.delete(docSnap.ref));
-        if (!snap.empty) await batch.commit();
+        if (!snap.empty) {
+          const docs = snap.docs;
+          const CHUNK_SIZE = 400;
+          for (let i = 0; i < docs.length; i += CHUNK_SIZE) {
+            const chunk = docs.slice(i, i + CHUNK_SIZE);
+            const batch = writeBatch(db);
+            chunk.forEach(docSnap => batch.delete(docSnap.ref));
+            await batch.commit();
+          }
+        }
       } catch (err) {
         console.warn(`Erro ao limpar subcolecao ${col}:`, err);
       }
     }
+
+    // 2. Apaga o documento principal do turno após limpar todos os filhos
+    await deleteDoc(doc(db, `users/${uid}/turnos/${turnoId}`));
   }
 }
 
@@ -845,7 +1022,7 @@ export function ouvirTurnoAtivoConta(callback: (turnoId: string | null) => void)
     unsub = onSnapshot(docRef, (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        if (data.activeTurnoId) {
+        if (data?.activeTurnoId) {
           callback(data.activeTurnoId);
         }
       }
@@ -951,13 +1128,110 @@ export async function restaurarSnapshotNuvem(
 
   syncCollection("registros_convenio", currentState.registrosConvenio, snapshot.registrosConvenio || [], (r: RegistroConvenio) => ({
     timestamp: r.timestamp,
-    cliente_id: r.clienteId || "",
-    nome_cliente: r.nomeCliente || "",
+    nome: r.nome || "",
     valor: r.valor || 0,
     descricao: r.descricao || "",
     status_conferencia: r.statusConferencia || "pendente"
   }));
 
   // Executa toda a restauração de forma atômica (tudo ou nada)
+  await batch.commit();
+}
+
+/** Importa um turno completo com todas as coleções filhas para a nuvem de forma atômica */
+export async function importarBackupCompletoNuvem(
+  turno: Turno,
+  transacoes: Transacao[],
+  fantasmas: LembreteFantasma[],
+  logs: LogAlteracao[] = [],
+  registrosPOS: RegistroPOS[] = [],
+  registrosConvenio: RegistroConvenio[] = []
+): Promise<void> {
+  const uid = await getUserIdAsync();
+  const db = getFirestoreDb();
+  const batch = writeBatch(db);
+  const turnoRef = doc(db, `users/${uid}/turnos/${turno.id}`);
+
+  // 1. Grava documento principal do Turno
+  batch.set(turnoRef, {
+    status_turno: turno.statusTurno || "aberto",
+    data_referencia: turno.dataReferencia,
+    ajuste_manual_sobra: turno.ajusteManualSobra ?? 0,
+    totais: turno.totais || null,
+    pos_relatorio_total: (turno as any).posRelatorioTotal ?? 0,
+    nota_dia: (turno as any).notaDia || "",
+    excluido: turno.excluido || false,
+    repassado: turno.repassado || false,
+    metadados: {
+      criado_em: turno.criadoEm || Date.now(),
+      atualizado_em: Date.now(),
+    }
+  }, { merge: true });
+
+  // 2. Grava Transações
+  for (const t of transacoes) {
+    const txId = t.id || doc(collection(db, `users/${uid}/turnos/${turno.id}/transacoes`)).id;
+    const txRef = doc(db, `users/${uid}/turnos/${turno.id}/transacoes/${txId}`);
+    batch.set(txRef, {
+      timestamp: t.timestamp || Date.now(),
+      natureza_operacao: t.naturezaOperacao || "pagamento",
+      categoria: t.categoria || "dinheiro",
+      descricao: t.descricao || "",
+      valor_sistema: t.valorSistema ?? 0,
+      valor_recebido_fisico: t.valorRecebidoFisico ?? 0,
+      troco_sobra: t.trocoSobra ?? 0,
+      status_conferencia: t.statusConferencia || "pendente",
+      codigo_contrato: (t as any).codigoContrato || (t as any).contrato || null,
+      justificativa_texto: t.justificativaTexto || null,
+      transacao_vinculada_id: t.transacaoVinculadaId || null,
+      client_local_id: t.clientLocalId || null
+    }, { merge: true });
+  }
+
+  // 3. Grava Fantasmas (Notas)
+  for (const f of fantasmas) {
+    const fId = f.id || doc(collection(db, `users/${uid}/turnos/${turno.id}/fantasmas_lembretes`)).id;
+    const fRef = doc(db, `users/${uid}/turnos/${turno.id}/fantasmas_lembretes/${fId}`);
+    batch.set(fRef, {
+      client_local_id: f.clientLocalId || null,
+      timestamp: f.timestamp || Date.now(),
+      tipo: f.tipo || "outro",
+      pessoa: f.pessoa || "",
+      descricao: f.descricao || "",
+      valor_referencia: f.valorReferencia ?? 0,
+      impacta_pix_repasse: Boolean(f.impactaPixRepasse),
+      destino_pix: f.destinoPix || null,
+      transacao_vinculada_id: f.transacaoVinculadaId || null,
+      resolvido: Boolean(f.resolvido),
+      comprovado_pix: Boolean(f.comprovadoPix)
+    }, { merge: true });
+  }
+
+  // 4. Grava Registros POS (se houver)
+  for (const r of registrosPOS) {
+    const rId = r.id || doc(collection(db, `users/${uid}/turnos/${turno.id}/registros_pos`)).id;
+    const rRef = doc(db, `users/${uid}/turnos/${turno.id}/registros_pos/${rId}`);
+    batch.set(rRef, {
+      timestamp: r.timestamp || Date.now(),
+      tipo: r.tipo || "cartao",
+      valor: r.valor ?? 0,
+      descricao: r.descricao || "",
+      status_conferencia: r.statusConferencia || "pendente"
+    }, { merge: true });
+  }
+
+  // 5. Grava Registros Convênio (se houver)
+  for (const c of registrosConvenio) {
+    const cId = c.id || doc(collection(db, `users/${uid}/turnos/${turno.id}/registros_convenio`)).id;
+    const cRef = doc(db, `users/${uid}/turnos/${turno.id}/registros_convenio/${cId}`);
+    batch.set(cRef, {
+      timestamp: c.timestamp || Date.now(),
+      nome: c.nome || "",
+      valor: c.valor ?? 0,
+      descricao: c.descricao || "",
+      status_conferencia: c.statusConferencia || "pendente"
+    }, { merge: true });
+  }
+
   await batch.commit();
 }

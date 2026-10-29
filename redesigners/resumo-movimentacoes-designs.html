@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — O que fazer com o Resumo de Movimentação?</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 420px;
+      border-radius: 40px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-5xl mx-auto pb-24">
+
+  <!-- CABEÇALHO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      💡 ANÁLISE PRÁTICA: RESUMO DE MOVIMENTAÇÃO
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      Como Lidar com Textos que Ninguém Lê?
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-xl mx-auto font-medium">
+      No balcão, caixa quer velocidade e objetividade. Veja as 3 soluções:
+    </p>
+
+    <!-- SELETOR DE PROPOSTAS -->
+    <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-2 bg-[#121216] p-1.5 rounded-2xl border border-zinc-800 max-w-2xl mx-auto">
+      <button onclick="setSolucao(1)" id="btn-sol1" class="py-2.5 rounded-xl text-xs font-black bg-emerald-500 text-black shadow transition-all">
+        1. Remover Totalmente (Mais Rápido)
+      </button>
+      <button onclick="setSolucao(2)" id="btn-sol2" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        2. Alertas Vivos (Só se houver pendência)
+      </button>
+      <button onclick="setSolucao(3)" id="btn-sol3" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        3. Modal Oculto de Explicação
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER CENTRAL -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- CABEÇALHO OFICIAL -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-4 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-lg font-black uppercase tracking-tighter text-white">CAIXA</span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span class="text-[11px] font-black text-zinc-400 uppercase">27 AGO</span>
+        </div>
+        <div id="sol-tag" class="text-xs font-black text-emerald-400 uppercase bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20">
+          Solução 1: 100% Limpo
+        </div>
+      </div>
+
+      <!-- CORPO -->
+      <div class="p-3.5 space-y-3">
+        
+        <!-- CARD TOPO OFICIAL (Contexto) -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-[28px] p-4 opacity-80">
+          <div class="flex justify-between items-center text-xs text-zinc-400 mb-1">
+            <span class="font-black uppercase tracking-wider">Total do Caixa</span>
+            <span class="text-red-400 font-bold">-R$ 0,09 Quebra</span>
+          </div>
+          <div class="text-2xl font-black text-white mono">R$ 7.340,98</div>
+        </div>
+
+        <!-- DOCK DE SAÍDAS & CANHOTOS -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-3 px-4 flex items-center min-h-[64px] opacity-80">
+          <div class="flex-1 text-xs font-bold text-zinc-300">Saídas: R$ 0,00</div>
+          <div class="w-px h-8 bg-zinc-800 mx-2"></div>
+          <div class="flex-1 text-xs font-bold text-blue-400">Canhotos: 22 de 22</div>
+        </div>
+
+        <!-- ÁREA DINÂMICA DA SOLUÇÃO -->
+        <div id="solucao-container">
+          <!-- Renderizado via JS -->
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    let currentSol = 1;
+
+    function setSolucao(s) {
+      currentSol = s;
+
+      for (let i = 1; i <= 3; i++) {
+        const btn = document.getElementById('btn-sol' + i);
+        if (i === s) {
+          btn.className = 'py-2.5 rounded-xl text-xs font-black bg-emerald-500 text-black shadow transition-all';
+        } else {
+          btn.className = 'py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all';
+        }
+      }
+
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById('solucao-container');
+      const tag = document.getElementById('sol-tag');
+
+      if (currentSol === 1) {
+        // SOLUÇÃO 1: REMOÇÃO TOTAL
+        tag.innerText = 'Solução 1: 100% Limpo';
+        tag.className = 'text-xs font-black text-emerald-400 uppercase bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20';
+
+        container.innerHTML = `
+          <div class="p-6 rounded-3xl border border-emerald-500/20 bg-emerald-500/5 text-center mt-4">
+            <i data-lucide="sparkles" class="w-8 h-8 text-emerald-400 mx-auto mb-2"></i>
+            <div class="text-sm font-black text-white uppercase tracking-tight">Zero Poluição Visual</div>
+            <p class="text-xs text-zinc-400 mt-1">
+              Como todos os números já estão no topo (Total, Saco, Pix e Saídas), removemos os textos repetitivos. O app fica veloz e direto ao ponto!
+            </p>
+          </div>
+        `;
+      } else if (currentSol === 2) {
+        // SOLUÇÃO 2: ALERTAS VIVOS DINÂMICOS (SÓ SE HOUVER ALGO REAL)
+        tag.innerText = 'Solução 2: Alertas Vivos';
+        tag.className = 'text-xs font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20';
+
+        container.innerHTML = `
+          <div class="space-y-2 mt-2">
+            <div class="text-[11px] font-black uppercase tracking-[2px] text-zinc-500 px-1 flex items-center gap-1.5">
+              <i data-lucide="bell" class="w-3.5 h-3.5 text-zinc-500"></i> Avisos Importantes
+            </div>
+
+            <!-- Card de Alerta Vivo 1 -->
+            <div class="bg-[#121216] border border-amber-500/30 rounded-2xl p-3.5 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                <div class="h-8 w-8 rounded-xl bg-amber-500/15 flex items-center justify-center text-amber-400">
+                  <i data-lucide="user-check" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <div class="text-xs font-bold text-amber-300">Empréstimo c/ João</div>
+                  <div class="text-[10.5px] text-zinc-400">R$ 50,00 a devolver na gaveta</div>
+                </div>
+              </div>
+              <button class="px-3 py-1.5 rounded-xl bg-amber-500/20 text-amber-300 text-xs font-bold">Resolver</button>
+            </div>
+
+            <div class="text-center pt-1">
+              <span class="text-[10.5px] text-zinc-500 font-medium">✨ Se não houver nada pendente, esta área fica 100% invisível.</span>
+            </div>
+          </div>
+        `;
+      } else if (currentSol === 3) {
+        // SOLUÇÃO 3: MODAL OCULTO / SHEET SOB DEMANDA
+        tag.innerText = 'Solução 3: Botão de Ajuda';
+        tag.className = 'text-xs font-black text-blue-400 uppercase bg-blue-500/10 px-2.5 py-1 rounded-xl border border-blue-500/20';
+
+        container.innerHTML = `
+          <div class="mt-4 text-center">
+            <button class="px-4 py-2.5 rounded-2xl bg-zinc-900 border border-zinc-800 text-xs font-bold text-zinc-400 hover:text-white flex items-center gap-2 mx-auto">
+              <i data-lucide="help-circle" class="w-4 h-4 text-zinc-400"></i>
+              Entender a conta dos números
+            </button>
+            <p class="text-[10.5px] text-zinc-500 mt-2">
+              Não ocupa espaço na tela. Abre um pop-up somente se o operador clicar.
+            </p>
+          </div>
+        `;
+      }
+
+      lucide.createIcons();
+    }
+
+    render();
+  </script>
+</body>
+</html>

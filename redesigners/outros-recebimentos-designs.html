@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Redesign de Outros Recebimentos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 420px;
+      border-radius: 40px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-5xl mx-auto pb-24">
+
+  <!-- CABEÇALHO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      💳 REDESIGN: OUTROS RECEBIMENTOS
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      Máquina POS & Convênios no Padrão Top
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-xl mx-auto">
+      Escolha abaixo qual estrutura visual você prefere para os recebimentos extras:
+    </p>
+
+    <!-- SELETOR DE PROPOSTAS -->
+    <div class="mt-4 flex items-center justify-center gap-2 bg-[#121216] p-1.5 rounded-2xl border border-zinc-800 max-w-lg mx-auto">
+      <button onclick="setOption('A')" id="btn-optA" class="flex-1 py-2.5 rounded-xl text-xs font-black bg-blue-500 text-white shadow transition-all">
+        Opção A: Dock Duplo
+      </button>
+      <button onclick="setOption('B')" id="btn-optB" class="flex-1 py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        Opção B: Cards em Grid
+      </button>
+      <button onclick="setOption('C')" id="btn-optC" class="flex-1 py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        Opção C: Linhas Amplas
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER CENTRAL -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- CABEÇALHO REAL DO APP -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-4 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-lg font-black uppercase tracking-tighter text-white">CAIXA</span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span class="text-[11px] font-black text-zinc-400 uppercase">27 AGO</span>
+        </div>
+        <div class="text-xs font-black text-blue-400 uppercase bg-blue-500/10 px-2.5 py-1 rounded-xl border border-blue-500/20">
+          Recebimentos Extras
+        </div>
+      </div>
+
+      <!-- CORPO COM AS PROPOSTAS -->
+      <div class="p-4 space-y-4">
+
+        <!-- CONTEXTO SUPERIOR (RESUMO DOS PRINCIPAIS) -->
+        <div class="bg-[#121216] p-3.5 rounded-2xl border border-zinc-800/60 opacity-60">
+          <div class="flex justify-between items-center text-xs text-zinc-400">
+            <span class="font-bold uppercase tracking-wider">Total Principal (Dinheiro + Pix)</span>
+            <span class="mono font-black text-white text-sm">R$ 7.340,98</span>
+          </div>
+        </div>
+
+        <!-- DIVISOR COM RÓTULO -->
+        <div class="flex items-center gap-2 px-1">
+          <i data-lucide="layers" class="w-3.5 h-3.5 text-zinc-500"></i>
+          <span class="text-[11px] font-black uppercase tracking-[2px] text-zinc-500">Outros Recebimentos</span>
+          <div class="flex-1 h-px bg-zinc-800"></div>
+        </div>
+
+        <!-- ÁREA DINÂMICA DA PROPOSTA SELECIONADA -->
+        <div id="dynamic-container">
+          <!-- Renderizado via JS -->
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    let currentOption = 'A';
+
+    function setOption(opt) {
+      currentOption = opt;
+
+      const ba = document.getElementById('btn-optA');
+      const bb = document.getElementById('btn-optB');
+      const bc = document.getElementById('btn-optC');
+
+      [ba, bb, bc].forEach(b => {
+        b.className = 'flex-1 py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all';
+      });
+
+      if (opt === 'A') ba.className = 'flex-1 py-2.5 rounded-xl text-xs font-black bg-blue-500 text-white shadow transition-all';
+      else if (opt === 'B') bb.className = 'flex-1 py-2.5 rounded-xl text-xs font-black bg-blue-500 text-white shadow transition-all';
+      else if (opt === 'C') bc.className = 'flex-1 py-2.5 rounded-xl text-xs font-black bg-blue-500 text-white shadow transition-all';
+
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById('dynamic-container');
+
+      if (currentOption === 'A') {
+        // OPÇÃO A: DOCK DUPLO UNIFICADO (Seguindo o design da Dock de Saídas/Canhotos)
+        container.innerHTML = `
+          <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-3 px-4 flex items-center shadow-lg min-h-[74px]">
+            
+            <!-- Lado 1: Máquina POS -->
+            <button class="flex-1 px-1 text-left active:scale-95 transition-all">
+              <div class="text-[11.5px] font-bold text-blue-400 uppercase flex items-center gap-1.5">
+                <i data-lucide="credit-card" class="w-4 h-4 text-blue-400"></i> Máquina POS
+              </div>
+              <div class="text-[20px] font-black text-white mono tracking-tight mt-0.5">
+                R$ 1.840<span class="text-zinc-300 text-sm font-bold">,50</span>
+              </div>
+              <div class="text-[10.5px] text-blue-300/80 font-medium">8 comprovantes</div>
+            </button>
+            
+            <!-- Divisor Vertical -->
+            <div class="w-[1px] h-12 bg-zinc-800 self-center mx-2.5"></div>
+            
+            <!-- Lado 2: Convênios -->
+            <button class="flex-1 px-1 text-left active:scale-95 transition-all">
+              <div class="text-[11.5px] font-bold text-purple-400 uppercase flex items-center gap-1.5">
+                <i data-lucide="building-2" class="w-4 h-4 text-purple-400"></i> Convênios
+              </div>
+              <div class="text-[20px] font-black text-white mono tracking-tight mt-0.5">
+                R$ 650<span class="text-zinc-300 text-sm font-bold">,00</span>
+              </div>
+              <div class="text-[10.5px] text-purple-300/80 font-medium">3 clientes</div>
+            </button>
+
+          </div>
+          
+          <div class="text-center mt-3">
+            <span class="text-[11px] font-bold text-zinc-500 uppercase tracking-wider">
+              ⭐ Toque em qualquer lado para abrir o lançamento detalhado
+            </span>
+          </div>
+        `;
+      } else if (currentOption === 'B') {
+        // OPÇÃO B: CARDS EM GRID COM BOTÃO RÁPIDO "+"
+        container.innerHTML = `
+          <div class="grid grid-cols-2 gap-3">
+            
+            <!-- Card POS -->
+            <div class="bg-[#121216] border border-blue-500/20 rounded-2xl p-3.5 shadow-lg flex flex-col justify-between min-h-[110px]">
+              <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center gap-1.5">
+                  <div class="h-6 w-6 rounded-lg bg-blue-500/15 flex items-center justify-center">
+                    <i data-lucide="credit-card" class="w-3.5 h-3.5 text-blue-400"></i>
+                  </div>
+                  <span class="text-[11px] font-bold uppercase text-blue-400">POS</span>
+                </div>
+                <button class="h-7 w-7 rounded-xl bg-blue-500/10 border border-blue-500/30 hover:bg-blue-500/20 active:scale-90 flex items-center justify-center text-blue-300">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+
+              <div>
+                <div class="text-[19px] font-black text-white mono tracking-tight">
+                  R$ 1.840<span class="text-zinc-300 text-xs font-bold">,50</span>
+                </div>
+                <div class="text-[10px] text-blue-300/70 font-medium mt-0.5">8 comprovantes</div>
+              </div>
+            </div>
+
+            <!-- Card Convênio -->
+            <div class="bg-[#121216] border border-purple-500/20 rounded-2xl p-3.5 shadow-lg flex flex-col justify-between min-h-[110px]">
+              <div class="flex items-center justify-between mb-1">
+                <div class="flex items-center gap-1.5">
+                  <div class="h-6 w-6 rounded-lg bg-purple-500/15 flex items-center justify-center">
+                    <i data-lucide="building-2" class="w-3.5 h-3.5 text-purple-400"></i>
+                  </div>
+                  <span class="text-[11px] font-bold uppercase text-purple-400">Convênio</span>
+                </div>
+                <button class="h-7 w-7 rounded-xl bg-purple-500/10 border border-purple-500/30 hover:bg-purple-500/20 active:scale-90 flex items-center justify-center text-purple-300">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+
+              <div>
+                <div class="text-[19px] font-black text-white mono tracking-tight">
+                  R$ 650<span class="text-zinc-300 text-xs font-bold">,00</span>
+                </div>
+                <div class="text-[10px] text-purple-300/70 font-medium mt-0.5">3 clientes</div>
+              </div>
+            </div>
+
+          </div>
+        `;
+      } else if (currentOption === 'C') {
+        // OPÇÃO C: LINHAS AMPLAS COM BOTÃO DE AÇÃO
+        container.innerHTML = `
+          <div class="space-y-2.5">
+            
+            <!-- Linha Máquina POS -->
+            <div class="bg-[#121216] p-3 px-4 rounded-2xl border border-zinc-800/80 flex items-center justify-between min-h-[64px] shadow-lg">
+              <div class="flex items-center gap-3">
+                <div class="h-9 w-9 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="credit-card" class="w-4.5 h-4.5 text-blue-400"></i>
+                </div>
+                <div>
+                  <div class="text-[12.5px] font-black text-blue-400 uppercase tracking-tight">Máquinas de Cartão (POS)</div>
+                  <div class="text-[10.5px] text-zinc-400 font-medium">8 comprovantes lançados</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="text-[19px] font-black text-white mono tracking-tight text-right">
+                  R$ 1.840<span class="text-zinc-300 text-xs font-bold">,50</span>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-500"></i>
+              </div>
+            </div>
+
+            <!-- Linha Convênios -->
+            <div class="bg-[#121216] p-3 px-4 rounded-2xl border border-zinc-800/80 flex items-center justify-between min-h-[64px] shadow-lg">
+              <div class="flex items-center gap-3">
+                <div class="h-9 w-9 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="building-2" class="w-4.5 h-4.5 text-purple-400"></i>
+                </div>
+                <div>
+                  <div class="text-[12.5px] font-black text-purple-400 uppercase tracking-tight">Convênios / Faturados</div>
+                  <div class="text-[10.5px] text-zinc-400 font-medium">3 clientes conveniados</div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="text-[19px] font-black text-white mono tracking-tight text-right">
+                  R$ 650<span class="text-zinc-300 text-xs font-bold">,00</span>
+                </div>
+                <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-500"></i>
+              </div>
+            </div>
+
+          </div>
+        `;
+      }
+
+      lucide.createIcons();
+    }
+
+    render();
+  </script>
+</body>
+</html>

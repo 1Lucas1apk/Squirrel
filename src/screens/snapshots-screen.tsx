@@ -126,7 +126,7 @@ export function SnapshotsScreen({ onClose, onAlert }: SnapshotsScreenProps) {
           // 2. Restaura na NUVEM (Firestore) via batch! Isso garante que todos os outros celulares sincronizem.
           await restaurarSnapshotNuvem(
             {
-              turnoId: currentState.turno.id,
+              turnoId: currentState.turno?.id || snap.turno?.id || "",
               transacoes: currentState.transacoes,
               fantasmas: currentState.fantasmas,
               registrosPOS: currentState.registrosPOS || [],

@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — 5 Animações em Pixel Art & 2D Flat</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Press+Start+2P&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .pixel-font {
+      font-family: 'Press Start 2P', monospace;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .pixelated {
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 420px;
+      height: 820px;
+      border-radius: 40px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* ===================================================
+       1. ESQUILO PIXEL IDLE & RABINHO
+       =================================================== */
+    @keyframes pixelTail {
+      0%, 100% { transform: rotate(0deg) translateY(0); }
+      50% { transform: rotate(-8deg) translateY(-2px); }
+    }
+    @keyframes pixelBreathe {
+      0%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(0.92); }
+    }
+    @keyframes pixelNutFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    .anim-tail { animation: pixelTail 1.2s ease-in-out infinite; transform-origin: bottom right; }
+    .anim-body { animation: pixelBreathe 1.2s ease-in-out infinite; transform-origin: bottom center; }
+    .anim-nut { animation: pixelNutFloat 1.2s ease-in-out infinite; }
+
+    /* ===================================================
+       2. MOEDINHAS PIXEL GIRANDO & CAINDO
+       =================================================== */
+    @keyframes coinSpin {
+      0% { transform: scaleX(1); }
+      25% { transform: scaleX(0.2); }
+      50% { transform: scaleX(1); }
+      75% { transform: scaleX(0.2); }
+      100% { transform: scaleX(1); }
+    }
+    @keyframes coinFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .coin-1 { animation: coinSpin 1.6s steps(4) infinite, coinFloat 2s ease-in-out infinite; }
+    .coin-2 { animation: coinSpin 1.6s steps(4) infinite 0.4s, coinFloat 2.4s ease-in-out infinite 0.3s; }
+    .coin-3 { animation: coinSpin 1.6s steps(4) infinite 0.8s, coinFloat 1.8s ease-in-out infinite 0.6s; }
+
+    /* ===================================================
+       3. ESQUILINHO CORRENDO (PIXEL RUNNER)
+       =================================================== */
+    @keyframes runHop {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(-6px) rotate(-4deg); }
+      50% { transform: translateY(0) rotate(0deg); }
+      75% { transform: translateY(-4px) rotate(3deg); }
+    }
+    @keyframes groundMove {
+      0% { background-position-x: 0px; }
+      100% { background-position-x: -80px; }
+    }
+    .runner-hop { animation: runHop 0.5s steps(4) infinite; }
+    .ground-scroll {
+      background-image: radial-gradient(#27272a 2px, transparent 2px);
+      background-size: 16px 8px;
+      animation: groundMove 1.5s linear infinite;
+    }
+
+    /* ===================================================
+       4. COFRE RETRÔ & ESTRELINHAS DE PIXEL
+       =================================================== */
+    @keyframes pixelSparkle {
+      0%, 100% { opacity: 0; transform: scale(0.4); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+    @keyframes chestGlow {
+      0%, 100% { filter: drop-shadow(0 0 4px #10b981); }
+      50% { filter: drop-shadow(0 0 12px #34d399); }
+    }
+    .sparkle-1 { animation: pixelSparkle 1.8s steps(3) infinite; }
+    .sparkle-2 { animation: pixelSparkle 1.8s steps(3) infinite 0.6s; }
+    .sparkle-3 { animation: pixelSparkle 1.8s steps(3) infinite 1.2s; }
+    .chest-anim { animation: chestGlow 2.5s ease-in-out infinite; }
+
+    /* ===================================================
+       5. FOGUEIRINHA PIXEL ART (CAMPFIRE)
+       =================================================== */
+    @keyframes fireFlicker {
+      0%, 100% { transform: scale(1) translateY(0); }
+      25% { transform: scaleX(0.9) scaleY(1.1) translateY(-2px); }
+      50% { transform: scaleX(1.1) scaleY(0.95) translateY(1px); }
+      75% { transform: scaleX(0.95) scaleY(1.05) translateY(-1px); }
+    }
+    @keyframes smokeRise {
+      0% { opacity: 0; transform: translateY(0) scale(0.6); }
+      40% { opacity: 0.8; }
+      100% { opacity: 0; transform: translateY(-24px) scale(1.4); }
+    }
+    .fire-anim { animation: fireFlicker 0.4s steps(3) infinite; }
+    .smoke-1 { animation: smokeRise 2s steps(4) infinite; }
+    .smoke-2 { animation: smokeRise 2s steps(4) infinite 0.8s; }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-5xl mx-auto pb-28">
+
+  <!-- CABEÇALHO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      🐿️ 2D FLAT • PIXEL ART • HARMONIA VISUAL
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      5 Animações em Pixel Art
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-xl mx-auto font-medium">
+      Animações 2D planas, nostálgicas e perfeitamente integradas à estética do Squirrel:
+    </p>
+
+    <!-- SELETOR -->
+    <div class="mt-4 grid grid-cols-2 sm:grid-cols-5 gap-2 bg-[#121216] p-1.5 rounded-2xl border border-zinc-800 max-w-3xl mx-auto">
+      <button onclick="setPixel(1)" id="btn-p1" class="py-2.5 rounded-xl text-xs font-black bg-amber-500 text-zinc-950 shadow transition-all">
+        1. Esquilo & Noz
+      </button>
+      <button onclick="setPixel(2)" id="btn-p2" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        2. Moedinhas 8-Bit
+      </button>
+      <button onclick="setPixel(3)" id="btn-p3" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        3. Corrida 2D
+      </button>
+      <button onclick="setPixel(4)" id="btn-p4" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        4. Cofre & Brilhos
+      </button>
+      <button onclick="setPixel(5)" id="btn-p5" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        5. Fogueira Pixel
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER DO CELULAR -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- CABEÇALHO DO APP -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="text-base font-black uppercase tracking-tighter text-white">CAIXA</span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span class="text-[11px] font-black text-zinc-400 uppercase">27 AGO</span>
+        </div>
+        <div id="pixel-tag" class="text-xs font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-0.5 rounded-xl border border-amber-500/20">
+          Opção 1: Esquilo & Noz
+        </div>
+      </div>
+
+      <!-- CORPO SCROLLÁVEL SIMULADO -->
+      <div class="flex-1 overflow-y-auto p-3.5 space-y-3 relative">
+        
+        <!-- CARD DO TOTAL (CONTEXTO) -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-3 px-3.5 shadow-lg flex items-center justify-between opacity-40">
+          <div>
+            <div class="text-[10px] font-bold text-zinc-400 uppercase">Total do Caixa</div>
+            <div class="mono text-lg font-black text-white">R$ 7.340,98</div>
+          </div>
+          <span class="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg">
+            22 baixas
+          </span>
+        </div>
+
+        <!-- OUTROS RECEBIMENTOS (CONTEXTO) -->
+        <div class="grid grid-cols-2 gap-2.5 opacity-40">
+          <div class="bg-[#121216] border border-blue-500/30 rounded-2xl p-3 min-h-[70px]">
+            <div class="text-[10px] font-bold text-blue-400 uppercase">POS Cartões</div>
+            <div class="mono text-base font-black text-white">R$ 1.840,50</div>
+          </div>
+          <div class="bg-[#121216] border border-purple-500/30 rounded-2xl p-3 min-h-[70px]">
+            <div class="text-[10px] font-bold text-purple-400 uppercase">Convênios</div>
+            <div class="mono text-base font-black text-white">R$ 650,00</div>
+          </div>
+        </div>
+
+        <!-- DIVISOR RETRÔ -->
+        <div class="pt-6 pb-2 text-center">
+          <div class="h-0.5 bg-zinc-900 w-3/4 mx-auto border-t border-dashed border-zinc-800"></div>
+        </div>
+
+        <!-- ==============================================
+             ÁREA DE ANIMAÇÃO PIXEL ART (2D FLAT PURA)
+             ============================================== -->
+        <div id="pixel-container" class="min-h-[140px] flex items-center justify-center relative overflow-hidden">
+          <!-- Injetado via JS -->
+        </div>
+
+      </div>
+
+      <!-- BARRA FLUTUANTE INFERIOR -->
+      <div class="p-3 bg-[#09090b]/90 backdrop-blur-md border-t border-zinc-900 flex-shrink-0">
+        <div class="bg-[#121216] border border-zinc-800 rounded-2xl p-2 px-4 flex items-center justify-between shadow-2xl">
+          <div class="flex items-center gap-2 text-amber-400 text-xs font-black uppercase tracking-wider">
+            <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+            <span>Squirrel Pay</span>
+          </div>
+          <div class="h-8 px-4 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-bold flex items-center">
+            Menu
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- DESCRIÇÃO DA ANIMAÇÃO -->
+    <div id="pixel-description" class="mt-6 max-w-xl text-center bg-[#121216] p-4 rounded-2xl border border-zinc-800 text-xs text-zinc-300">
+      <!-- Injetado via JS -->
+    </div>
+
+  </div>
+
+  <script>
+    let currentPixel = 1;
+
+    function setPixel(n) {
+      currentPixel = n;
+
+      for (let i = 1; i <= 5; i++) {
+        const btn = document.getElementById('btn-p' + i);
+        if (i === n) {
+          btn.className = 'py-2.5 rounded-xl text-xs font-black bg-amber-500 text-zinc-950 shadow transition-all';
+        } else {
+          btn.className = 'py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all';
+        }
+      }
+
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById('pixel-container');
+      const tag = document.getElementById('pixel-tag');
+      const desc = document.getElementById('pixel-description');
+
+      if (currentPixel === 1) {
+        // ==========================================
+        // OPÇÃO 1: ESQUILO & NOZ (PIXEL ART IDLE)
+        // ==========================================
+        tag.innerText = '1. Esquilo & Noz (Pixel Idle)';
+        tag.className = 'text-xs font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-0.5 rounded-xl border border-amber-500/20';
+        desc.innerHTML = `<b>Opção 1 — Esquilo & Noz (Pixel Idle):</b> Esquilinho 2D plano em Pixel Art desenhado em grid retrô. O corpinho respira suavemente, o rabinho balança e uma pequena noz pixelada dourada flutua nas patinhas. Zero 3D, puro charme 2D!`;
+
+        container.innerHTML = `
+          <div class="flex items-center justify-center gap-4 py-2">
+            
+            <!-- SVG Pixel Art do Esquilo (Grid 2D Estilizado) -->
+            <div class="relative w-20 h-20 flex items-center justify-center pixelated">
+              <svg viewBox="0 0 32 32" class="w-full h-full">
+                
+                <!-- Rabinho Fofinho de Pixel (Animado) -->
+                <g class="anim-tail">
+                  <rect x="4" y="10" width="6" height="4" fill="#d97706" />
+                  <rect x="2" y="14" width="8" height="6" fill="#f59e0b" />
+                  <rect x="4" y="20" width="6" height="4" fill="#b45309" />
+                  <rect x="6" y="8" width="4" height="2" fill="#fbbf24" />
+                </g>
+
+                <!-- Corpo e Cabeça (Animado) -->
+                <g class="anim-body">
+                  <!-- Orelhas -->
+                  <rect x="18" y="6" width="3" height="4" fill="#b45309" />
+                  <rect x="19" y="7" width="1" height="2" fill="#fde68a" />
+                  <rect x="23" y="8" width="3" height="3" fill="#b45309" />
+                  
+                  <!-- Cabeça -->
+                  <rect x="16" y="10" width="10" height="8" fill="#f59e0b" />
+                  <rect x="20" y="12" width="2" height="2" fill="#18181b" /> <!-- Olho -->
+                  <rect x="25" y="14" width="2" height="2" fill="#451a03" /> <!-- Focinho -->
+                  <rect x="18" y="15" width="5" height="3" fill="#fef3c7" /> <!-- Bochecha -->
+                  
+                  <!-- Corpo -->
+                  <rect x="12" y="18" width="10" height="8" fill="#d97706" />
+                  <rect x="14" y="19" width="6" height="6" fill="#fef3c7" /> <!-- Barriguinha -->
+                  
+                  <!-- Patinhas -->
+                  <rect x="12" y="26" width="4" height="2" fill="#b45309" />
+                  <rect x="18" y="26" width="4" height="2" fill="#b45309" />
+                </g>
+
+                <!-- Noz de Ouro Flutuante -->
+                <g class="anim-nut">
+                  <rect x="22" y="18" width="4" height="4" fill="#f59e0b" />
+                  <rect x="23" y="17" width="2" height="1" fill="#78350f" />
+                  <rect x="23" y="19" width="2" height="2" fill="#fef08a" />
+                </g>
+
+                <!-- Chão de Graminha Pixelada -->
+                <rect x="0" y="28" width="32" height="2" fill="#27272a" />
+                <rect x="6" y="27" width="2" height="1" fill="#10b981" />
+                <rect x="14" y="27" width="3" height="1" fill="#10b981" />
+                <rect x="26" y="27" width="2" height="1" fill="#10b981" />
+              </svg>
+            </div>
+
+          </div>
+        `;
+      } else if (currentPixel === 2) {
+        // ==========================================
+        // OPÇÃO 2: MOEDINHAS 8-BIT GIRANDO (RETRO COINS)
+        // ==========================================
+        tag.innerText = '2. Moedinhas 8-Bit (Retro Coins)';
+        tag.className = 'text-xs font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-0.5 rounded-xl border border-amber-500/20';
+        desc.innerHTML = `<b>Opção 2 — Moedinhas 8-Bit:</b> Três moedas clássicas de RPG pixel art girando em steps 2D clássicos e flutuando suavemente. 100% plano, limpo e direto.`;
+
+        container.innerHTML = `
+          <div class="flex items-center justify-center gap-6 py-4">
+            
+            <!-- Moeda 1 -->
+            <div class="coin-1 pixelated w-8 h-8">
+              <svg viewBox="0 0 16 16" class="w-full h-full">
+                <rect x="4" y="1" width="8" height="14" fill="#f59e0b" />
+                <rect x="2" y="3" width="12" height="10" fill="#f59e0b" />
+                <rect x="5" y="3" width="6" height="10" fill="#fef08a" />
+                <rect x="7" y="5" width="2" height="6" fill="#b45309" />
+              </svg>
+            </div>
+
+            <!-- Moeda 2 (Maior / Central) -->
+            <div class="coin-2 pixelated w-10 h-10">
+              <svg viewBox="0 0 16 16" class="w-full h-full">
+                <rect x="4" y="1" width="8" height="14" fill="#fbbf24" />
+                <rect x="2" y="3" width="12" height="10" fill="#fbbf24" />
+                <rect x="5" y="3" width="6" height="10" fill="#fffbeb" />
+                <rect x="7" y="5" width="2" height="6" fill="#d97706" />
+              </svg>
+            </div>
+
+            <!-- Moeda 3 -->
+            <div class="coin-3 pixelated w-8 h-8">
+              <svg viewBox="0 0 16 16" class="w-full h-full">
+                <rect x="4" y="1" width="8" height="14" fill="#f59e0b" />
+                <rect x="2" y="3" width="12" height="10" fill="#f59e0b" />
+                <rect x="5" y="3" width="6" height="10" fill="#fef08a" />
+                <rect x="7" y="5" width="2" height="6" fill="#b45309" />
+              </svg>
+            </div>
+
+          </div>
+        `;
+      } else if (currentPixel === 3) {
+        // ==========================================
+        // OPÇÃO 3: ESQUILINHO CORRENDO 2D (PIXEL RUNNER)
+        // ==========================================
+        tag.innerText = '3. Corrida 2D (Pixel Runner)';
+        tag.className = 'text-xs font-black text-emerald-400 uppercase bg-emerald-500/10 px-2.5 py-0.5 rounded-xl border border-emerald-500/20';
+        desc.innerHTML = `<b>Opção 3 — Corrida 2D (Pixel Runner):</b> O esquilinho pixelado corre e saltita sobre uma esteira de pontinhos retrô em loop contínuo.`;
+
+        container.innerHTML = `
+          <div class="w-full max-w-[260px] flex flex-col items-center justify-center py-3">
+            
+            <!-- Esquilinho Saltitando -->
+            <div class="runner-hop pixelated w-14 h-14 mb-[-6px]">
+              <svg viewBox="0 0 32 32" class="w-full h-full">
+                <!-- Rabinho -->
+                <rect x="2" y="12" width="6" height="8" fill="#f59e0b" />
+                <rect x="4" y="8" width="4" height="4" fill="#fbbf24" />
+                <!-- Corpo -->
+                <rect x="8" y="14" width="12" height="8" fill="#d97706" />
+                <!-- Cabeça -->
+                <rect x="18" y="10" width="8" height="7" fill="#f59e0b" />
+                <rect x="22" y="11" width="2" height="2" fill="#18181b" />
+                <rect x="25" y="13" width="2" height="2" fill="#451a03" />
+                <!-- Patinhas Correndo -->
+                <rect x="10" y="22" width="3" height="4" fill="#b45309" />
+                <rect x="17" y="20" width="3" height="4" fill="#b45309" />
+              </svg>
+            </div>
+
+            <!-- Chão com Textura de Pixel em Movimento -->
+            <div class="w-full h-2 ground-scroll border-t border-zinc-800"></div>
+
+          </div>
+        `;
+      } else if (currentPixel === 4) {
+        // ==========================================
+        // OPÇÃO 4: COFRE RETRÔ & BRILHOS (PIXEL VAULT)
+        // ==========================================
+        tag.innerText = '4. Cofre Retrô & Brilhos';
+        tag.className = 'text-xs font-black text-emerald-400 uppercase bg-emerald-500/10 px-2.5 py-0.5 rounded-xl border border-emerald-500/20';
+        desc.innerHTML = `<b>Opção 4 — Cofre Retrô & Brilhos:</b> Um cofrinho retrô de pixel art em 2D com luzinha esmeralda pulsante e estrelinhas de 4 pontas piscando suavemente.`;
+
+        container.innerHTML = `
+          <div class="relative w-36 h-20 flex items-center justify-center py-2">
+            
+            <!-- Estrelinha 1 -->
+            <div class="absolute left-2 top-2 sparkle-1 pixelated w-4 h-4">
+              <svg viewBox="0 0 8 8" class="w-full h-full">
+                <rect x="3" y="1" width="2" height="6" fill="#fef08a" />
+                <rect x="1" y="3" width="6" height="2" fill="#fef08a" />
+                <rect x="3" y="3" width="2" height="2" fill="#ffffff" />
+              </svg>
+            </div>
+
+            <!-- Cofre Pixel Art -->
+            <div class="chest-anim pixelated w-14 h-14">
+              <svg viewBox="0 0 24 24" class="w-full h-full">
+                <!-- Base do Cofre -->
+                <rect x="3" y="4" width="18" height="16" fill="#27272a" />
+                <rect x="4" y="5" width="16" height="14" fill="#18181b" />
+                <!-- Fechadura / Volante -->
+                <rect x="9" y="9" width="6" height="6" fill="#52525b" />
+                <rect x="10" y="10" width="4" height="4" fill="#10b981" /> <!-- Luz Verde -->
+                <rect x="11" y="11" width="2" height="2" fill="#a7f3d0" />
+                <!-- Rebites -->
+                <rect x="5" y="6" width="1" height="1" fill="#71717a" />
+                <rect x="18" y="6" width="1" height="1" fill="#71717a" />
+                <rect x="5" y="17" width="1" height="1" fill="#71717a" />
+                <rect x="18" y="17" width="1" height="1" fill="#71717a" />
+              </svg>
+            </div>
+
+            <!-- Estrelinha 2 -->
+            <div class="absolute right-3 bottom-3 sparkle-2 pixelated w-4 h-4">
+              <svg viewBox="0 0 8 8" class="w-full h-full">
+                <rect x="3" y="1" width="2" height="6" fill="#6ee7b7" />
+                <rect x="1" y="3" width="6" height="2" fill="#6ee7b7" />
+                <rect x="3" y="3" width="2" height="2" fill="#ffffff" />
+              </svg>
+            </div>
+
+          </div>
+        `;
+      } else if (currentPixel === 5) {
+        // ==========================================
+        // OPÇÃO 5: FOGUEIRINHA PIXEL ART (CAMPFIRE)
+        // ==========================================
+        tag.innerText = '5. Fogueira Pixel Art';
+        tag.className = 'text-xs font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-0.5 rounded-xl border border-amber-500/20';
+        desc.innerHTML = `<b>Opção 5 — Fogueira Pixel Art:</b> Fogueirinha 2D aconchegante com chamas em pixel dançando suavemente e fumaça em bloquinhos subindo. Super acolhedor e relaxante.`;
+
+        container.innerHTML = `
+          <div class="relative w-28 h-20 flex flex-col items-center justify-center py-2">
+            
+            <!-- Fumaça em Bloquinhos -->
+            <div class="absolute top-0 flex gap-2">
+              <div class="smoke-1 w-2 h-2 bg-zinc-600/60 rounded-none"></div>
+              <div class="smoke-2 w-1.5 h-1.5 bg-zinc-500/40 rounded-none"></div>
+            </div>
+
+            <!-- Fogueira Pixel Art -->
+            <div class="pixelated w-12 h-12 flex items-center justify-center">
+              <svg viewBox="0 0 24 24" class="w-full h-full">
+                <!-- Lenha -->
+                <rect x="4" y="18" width="16" height="3" fill="#78350f" />
+                <rect x="7" y="16" width="10" height="2" fill="#451a03" />
+                
+                <!-- Chamas (Animadas) -->
+                <g class="fire-anim">
+                  <!-- Fogo Laranja Base -->
+                  <rect x="8" y="10" width="8" height="7" fill="#ea580c" />
+                  <rect x="9" y="7" width="6" height="4" fill="#ea580c" />
+                  <!-- Fogo Amarelo Centro -->
+                  <rect x="9" y="11" width="6" height="5" fill="#facc15" />
+                  <rect x="10" y="8" width="4" height="4" fill="#facc15" />
+                  <!-- Fogo Branco Núcleo -->
+                  <rect x="11" y="12" width="2" height="3" fill="#fef08a" />
+                </g>
+              </svg>
+            </div>
+
+          </div>
+        `;
+      }
+    }
+
+    render();
+  </script>
+</body>
+</html>

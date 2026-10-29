@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Identidade do Operador (Modelos de Design)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050508;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 412px;
+      border-radius: 46px;
+      border: 3.5px solid #27272a;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 0 1px #18181b;
+      background-color: #09090c;
+      overflow: hidden;
+      min-height: 870px;
+      max-height: 870px;
+      position: relative;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-6xl mx-auto pb-32">
+
+  <!-- CABEÇALHO DO PROJETO -->
+  <div class="mb-8 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-black uppercase tracking-widest mb-3 shadow-sm">
+      🐿️ SQUIRREL IDENTITY SYSTEM • DESIGN LAB
+    </div>
+    <h1 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-white">
+      Identidade & Perfil do Operador
+    </h1>
+    <p class="text-zinc-400 text-sm mt-2 max-w-2xl mx-auto font-medium leading-relaxed">
+      Modelos para destacar quem é a pessoa operando o caixa no momento com elegância, carinho e o DNA tático do Squirrel.
+    </p>
+
+    <!-- SELETOR DE MODELOS -->
+    <div class="flex items-center justify-center gap-2.5 mt-6 flex-wrap">
+      <button onclick="switchConcept('modelo-1')" id="btn-m1" class="concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-amber-500 text-black border-amber-400 font-bold shadow-xl">
+        ⭐ 1. Crachá Tático & Card de Perfil
+      </button>
+      <button onclick="switchConcept('modelo-2')" id="btn-m2" class="concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] text-zinc-400 border-zinc-800 hover:border-zinc-700">
+        🌟 2. Hero de Boas-Vindas no Painel
+      </button>
+      <button onclick="switchConcept('modelo-3')" id="btn-m3" class="concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] text-zinc-400 border-zinc-800 hover:border-zinc-700">
+        🪪 3. Passaporte Digital Squirrel ID
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER DE PREVIEWS -->
+  <div class="flex justify-center items-start gap-8">
+
+    <!-- ========================================================================= -->
+    <!-- MODELO 1: CRACHÁ TÁTICO & CARD DE PERFIL (POPOVER ELEGANTE) -->
+    <!-- ========================================================================= -->
+    <div id="modelo-1" class="mobile-frame flex flex-col">
+      <!-- Status Bar Simulado -->
+      <div class="px-7 pt-3.5 pb-2 flex justify-between items-center text-[11px] font-bold text-zinc-500 border-b border-zinc-900/60 bg-[#09090c]">
+        <span class="mono">20:20</span>
+        <div class="flex items-center gap-1.5 text-zinc-400">
+          <i data-lucide="wifi" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <i data-lucide="battery" class="w-4 h-4 text-emerald-400"></i>
+        </div>
+      </div>
+
+      <!-- Header com Cápsula de Operador Clicável -->
+      <div class="p-3 px-4 bg-[#0d0d12] border-b border-zinc-800 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="relative">
+            <!-- Avatar Neon com Iniciais -->
+            <div class="h-11 w-11 rounded-2xl bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 flex items-center justify-center font-black text-black text-base shadow-lg shadow-amber-500/20 border border-amber-300/40">
+              W
+            </div>
+            <!-- Ponto Verde Online Pulsante -->
+            <div class="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-[#09090c]"></div>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[9px] font-black uppercase tracking-[1.5px] text-zinc-400">Operador Ativo</span>
+              <span class="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 text-[8px] font-black font-mono">CAIXA #01</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <h3 class="text-sm font-black text-white">Wini</h3>
+              <span class="text-xs font-mono font-bold text-zinc-500">@wini</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button class="h-9 px-3 rounded-xl bg-[#18181f] border border-zinc-700/80 flex items-center gap-1.5 text-[10px] font-black uppercase text-amber-400 hover:bg-zinc-800 transition">
+            <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+            Perfil
+          </button>
+        </div>
+      </div>
+
+      <!-- Preview do Modal / Popover Aberto -->
+      <div class="flex-1 p-4 overflow-y-auto no-scrollbar space-y-4">
+        
+        <!-- CARD DE IDENTIDADE PRINCIPAL -->
+        <div class="bg-[#121216] border border-zinc-800 rounded-[32px] p-5 shadow-2xl space-y-4 relative overflow-hidden">
+          
+          <!-- Efeito de Brilho de Fundo -->
+          <div class="absolute -top-12 -right-12 w-40 h-40 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+          <!-- Topo do Card com Selo -->
+          <div class="flex items-center justify-between pb-3 border-b border-zinc-800/80">
+            <div class="flex items-center gap-2">
+              <div class="h-6 w-6 rounded-lg bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+                <i data-lucide="shield-check" class="w-3.5 h-3.5 text-amber-400"></i>
+              </div>
+              <span class="text-[10px] font-black uppercase tracking-[2px] text-zinc-400">Identificação do Usuário</span>
+            </div>
+            <div class="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 flex items-center gap-1">
+              <div class="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
+              <span class="text-[9px] font-black font-mono text-emerald-400">CONTA SINCRONIZADA</span>
+            </div>
+          </div>
+
+          <!-- Foto / Avatar Grande + Nomes -->
+          <div class="flex items-center gap-4">
+            <div class="h-16 w-16 rounded-[24px] bg-gradient-to-br from-amber-400 via-orange-500 to-amber-600 flex items-center justify-center font-black text-black text-2xl shadow-xl shadow-amber-500/25 border-2 border-amber-300/50 flex-shrink-0">
+              W
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <h2 class="text-xl font-black text-white truncate">Wini</h2>
+                <div class="px-1.5 py-0.5 rounded bg-amber-500/20 border border-amber-500/40">
+                  <span class="text-[9px] font-mono font-black text-amber-400">OPERADOR</span>
+                </div>
+              </div>
+              <span class="text-xs font-mono font-bold text-amber-400/90 block mt-0.5">@wini</span>
+              <span class="text-[10px] text-zinc-500 font-medium truncate block mt-1">
+                Conectado na conta oficial da loja
+              </span>
+            </div>
+          </div>
+
+          <!-- GRID DE METADADOS DO CAIXA -->
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <div class="bg-[#09090c] p-3 rounded-2xl border border-zinc-800/80">
+              <span class="text-[8px] font-black uppercase tracking-wider text-zinc-500 block mb-0.5">Terminal / Caixa</span>
+              <span class="text-xs font-black mono text-zinc-200">Terminal #01</span>
+            </div>
+            <div class="bg-[#09090c] p-3 rounded-2xl border border-zinc-800/80">
+              <span class="text-[8px] font-black uppercase tracking-wider text-zinc-500 block mb-0.5">Status no Bate-Papo</span>
+              <span class="text-xs font-black text-emerald-400 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                Visível no Mural
+              </span>
+            </div>
+          </div>
+
+          <!-- BOTÕES DE AÇÃO -->
+          <div class="pt-2 flex gap-2">
+            <button class="flex-1 py-3 rounded-2xl bg-[#09090c] border border-zinc-700 text-zinc-200 text-xs font-black uppercase tracking-wider hover:bg-zinc-800 transition flex items-center justify-center gap-2">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5 text-amber-400"></i>
+              Editar Meu Nome
+            </button>
+            <button class="px-4 py-3 rounded-2xl bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-black uppercase hover:text-white transition">
+              <i data-lucide="share-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- MURAL / RECADO RÁPIDO DO OPERADOR -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-3xl p-4 flex items-center gap-3">
+          <div class="h-10 w-10 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="message-square" class="w-5 h-5 text-blue-400"></i>
+          </div>
+          <div class="flex-1 min-w-0">
+            <span class="text-[9px] font-black uppercase tracking-wider text-zinc-500 block">Mensagens no Mural</span>
+            <span class="text-xs font-bold text-zinc-300 truncate block">Enviando como <strong class="text-white">Wini (@wini)</strong></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODELO 2: HERO DE BOAS-VINDAS NO TOPO DO PAINEL -->
+    <!-- ========================================================================= -->
+    <div id="modelo-2" class="mobile-frame flex flex-col hidden">
+      <div class="px-7 pt-3.5 pb-2 flex justify-between items-center text-[11px] font-bold text-zinc-500 border-b border-zinc-900/60 bg-[#09090c]">
+        <span class="mono">20:20</span>
+        <div class="flex items-center gap-1.5 text-zinc-400">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i>
+        </div>
+      </div>
+
+      <div class="p-4 space-y-4 flex-1 overflow-y-auto no-scrollbar">
+        
+        <!-- HERO CARD DE BOAS-VINDAS -->
+        <div class="bg-gradient-to-br from-[#181822] via-[#121216] to-[#0d0d12] border border-amber-500/30 rounded-[32px] p-5 shadow-2xl space-y-3">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-xs">☀️</span>
+              <span class="text-[10px] font-black uppercase tracking-[2px] text-amber-400 font-mono">BOM EXPEDIENTE</span>
+            </div>
+            <div class="px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-[9px] font-mono text-zinc-400">
+              HOJE • SÁBADO
+            </div>
+          </div>
+
+          <div>
+            <h1 class="text-2xl font-black text-white tracking-tight">
+              Olá, <span class="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">Wini</span> 👋
+            </h1>
+            <p class="text-xs text-zinc-400 font-medium mt-0.5">
+              Seu caixa está pronto e sincronizado com a nuvem.
+            </p>
+          </div>
+
+          <div class="flex items-center gap-2 pt-2 border-t border-zinc-800/80">
+            <div class="h-2 w-2 rounded-full bg-emerald-400"></div>
+            <span class="text-[10px] font-mono text-zinc-400">Conectado como <strong class="text-zinc-200 font-mono">@wini</strong></span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODELO 3: PASSAPORTE DIGITAL SQUIRREL ID (ESTILO CRACHÁ FUTURISTA) -->
+    <!-- ========================================================================= -->
+    <div id="modelo-3" class="mobile-frame flex flex-col hidden">
+      <div class="px-7 pt-3.5 pb-2 flex justify-between items-center text-[11px] font-bold text-zinc-500 border-b border-zinc-900/60 bg-[#09090c]">
+        <span class="mono">20:20</span>
+      </div>
+
+      <div class="p-5 flex-1 flex flex-col justify-center">
+        <!-- CRACHÁ DIGITAL -->
+        <div class="bg-[#121216] border-2 border-amber-500/40 rounded-[36px] p-6 shadow-2xl space-y-5 text-center relative overflow-hidden">
+          
+          <!-- Barra do Topo Estilo Cartão -->
+          <div class="flex items-center justify-between">
+            <span class="text-[9px] font-black uppercase tracking-[3px] text-amber-400 font-mono">SQUIRREL ID • OPERADOR</span>
+            <i data-lucide="qr-code" class="w-5 h-5 text-zinc-400"></i>
+          </div>
+
+          <!-- Foto Central Grande -->
+          <div class="flex justify-center">
+            <div class="h-24 w-24 rounded-3xl bg-gradient-to-tr from-amber-500 via-orange-500 to-yellow-400 flex items-center justify-center text-4xl font-black text-black shadow-2xl shadow-amber-500/30 border-4 border-[#09090c]">
+              W
+            </div>
+          </div>
+
+          <div>
+            <h2 class="text-2xl font-black text-white">Wini</h2>
+            <span class="text-sm font-mono font-bold text-amber-400">@wini</span>
+          </div>
+
+          <div class="bg-[#09090c] p-3 rounded-2xl border border-zinc-800 flex justify-around text-center">
+            <div>
+              <span class="text-[8px] font-bold text-zinc-500 block">CAIXA</span>
+              <span class="text-xs font-black text-white mono">#01</span>
+            </div>
+            <div class="w-[1px] bg-zinc-800"></div>
+            <div>
+              <span class="text-[8px] font-bold text-zinc-500 block">PATENTE</span>
+              <span class="text-xs font-black text-amber-400">Elite</span>
+            </div>
+            <div class="w-[1px] bg-zinc-800"></div>
+            <div>
+              <span class="text-[8px] font-bold text-zinc-500 block">STATUS</span>
+              <span class="text-xs font-black text-emerald-400">Online</span>
+            </div>
+          </div>
+
+          <button class="w-full py-3.5 rounded-2xl bg-zinc-100 text-black font-black uppercase text-xs tracking-wider">
+            Confirmar Operador
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function switchConcept(id) {
+      document.getElementById('modelo-1').classList.add('hidden');
+      document.getElementById('modelo-2').classList.add('hidden');
+      document.getElementById('modelo-3').classList.add('hidden');
+
+      document.getElementById(id).classList.remove('hidden');
+
+      const btns = ['btn-m1', 'btn-m2', 'btn-m3'];
+      btns.forEach(b => {
+        const el = document.getElementById(b);
+        el.className = "concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all bg-[#121216] text-zinc-400 border-zinc-800 hover:border-zinc-700";
+      });
+
+      const activeBtn = id === 'modelo-1' ? 'btn-m1' : (id === 'modelo-2' ? 'btn-m2' : 'btn-m3');
+      const activeColor = id === 'modelo-1' ? 'bg-amber-500 text-black border-amber-400 font-bold' : (id === 'modelo-2' ? 'bg-amber-400 text-black border-amber-300 font-bold' : 'bg-cyan-500 text-black border-cyan-400 font-bold');
+      document.getElementById(activeBtn).className = `concept-btn px-4 py-2.5 rounded-2xl border text-xs font-black uppercase tracking-wider transition-all ${activeColor} shadow-xl`;
+    }
+  </script>
+</body>
+</html>

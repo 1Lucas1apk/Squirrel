@@ -6,14 +6,40 @@ async function getNotificationsModule() {
   return import('expo-notifications');
 }
 
-async function ensureNotificationHandler() {
+export async function ensureNotificationHandler() {
   if (Platform.OS === 'web' || notificationHandlerConfigured) return;
   const Notifications = await getNotificationsModule();
+
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('chat-messages', {
+      name: 'Mensagens da Equipe',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#6366f1',
+      sound: 'default',
+      enableVibrate: true,
+      showBadge: true,
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      bypassDnd: false,
+    });
+
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'Lembretes do Caixa',
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#fbbf24',
+      sound: 'default',
+      enableVibrate: true,
+      showBadge: true,
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    });
+  }
+
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldShowAlert: true,
       shouldPlaySound: true,
-      shouldSetBadge: false,
+      shouldSetBadge: true,
       shouldShowBanner: true,
       shouldShowList: true,
     }),

@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Chat por @username (Com Perfil Dinâmico e Envio de Fotos)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050508;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 410px;
+      border-radius: 48px;
+      border: 3.5px solid #27272a;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.95), 0 0 0 1px #18181b;
+      background-color: #09090c;
+      overflow: hidden;
+      height: 820px;
+      position: relative;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .btn-tactile:active {
+      transform: scale(0.97);
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-5xl mx-auto pb-32">
+
+  <!-- CABEÇALHO DO PROJETO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+      <span>SQUIRREL CHAT • PERFIL DINÂMICO (@USERNAME) & FOTOS</span>
+    </div>
+    <h1 class="text-3xl md:text-4xl font-black uppercase tracking-tight text-white">
+      Identificação Própria & Mensagens
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-xl mx-auto font-medium leading-relaxed">
+      Cada conta define seu próprio <span class="text-indigo-400 font-bold">@username</span> e nome livremente. Sem dados fixos ou pré-definidos.
+    </p>
+  </div>
+
+  <!-- CONTAINER DE DEMONSTRAÇÃO MOBILE -->
+  <div class="flex flex-col items-center justify-center">
+    
+    <div class="mobile-frame relative flex flex-col bg-[#09090c]">
+      
+      <!-- ========================================================================= -->
+      <!-- VIEW 1: HUB PRINCIPAL (MEU CARD + ABAS + CONTEÚDO) -->
+      <!-- ========================================================================= -->
+      <div id="view-contacts" class="flex flex-col h-full">
+        
+        <!-- HEADER COM MEU PERFIL (CLICÁVEL PARA EDITAR) -->
+        <div class="p-4 bg-[#0d0d12] border-b border-zinc-800 flex flex-col gap-3">
+          
+          <div class="flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0 flex-1">
+              <!-- Avatar com Gesto Secreto (5 toques para abrir o PIN de Admin) -->
+              <div onclick="handleAvatarSecretTap()" class="relative flex-shrink-0 cursor-pointer active:scale-95 transition-transform" title="Toque 5x para autenticar Admin">
+                <div id="profile-avatar-box" class="h-10 w-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-300 font-black text-xs shadow-md">
+                  LM
+                </div>
+                <div class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-[#0d0d12]"></div>
+              </div>
+
+              <!-- Informações do Perfil Clicáveis para Editar -->
+              <div onclick="openEditProfileModal()" class="min-w-0 flex-1 cursor-pointer group" title="Toque para editar seu perfil">
+                <div class="flex items-center gap-1">
+                  <span id="profile-display-name" class="text-xs font-black text-white uppercase tracking-wider truncate block group-hover:text-indigo-300">Lucas Morais</span>
+                  <i data-lucide="edit-2" class="w-2.5 h-2.5 text-zinc-500 group-hover:text-indigo-400"></i>
+                </div>
+                <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                  <span id="profile-username-tag" class="text-[10px] font-mono text-indigo-400 font-bold">@1lucas1apk</span>
+                  <button onclick="event.stopPropagation(); copiarTag();" class="text-zinc-500 hover:text-indigo-400" title="Copiar tag">
+                    <i data-lucide="copy" class="w-3 h-3"></i>
+                  </button>
+                  
+                  <!-- Badge Só Aparece Quando Ativado -->
+                  <span id="badge-admin-header" class="hidden h-3.5 px-1.5 rounded-md bg-amber-500/15 border border-amber-500/30 text-[7px] font-mono text-amber-300 font-black flex items-center gap-0.5">
+                    <i data-lucide="crown" class="w-2 h-2 text-amber-400"></i>
+                    <span>ADMIN</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Botões de Ação Topo (Meu QR Code / Adicionar / Fechar) -->
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <button onclick="openQrModal()" class="btn-tactile h-8 w-8 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300 hover:text-white" title="Meu QR Code">
+                <i data-lucide="qr-code" class="w-3.5 h-3.5"></i>
+              </button>
+              <button onclick="openAddModal()" class="btn-tactile h-8 px-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 flex items-center gap-1 text-white shadow-lg">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span class="text-[9px] font-black uppercase tracking-wider">Adicionar</span>
+              </button>
+              <button onclick="fecharChatHub()" class="btn-tactile h-8 w-8 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white" title="Fechar Chat">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- SELETOR DE ABAS: DIRETO VS MURAL -->
+          <div class="grid grid-cols-2 gap-1.5 p-1 bg-[#09090c] rounded-2xl border border-zinc-800/80">
+            <button id="tab-btn-privado" onclick="switchMainTab('privado')" class="h-8 rounded-xl bg-[#18181f] text-white text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm">
+              <i data-lucide="message-square" class="w-3.5 h-3.5 text-indigo-400"></i>
+              <span>Direto (3)</span>
+            </button>
+            <button id="tab-btn-mural" onclick="switchMainTab('mural')" class="h-8 rounded-xl text-zinc-400 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 hover:text-zinc-200">
+              <i data-lucide="megaphone" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>Mural</span>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- ========================================== -->
+        <!-- ABA 1: CONVERSAS DIRETAS -->
+        <!-- ========================================== -->
+        <div id="content-privado" class="flex-1 flex flex-col overflow-hidden">
+          
+          <!-- Search Bar -->
+          <div class="p-3 bg-[#09090c] border-b border-zinc-900 flex items-center gap-2">
+            <div class="h-10 rounded-2xl bg-[#121216] border border-zinc-800 px-3 flex-1 flex items-center gap-2.5">
+              <i data-lucide="search" class="w-4 h-4 text-zinc-500"></i>
+              <input type="text" placeholder="Buscar por @username ou nome..." class="bg-transparent flex-1 text-xs text-white placeholder-zinc-500 outline-none">
+            </div>
+            <button onclick="openScannerModal()" class="btn-tactile h-10 w-10 rounded-2xl bg-[#121216] border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-indigo-400" title="Ler QR Code">
+              <i data-lucide="camera" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Lista de Conversas -->
+          <div class="flex-1 overflow-y-auto no-scrollbar p-3 space-y-2">
+            <div class="flex items-center justify-between px-2 pt-1">
+              <span class="text-[10px] font-black uppercase tracking-widest text-zinc-500">Conectados</span>
+              <span class="text-[9px] font-mono text-emerald-400 font-bold">2 Online</span>
+            </div>
+
+            <!-- Contato 1: Amanda (Online) -->
+            <div onclick="openChat('Amanda Santos', '@amanda_caixa', 'AS', 'online', 'Online agora')" class="btn-tactile bg-[#121216] hover:bg-[#18181f] p-3 rounded-2xl border border-zinc-800 flex items-center justify-between cursor-pointer">
+              <div class="flex items-center gap-3 flex-1 min-w-0 mr-2">
+                <div class="relative flex-shrink-0">
+                  <div class="h-11 w-11 rounded-2xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 font-black text-xs">
+                    AS
+                  </div>
+                  <div class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-[#121216]"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-black text-zinc-100 uppercase truncate">Amanda Santos</span>
+                    <span class="text-[9px] text-zinc-500 font-medium">17:12</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="text-[9px] font-mono text-purple-400">@amanda_caixa</span>
+                    <span class="text-[8px] text-zinc-600">•</span>
+                    <span class="text-[9px] text-emerald-400 font-bold">Online</span>
+                  </div>
+                  <p class="text-[10px] text-zinc-400 truncate mt-0.5 flex items-center gap-1">
+                    <i data-lucide="image" class="w-3 h-3 text-indigo-400 inline"></i>
+                    <span>Foto do comprovante anexada...</span>
+                  </p>
+                </div>
+              </div>
+              <span class="h-5 min-w-[20px] px-1.5 rounded-full bg-indigo-500 text-[9px] font-black text-white flex items-center justify-center shadow">1</span>
+            </div>
+
+            <!-- Contato 2: Marcos (Online) -->
+            <div onclick="openChat('Marcos Oliveira', '@marcos_gerente', 'MO', 'online', 'Online agora')" class="btn-tactile bg-[#121216] hover:bg-[#18181f] p-3 rounded-2xl border border-zinc-800 flex items-center justify-between cursor-pointer">
+              <div class="flex items-center gap-3 flex-1 min-w-0 mr-2">
+                <div class="relative flex-shrink-0">
+                  <div class="h-11 w-11 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-300 font-black text-xs">
+                    MO
+                  </div>
+                  <div class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-[#121216]"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-xs font-black text-zinc-100 uppercase truncate">Marcos Oliveira</span>
+                      <span class="h-3.5 px-1 rounded bg-amber-500/15 border border-amber-500/25 text-[7px] font-mono text-amber-300 font-black flex items-center gap-0.5">
+                        <i data-lucide="crown" class="w-2 h-2 text-amber-400"></i>
+                        <span>ADMIN</span>
+                      </span>
+                    </div>
+                    <span class="text-[9px] text-zinc-500 font-medium">16:42</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="text-[9px] font-mono text-amber-400">@marcos_gerente</span>
+                    <span class="text-[8px] text-zinc-600">•</span>
+                    <span class="text-[9px] text-emerald-400 font-bold">Online</span>
+                  </div>
+                  <p class="text-[10px] text-zinc-400 truncate mt-0.5">Confirmado aqui no sistema.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Contato 3: Bruno (Offline) -->
+            <div onclick="openChat('Bruno Costa', '@brunocosta', 'BC', 'offline', 'Visto por último hoje às 15:40')" class="btn-tactile bg-[#121216] hover:bg-[#18181f] p-3 rounded-2xl border border-zinc-800 flex items-center justify-between cursor-pointer">
+              <div class="flex items-center gap-3 flex-1 min-w-0 mr-2">
+                <div class="relative flex-shrink-0">
+                  <div class="h-11 w-11 rounded-2xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-400 font-black text-xs">
+                    BC
+                  </div>
+                  <div class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-zinc-600 border-2 border-[#121216]"></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-black text-zinc-300 uppercase truncate">Bruno Costa</span>
+                    <span class="text-[9px] text-zinc-500 font-medium">Ontem</span>
+                  </div>
+                  <div class="flex items-center gap-1.5 mt-0.5">
+                    <span class="text-[9px] font-mono text-zinc-500">@brunocosta</span>
+                    <span class="text-[8px] text-zinc-600">•</span>
+                    <span class="text-[9px] text-zinc-500 font-medium">Visto às 15:40</span>
+                  </div>
+                  <p class="text-[10px] text-zinc-500 truncate mt-0.5">Tudo certo por aqui!</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ========================================== -->
+        <!-- ABA 2: MURAL COM AVISO FIXADO & POSTAGEM ADMIN -->
+        <!-- ========================================== -->
+        <div id="content-mural" class="hidden flex-1 flex flex-col overflow-hidden bg-[#07070a]">
+          
+          <!-- Lista de Avisos do Mural -->
+          <div id="mural-list" class="flex-1 overflow-y-auto no-scrollbar p-3 space-y-3">
+            
+            <!-- AVISO EM DESTAQUE (FIXADO POR ADMIN) -->
+            <div id="pinned-mural-card" class="bg-[#14120c] border-2 border-amber-500/50 rounded-2xl p-3.5 relative shadow-xl">
+              <div class="flex items-center justify-between pb-2 mb-2 border-b border-amber-500/20">
+                <div class="flex items-center gap-2">
+                  <div class="h-6 w-6 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400">
+                    <i data-lucide="pin" class="w-3.5 h-3.5"></i>
+                  </div>
+                  <span class="text-[10px] font-black uppercase tracking-wider text-amber-300">Aviso em Destaque</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[9px] font-mono text-amber-400/80">Hoje • 14:00</span>
+                  <!-- Botão Desafixar (Só visível para Admin autenticado) -->
+                  <button id="btn-desafixar-mural" onclick="desafixarAviso()" class="hidden h-6 w-6 rounded-lg bg-amber-500/15 flex items-center justify-center text-amber-400 hover:text-white" title="Desafixar aviso">
+                    <i data-lucide="pin-off" class="w-3 h-3"></i>
+                  </button>
+                </div>
+              </div>
+              <p class="text-xs text-zinc-100 leading-relaxed font-medium">
+                Conferência programada para as 22h pontual. Manter todos os registros em dia.
+              </p>
+              <div class="flex items-center justify-between mt-2.5 pt-2 border-t border-zinc-800/80">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-[9px] font-mono text-amber-400 font-bold">@marcos_gerente</span>
+                  <span class="h-3.5 px-1 rounded bg-amber-500/15 border border-amber-500/25 text-[7px] font-mono text-amber-300 font-black flex items-center gap-0.5">
+                    <i data-lucide="crown" class="w-2 h-2 text-amber-400"></i>
+                    <span>ADMIN</span>
+                  </span>
+                </div>
+                <span class="text-[8px] text-zinc-500">Fixado no topo</span>
+              </div>
+            </div>
+
+            <!-- Recado 1: Amanda -->
+            <div class="bg-[#121216] border border-zinc-800 rounded-2xl p-3.5 shadow-md">
+              <div class="flex items-center justify-between mb-1.5">
+                <div class="flex items-center gap-2">
+                  <div class="h-7 w-7 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 text-[10px] font-black">
+                    AS
+                  </div>
+                  <div>
+                    <span class="text-xs font-black text-zinc-200">Amanda Santos</span>
+                    <span class="text-[9px] font-mono text-purple-400 block -mt-0.5">@amanda_caixa</span>
+                  </div>
+                </div>
+                <span class="text-[9px] text-zinc-500">16:15</span>
+              </div>
+              <p class="text-xs text-zinc-300 leading-relaxed">
+                Cartão esquecido no balcão 2 guardado na gaveta.
+              </p>
+            </div>
+
+          </div>
+
+          <!-- BARRA DE PUBLICAÇÃO (OPÇÃO DE FIXAR SÓ APARECE APÓS AUTENTICAR ADMIN) -->
+          <div class="p-3 bg-[#0d0d12] border-t border-zinc-800 space-y-2">
+            
+            <!-- Toggle de Fixar Aviso (Oculto por padrão, visível após autenticar PIN) -->
+            <div id="mural-pin-toggle-bar" class="hidden items-center justify-between px-1">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input id="check-fixar" type="checkbox" class="rounded accent-amber-500 h-3.5 w-3.5 bg-zinc-900 border-zinc-700">
+                <span class="text-[10px] font-black uppercase tracking-wider text-amber-300 flex items-center gap-1">
+                  <i data-lucide="pin" class="w-3 h-3"></i>
+                  Fixar como Destaque no Topo
+                </span>
+              </label>
+              <span class="text-[8px] font-mono text-amber-400/80 flex items-center gap-1">
+                <i data-lucide="crown" class="w-2.5 h-2.5 text-amber-400"></i>
+                <span>Admin Ativo</span>
+              </span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <div class="flex-1 h-11 bg-[#121216] border border-zinc-800 rounded-2xl px-3.5 flex items-center gap-2">
+                <i data-lucide="megaphone" class="w-4 h-4 text-amber-400"></i>
+                <input id="input-mural-msg" type="text" placeholder="Publicar aviso no mural..." onkeypress="if(event.key==='Enter') sendMuralMessage()" class="bg-transparent flex-1 text-xs text-white placeholder-zinc-500 outline-none">
+              </div>
+              <button onclick="sendMuralMessage()" class="btn-tactile h-11 w-11 rounded-2xl bg-amber-500 hover:bg-amber-400 flex items-center justify-center text-zinc-950 shadow-lg" title="Publicar">
+                <i data-lucide="send" class="w-4 h-4 stroke-[2.5]"></i>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- VIEW 2: TELA DE CONVERSA DIRETA (COM SUPORTE A FOTOS & IMAGENS) -->
+      <!-- ========================================================================= -->
+      <div id="view-chat" class="hidden flex flex-col h-full">
+        
+        <!-- HEADER DO CHAT ATIVO -->
+        <div class="p-3.5 bg-[#0d0d12] border-b border-zinc-800 flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <button onclick="closeChat()" class="h-8 w-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <div class="relative">
+              <div id="chat-avatar" class="h-9 w-9 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-purple-300 font-black text-xs">
+                AS
+              </div>
+              <div id="chat-status-dot" class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-[#0d0d12]"></div>
+            </div>
+            <div>
+              <span id="chat-user-name" class="text-xs font-black text-white uppercase tracking-wider block">Amanda Santos</span>
+              <div class="flex items-center gap-1.5">
+                <span id="chat-user-tag" class="text-[9px] font-mono text-purple-400 font-bold block">@amanda_caixa</span>
+                <span class="text-[8px] text-zinc-600">•</span>
+                <span id="chat-last-seen" class="text-[9px] text-emerald-400 font-medium">Online agora</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MENSAGENS -->
+        <div id="messages-container" class="flex-1 overflow-y-auto no-scrollbar p-3.5 space-y-3 bg-[#07070a]">
+          <div class="text-center my-1">
+            <span class="text-[9px] font-mono font-bold uppercase tracking-widest text-zinc-600 bg-zinc-900 px-3 py-1 rounded-full border border-zinc-800">
+              Hoje
+            </span>
+          </div>
+
+          <!-- Mensagem Recebida (COM IMAGEM / FOTO DO COMPROVANTE) -->
+          <div class="flex flex-col items-start max-w-[82%]">
+            <div class="bg-[#18181f] border border-zinc-800 p-2 rounded-2xl rounded-tl-sm shadow-md space-y-2">
+              
+              <!-- Card da Imagem com Visualização Fullscreen ao Clicar -->
+              <div onclick="openFullscreenImage('https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80')" class="relative rounded-xl overflow-hidden cursor-pointer group border border-zinc-800/80">
+                <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80" alt="Comprovante" class="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300">
+                <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent flex items-end justify-end p-1.5">
+                  <span class="px-2 py-0.5 rounded-lg bg-black/70 backdrop-blur-md text-[8px] font-mono text-zinc-300 font-bold flex items-center gap-1">
+                    <i data-lucide="maximize-2" class="w-2.5 h-2.5"></i>
+                    <span>Expandir</span>
+                  </span>
+                </div>
+              </div>
+
+              <p class="text-xs text-zinc-200 leading-relaxed font-medium px-1">
+                Segue a foto do comprovante do pagamento que deu divergência.
+              </p>
+            </div>
+            <span class="text-[9px] text-zinc-500 font-mono mt-1 px-1">17:08</span>
+          </div>
+
+          <!-- Mensagem Enviada -->
+          <div class="flex flex-col items-end max-w-[82%] ml-auto">
+            <div class="bg-indigo-600 border border-indigo-500/50 p-3 rounded-2xl rounded-tr-sm shadow-md">
+              <p class="text-xs text-white leading-relaxed font-medium">
+                Perfeito Amanda! Conferi a foto aqui, já lancei o estorno no sistema.
+              </p>
+            </div>
+            <div class="flex items-center gap-1 mt-1 px-1">
+              <span class="text-[9px] text-zinc-500 font-mono">17:09</span>
+              <i data-lucide="check-check" class="w-3 h-3 text-indigo-400"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- INPUT DE MENSAGEM COM BOTÃO DE FOTO / ANEXO DE IMAGEM -->
+        <div class="p-3 bg-[#0d0d12] border-t border-zinc-800">
+          <div class="flex items-center gap-2">
+            
+            <!-- Botão de Anexar Foto / Imagem -->
+            <button onclick="simularEnvioFoto()" class="btn-tactile h-11 w-11 rounded-2xl bg-[#121216] border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-indigo-400 shadow-md" title="Enviar Foto / Comprovante">
+              <i data-lucide="image" class="w-4 h-4"></i>
+            </button>
+
+            <input id="input-chat-msg" type="text" placeholder="Escreva uma mensagem..." onkeypress="if(event.key==='Enter') sendManualMessage()" class="flex-1 h-11 bg-[#121216] border border-zinc-800 rounded-2xl px-3.5 text-xs text-white placeholder-zinc-500 outline-none">
+            
+            <button onclick="sendManualMessage()" class="btn-tactile h-11 w-11 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg">
+              <i data-lucide="send" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- MODAL 0: EDITAR MEU PERFIL (NOME & @USERNAME) -->
+      <!-- ========================================================================= -->
+      <div id="modal-edit-profile" class="hidden absolute inset-0 bg-black/85 flex items-center justify-center p-4 z-50">
+        <div class="w-full bg-[#0d0d12] border border-zinc-800 rounded-[32px] p-5 shadow-2xl space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+            <div class="flex items-center gap-2.5">
+              <div class="h-8 w-8 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+                <i data-lucide="user-check" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <span class="text-xs font-black uppercase tracking-wider text-white block">Meu Perfil</span>
+                <span class="text-[10px] text-zinc-400 font-medium block">Defina seu nome e tag pública</span>
+              </div>
+            </div>
+            <button onclick="closeEditProfileModal()" class="h-7 w-7 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black uppercase tracking-wider text-zinc-400">Nome de Exibição</label>
+            <div class="h-11 bg-[#09090c] border border-zinc-800 rounded-2xl px-3.5 flex items-center">
+              <input id="input-edit-name" type="text" value="Lucas Morais" placeholder="Seu nome" class="bg-transparent flex-1 text-xs text-white outline-none">
+            </div>
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black uppercase tracking-wider text-zinc-400">Meu @username</label>
+            <div class="h-11 bg-[#09090c] border border-indigo-500/50 rounded-2xl px-3.5 flex items-center gap-2">
+              <span class="text-indigo-400 font-mono font-bold text-sm">@</span>
+              <input id="input-edit-username" type="text" value="1lucas1apk" placeholder="seu_username" class="bg-transparent flex-1 text-xs text-white font-mono font-bold outline-none">
+            </div>
+          </div>
+
+          <div class="flex gap-2.5 pt-1">
+            <button onclick="closeEditProfileModal()" class="flex-1 h-11 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-black uppercase">
+              Cancelar
+            </button>
+            <button onclick="salvarNovoPerfil()" class="flex-1 h-11 rounded-xl bg-indigo-600 text-white text-xs font-black uppercase shadow-lg">
+              Salvar Perfil
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- MODAL FULLSCREEN DE VISUALIZAÇÃO DE FOTO / IMAGEM -->
+      <!-- ========================================================================= -->
+      <div id="modal-image-viewer" class="hidden absolute inset-0 bg-black/95 flex flex-col justify-between p-4 z-50">
+        
+        <div class="flex items-center justify-between pt-2">
+          <div class="flex items-center gap-2">
+            <div class="h-8 w-8 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-300">
+              <i data-lucide="image" class="w-4 h-4"></i>
+            </div>
+            <span class="text-xs font-black uppercase tracking-wider text-white">Visualizador de Imagem</span>
+          </div>
+          <button onclick="closeFullscreenImage()" class="h-8 w-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Imagem Expandida -->
+        <div class="my-auto flex items-center justify-center">
+          <img id="fullscreen-img-src" src="" alt="Foto expandida" class="max-h-[460px] w-full object-contain rounded-2xl border border-zinc-800 shadow-2xl">
+        </div>
+
+        <div class="flex gap-2 pb-2">
+          <button onclick="closeFullscreenImage()" class="w-full h-11 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 font-black uppercase text-xs">
+            Fechar Imagem
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- MODAL COFRE: ATIVAÇÃO SECRETA DE ADMIN POR PIN (SEM EMOJIS) -->
+      <!-- ========================================================================= -->
+      <div id="modal-pin" class="hidden absolute inset-0 bg-black/90 flex items-center justify-center p-4 z-50">
+        <div class="w-full bg-[#0d0d12] border border-zinc-800 rounded-[36px] p-5 shadow-2xl space-y-4 text-center">
+          
+          <div class="flex items-center justify-between pb-2 border-b border-zinc-800 text-left">
+            <div class="flex items-center gap-2">
+              <div class="h-7 w-7 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400">
+                <i data-lucide="shield-check" class="w-4 h-4"></i>
+              </div>
+              <span class="text-xs font-black uppercase tracking-wider text-white">Chave de Autoridade</span>
+            </div>
+            <button onclick="closePinModal()" class="h-7 w-7 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <div>
+            <span class="text-xs font-black uppercase text-amber-300 block">Autenticação Mestra</span>
+            <p class="text-[10px] text-zinc-400 mt-1">Insira o código de segurança para autenticar esta sessão.</p>
+          </div>
+
+          <!-- Campos de PIN (4 Caixas Ocultas com Password Mask) -->
+          <div class="flex items-center justify-center gap-2.5 py-1">
+            <input id="pin-1" type="password" maxlength="1" oninput="focusNext(1)" class="w-12 h-14 rounded-2xl bg-[#09090c] border-2 border-zinc-800 focus:border-amber-500 text-center text-lg font-mono font-black text-amber-300 outline-none">
+            <input id="pin-2" type="password" maxlength="1" oninput="focusNext(2)" class="w-12 h-14 rounded-2xl bg-[#09090c] border-2 border-zinc-800 focus:border-amber-500 text-center text-lg font-mono font-black text-amber-300 outline-none">
+            <input id="pin-3" type="password" maxlength="1" oninput="focusNext(3)" class="w-12 h-14 rounded-2xl bg-[#09090c] border-2 border-zinc-800 focus:border-amber-500 text-center text-lg font-mono font-black text-amber-300 outline-none">
+            <input id="pin-4" type="password" maxlength="1" oninput="focusNext(4)" class="w-12 h-14 rounded-2xl bg-[#09090c] border-2 border-zinc-800 focus:border-amber-500 text-center text-lg font-mono font-black text-amber-300 outline-none">
+          </div>
+
+          <!-- Botões -->
+          <div class="flex gap-2 pt-1">
+            <button onclick="closePinModal()" class="flex-1 h-11 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-black uppercase">
+              Cancelar
+            </button>
+            <button onclick="validarPinMaster()" class="flex-1 h-11 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-black uppercase shadow-lg font-black flex items-center justify-center gap-1.5">
+              <i data-lucide="check" class="w-4 h-4 stroke-[3]"></i>
+              <span>Autenticar</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- MODAL 1: ADICIONAR POR @USERNAME -->
+      <!-- ========================================================================= -->
+      <div id="modal-add" class="hidden absolute inset-0 bg-black/85 flex items-center justify-center p-4 z-50">
+        <div class="w-full bg-[#0d0d12] border border-zinc-800 rounded-[32px] p-5 shadow-2xl space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-zinc-800">
+            <div class="flex items-center gap-2.5">
+              <div class="h-8 w-8 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <span class="text-xs font-black uppercase tracking-wider text-white block">Adicionar Contato</span>
+                <span class="text-[10px] text-zinc-400 font-medium block">Busca direta por @username</span>
+              </div>
+            </div>
+            <button onclick="closeAddModal()" class="h-7 w-7 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <div class="space-y-1.5">
+            <div class="h-12 bg-[#09090c] border border-indigo-500/50 rounded-2xl px-3.5 flex items-center gap-2">
+              <span class="text-indigo-400 font-mono font-bold text-sm">@</span>
+              <input id="input-username" type="text" value="carlos" placeholder="digite o username..." class="bg-transparent flex-1 text-xs text-white placeholder-zinc-600 outline-none">
+            </div>
+          </div>
+
+          <div class="bg-[#121216] border border-emerald-500/30 rounded-2xl p-3 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-black text-xs">
+                CC
+              </div>
+              <div>
+                <span class="text-xs font-black text-zinc-100 uppercase block">Carlos Cunha</span>
+                <span class="text-[10px] font-mono text-emerald-400 font-bold block mt-0.5">@carlos</span>
+              </div>
+            </div>
+            <span class="px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-300 text-[9px] font-black uppercase">ENCONTRADO</span>
+          </div>
+
+          <div class="flex gap-2.5 pt-1">
+            <button onclick="closeAddModal()" class="flex-1 h-11 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 text-xs font-black uppercase">
+              Cancelar
+            </button>
+            <button onclick="confirmAdd()" class="flex-1 h-11 rounded-xl bg-indigo-600 text-white text-xs font-black uppercase shadow-lg">
+              Conectar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- MODAL 2: SCANNER / LEITOR DE CÂMERA -->
+      <!-- ========================================================================= -->
+      <div id="modal-scanner" class="hidden absolute inset-0 bg-black/95 flex flex-col justify-between p-4 z-50">
+        <div class="flex items-center justify-between pt-2">
+          <div class="flex items-center gap-2">
+            <div class="h-8 w-8 rounded-xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+              <i data-lucide="scan-line" class="w-4 h-4"></i>
+            </div>
+            <span class="text-xs font-black uppercase tracking-wider text-white">Leitor de QR Code</span>
+          </div>
+          <button onclick="closeScannerModal()" class="h-8 w-8 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400 hover:text-white">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <div class="relative w-full max-w-[280px] h-[280px] mx-auto rounded-3xl border-2 border-indigo-500/60 bg-[#050508]/80 flex flex-col items-center justify-center overflow-hidden shadow-[0_0_50px_rgba(99,102,241,0.25)]">
+          <div class="absolute top-2 left-2 w-6 h-6 border-t-4 border-l-4 border-indigo-400 rounded-tl-lg"></div>
+          <div class="absolute top-2 right-2 w-6 h-6 border-t-4 border-r-4 border-indigo-400 rounded-tr-lg"></div>
+          <div class="absolute bottom-2 left-2 w-6 h-6 border-b-4 border-l-4 border-indigo-400 rounded-bl-lg"></div>
+          <div class="absolute bottom-2 right-2 w-6 h-6 border-b-4 border-r-4 border-indigo-400 rounded-br-lg"></div>
+          <i data-lucide="qr-code" class="w-24 h-24 text-zinc-800 stroke-[1]"></i>
+          <span class="text-[10px] font-mono text-indigo-300 font-bold mt-2 z-10 bg-zinc-950/80 px-2 py-0.5 rounded border border-indigo-500/30">
+            Aponte para o QR Code
+          </span>
+        </div>
+
+        <div class="space-y-2 pb-2">
+          <button onclick="simularLeituraSucesso()" class="w-full h-12 rounded-2xl bg-indigo-600 text-white font-black uppercase text-xs tracking-wider flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/30 active:scale-[0.98]">
+            <i data-lucide="zap" class="w-4 h-4"></i>
+            <span>Simular Leitura (@carlos)</span>
+          </button>
+          <button onclick="closeScannerModal()" class="w-full h-10 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-400 font-black uppercase text-xs">
+            Fechar Câmera
+          </button>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- MODAL 3: MEU QR CODE & LINK -->
+      <!-- ========================================================================= -->
+      <div id="modal-qr" class="hidden absolute inset-0 bg-black/85 flex items-center justify-center p-4 z-50">
+        <div class="w-full bg-[#0d0d12] border border-zinc-800 rounded-[32px] p-5 shadow-2xl space-y-4 text-center">
+          <div class="flex items-center justify-between pb-2 border-b border-zinc-800 text-left">
+            <span class="text-xs font-black uppercase tracking-wider text-white">Meu ID</span>
+            <button onclick="closeQrModal()" class="h-7 w-7 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+
+          <div class="bg-white p-4 rounded-3xl mx-auto w-44 h-44 flex flex-col items-center justify-center shadow-2xl">
+            <i data-lucide="qr-code" class="w-32 h-32 text-zinc-950 stroke-[1.5]"></i>
+          </div>
+
+          <div>
+            <span id="qr-modal-name" class="text-sm font-black text-white uppercase block">Lucas Morais</span>
+            <span id="qr-modal-tag" class="text-xs font-mono text-indigo-400 font-bold block mt-0.5">@1lucas1apk</span>
+            <p class="text-[10px] text-zinc-400 mt-1">Aproxime a câmera ou busque pela tag para conectar.</p>
+          </div>
+
+          <button id="btn-copy-qr-modal" onclick="copiarTag(); closeQrModal();" class="w-full h-11 rounded-xl bg-zinc-100 text-zinc-950 font-black uppercase text-xs tracking-wider shadow-lg">
+            Copiar @1lucas1apk
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    let currentDisplayName = "Lucas Morais";
+    let currentUsernameTag = "1lucas1apk";
+    let isCurrentUserAdmin = false;
+    let secretTapCount = 0;
+    let secretTapTimer = null;
+
+    function fecharChatHub() {
+      alert("Fechando o Chat e retornando ao Painel Principal.");
+    }
+
+    // Modal de Edição de Perfil
+    function openEditProfileModal() {
+      document.getElementById('input-edit-name').value = currentDisplayName;
+      document.getElementById('input-edit-username').value = currentUsernameTag;
+      document.getElementById('modal-edit-profile').classList.remove('hidden');
+      lucide.createIcons();
+    }
+    function closeEditProfileModal() {
+      document.getElementById('modal-edit-profile').classList.add('hidden');
+    }
+    function salvarNovoPerfil() {
+      const newName = document.getElementById('input-edit-name').value.trim();
+      const newTag = document.getElementById('input-edit-username').value.trim().replace(/^@/, "").toLowerCase();
+
+      if (!newTag) {
+        alert("Por favor, digite um @username válido.");
+        return;
+      }
+
+      currentDisplayName = newName || newTag;
+      currentUsernameTag = newTag;
+
+      document.getElementById('profile-display-name').innerText = currentDisplayName;
+      document.getElementById('profile-username-tag').innerText = `@${currentUsernameTag}`;
+      document.getElementById('profile-avatar-box').innerText = currentDisplayName.substring(0, 2).toUpperCase();
+      document.getElementById('qr-modal-name').innerText = currentDisplayName;
+      document.getElementById('qr-modal-tag').innerText = `@${currentUsernameTag}`;
+      document.getElementById('btn-copy-qr-modal').innerText = `Copiar @${currentUsernameTag}`;
+
+      closeEditProfileModal();
+      alert(`Perfil Atualizado com Sucesso!\nNome: ${currentDisplayName}\nTag: @${currentUsernameTag}`);
+    }
+
+    // GESTO SECRETO: 5 toques no avatar abrem o modal de PIN
+    function handleAvatarSecretTap() {
+      secretTapCount++;
+      clearTimeout(secretTapTimer);
+      secretTapTimer = setTimeout(() => { secretTapCount = 0; }, 2000);
+
+      if (secretTapCount >= 5) {
+        secretTapCount = 0;
+        openPinModal();
+      }
+    }
+
+    function switchMainTab(tab) {
+      if (tab === 'privado') {
+        document.getElementById('content-privado').classList.remove('hidden');
+        document.getElementById('content-mural').classList.add('hidden');
+        document.getElementById('tab-btn-privado').className = "h-8 rounded-xl bg-[#18181f] text-white text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm";
+        document.getElementById('tab-btn-mural').className = "h-8 rounded-xl text-zinc-400 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 hover:text-zinc-200";
+      } else {
+        document.getElementById('content-privado').classList.add('hidden');
+        document.getElementById('content-mural').classList.remove('hidden');
+        document.getElementById('tab-btn-mural').className = "h-8 rounded-xl bg-[#18181f] text-white text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-sm";
+        document.getElementById('tab-btn-privado').className = "h-8 rounded-xl text-zinc-400 text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 hover:text-zinc-200";
+      }
+      lucide.createIcons();
+    }
+
+    function openChat(name, tag, avatar, status, lastSeenText) {
+      document.getElementById('chat-user-name').innerText = name;
+      document.getElementById('chat-user-tag').innerText = tag;
+      document.getElementById('chat-avatar').innerText = avatar;
+      
+      const lastSeenEl = document.getElementById('chat-last-seen');
+      const dotEl = document.getElementById('chat-status-dot');
+
+      if (status === 'online') {
+        lastSeenEl.innerText = 'Online agora';
+        lastSeenEl.className = 'text-[9px] text-emerald-400 font-medium';
+        dotEl.className = 'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-[#0d0d12]';
+      } else {
+        lastSeenEl.innerText = lastSeenText || 'Visto recentemente';
+        lastSeenEl.className = 'text-[9px] text-zinc-400 font-medium';
+        dotEl.className = 'absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-zinc-600 border-2 border-[#0d0d12]';
+      }
+
+      document.getElementById('view-contacts').classList.add('hidden');
+      document.getElementById('view-chat').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeChat() {
+      document.getElementById('view-chat').classList.add('hidden');
+      document.getElementById('view-contacts').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function openAddModal() {
+      document.getElementById('modal-add').classList.remove('hidden');
+      lucide.createIcons();
+    }
+    function closeAddModal() {
+      document.getElementById('modal-add').classList.add('hidden');
+    }
+
+    function openQrModal() {
+      document.getElementById('modal-qr').classList.remove('hidden');
+      lucide.createIcons();
+    }
+    function closeQrModal() {
+      document.getElementById('modal-qr').classList.add('hidden');
+    }
+
+    function openScannerModal() {
+      document.getElementById('modal-scanner').classList.remove('hidden');
+      lucide.createIcons();
+    }
+    function closeScannerModal() {
+      document.getElementById('modal-scanner').classList.add('hidden');
+    }
+    function simularLeituraSucesso() {
+      closeScannerModal();
+      alert("QR Code Lido com Sucesso!\nTag: @carlos\nContato conectado!");
+    }
+
+    // VISUALIZADOR DE IMAGEM FULLSCREEN
+    function openFullscreenImage(src) {
+      document.getElementById('fullscreen-img-src').src = src;
+      document.getElementById('modal-image-viewer').classList.remove('hidden');
+      lucide.createIcons();
+    }
+    function closeFullscreenImage() {
+      document.getElementById('modal-image-viewer').classList.add('hidden');
+    }
+
+    // SIMULAÇÃO DE ENVIO DE FOTO NO CHAT
+    function simularEnvioFoto() {
+      const container = document.getElementById('messages-container');
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const sampleImg = 'https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=600&auto=format&fit=crop&q=80';
+
+      const photoHtml = `
+        <div class="flex flex-col items-end max-w-[82%] ml-auto">
+          <div class="bg-indigo-600 border border-indigo-500/50 p-2 rounded-2xl rounded-tr-sm shadow-md space-y-1.5">
+            <div onclick="openFullscreenImage('${sampleImg}')" class="relative rounded-xl overflow-hidden cursor-pointer group border border-indigo-400/30">
+              <img src="${sampleImg}" alt="Foto enviada" class="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300">
+              <div class="absolute inset-0 bg-black/20 group-hover:bg-transparent flex items-end justify-end p-1.5">
+                <span class="px-2 py-0.5 rounded-lg bg-black/70 backdrop-blur-md text-[8px] font-mono text-white font-bold flex items-center gap-1">
+                  <i data-lucide="maximize-2" class="w-2.5 h-2.5"></i>
+                  <span>Expandir</span>
+                </span>
+              </div>
+            </div>
+            <p class="text-xs text-white leading-relaxed font-medium px-1">
+              Foto enviada em anexo.
+            </p>
+          </div>
+          <div class="flex items-center gap-1 mt-1 px-1">
+            <span class="text-[9px] text-zinc-500 font-mono">${timeStr}</span>
+            <i data-lucide="check-check" class="w-3 h-3 text-indigo-400"></i>
+          </div>
+        </div>
+      `;
+      container.innerHTML += photoHtml;
+      container.scrollTop = container.scrollHeight;
+      lucide.createIcons();
+    }
+
+    // MODAL DE PIN MESTRE OCULTO
+    function openPinModal() {
+      document.getElementById('modal-pin').classList.remove('hidden');
+      document.getElementById('pin-1').focus();
+      lucide.createIcons();
+    }
+    function closePinModal() {
+      document.getElementById('modal-pin').classList.add('hidden');
+      document.getElementById('pin-1').value = "";
+      document.getElementById('pin-2').value = "";
+      document.getElementById('pin-3').value = "";
+      document.getElementById('pin-4').value = "";
+    }
+    function focusNext(index) {
+      if (index < 4) {
+        document.getElementById(`pin-${index + 1}`).focus();
+      } else {
+        validarPinMaster();
+      }
+    }
+    function validarPinMaster() {
+      const p1 = document.getElementById('pin-1').value;
+      const p2 = document.getElementById('pin-2').value;
+      const p3 = document.getElementById('pin-3').value;
+      const p4 = document.getElementById('pin-4').value;
+      const fullPin = `${p1}${p2}${p3}${p4}`;
+
+      if (fullPin === "2701") {
+        isCurrentUserAdmin = true;
+        closePinModal();
+        
+        document.getElementById('badge-admin-header').classList.remove('hidden');
+        document.getElementById('mural-pin-toggle-bar').classList.remove('hidden');
+        document.getElementById('mural-pin-toggle-bar').classList.add('flex');
+        document.getElementById('btn-desafixar-mural').classList.remove('hidden');
+
+        alert("Sessão Autenticada!\nPermissões de Administrador ativadas nesta conta.");
+        lucide.createIcons();
+      } else {
+        alert("Código de Autoridade Incorreto.");
+        document.getElementById('pin-1').value = "";
+        document.getElementById('pin-2').value = "";
+        document.getElementById('pin-3').value = "";
+        document.getElementById('pin-4').value = "";
+        document.getElementById('pin-1').focus();
+      }
+    }
+
+    function desafixarAviso() {
+      document.getElementById('pinned-mural-card').classList.add('hidden');
+      alert("Aviso desafixado do topo!");
+    }
+
+    function sendManualMessage() {
+      const input = document.getElementById('input-chat-msg');
+      const txt = input.value.trim();
+      if (!txt) return;
+      input.value = "";
+      appendMsg(txt);
+    }
+
+    function appendMsg(text) {
+      const container = document.getElementById('messages-container');
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      
+      const msgHtml = `
+        <div class="flex flex-col items-end max-w-[82%] ml-auto">
+          <div class="bg-indigo-600 border border-indigo-500/50 p-3 rounded-2xl rounded-tr-sm shadow-md">
+            <p class="text-xs text-white leading-relaxed font-medium">${text}</p>
+          </div>
+          <div class="flex items-center gap-1 mt-1 px-1">
+            <span class="text-[9px] text-zinc-500 font-mono">${timeStr}</span>
+            <i data-lucide="check-check" class="w-3 h-3 text-indigo-400"></i>
+          </div>
+        </div>
+      `;
+      container.innerHTML += msgHtml;
+      container.scrollTop = container.scrollHeight;
+      lucide.createIcons();
+    }
+
+    function sendMuralMessage() {
+      const input = document.getElementById('input-mural-msg');
+      const isPinned = document.getElementById('check-fixar').checked;
+      const txt = input.value.trim();
+      if (!txt) return;
+      input.value = "";
+      
+      if (isPinned) {
+        if (!isCurrentUserAdmin) {
+          alert("Apenas administradores autenticados podem fixar avisos!");
+          return;
+        }
+        document.getElementById('check-fixar').checked = false;
+        const pinnedCard = document.getElementById('pinned-mural-card');
+        pinnedCard.classList.remove('hidden');
+        pinnedCard.querySelector('p').innerText = txt;
+        alert("Aviso fixado no topo com sucesso!");
+      } else {
+        appendMuralCard(txt);
+      }
+    }
+
+    function appendMuralCard(htmlText) {
+      const list = document.getElementById('mural-list');
+      const now = new Date();
+      const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+      const cardHtml = `
+        <div class="bg-[#121216] border border-zinc-800 rounded-2xl p-3.5 shadow-md">
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <div class="h-7 w-7 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-300 text-[10px] font-black">
+                ${currentDisplayName.substring(0, 2).toUpperCase()}
+              </div>
+              <div>
+                <span class="text-xs font-black text-zinc-200">${currentDisplayName}</span>
+                <span class="text-[9px] font-mono text-indigo-400 block -mt-0.5">@${currentUsernameTag}</span>
+              </div>
+            </div>
+            <span class="text-[9px] text-zinc-500">${timeStr}</span>
+          </div>
+          <p class="text-xs text-zinc-300 leading-relaxed">${htmlText}</p>
+        </div>
+      `;
+      list.innerHTML += cardHtml;
+      list.scrollTop = list.scrollHeight;
+      lucide.createIcons();
+    }
+
+    function confirmAdd() {
+      closeAddModal();
+      alert("Contato @carlos adicionado com sucesso!");
+    }
+
+    function copiarTag() {
+      navigator.clipboard?.writeText(`@${currentUsernameTag}`);
+      alert(`Tag @${currentUsernameTag} copiada!`);
+    }
+  </script>
+</body>
+</html>

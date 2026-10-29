@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — 3 Variações do Conceito 1 (Terminal Vault)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 420px;
+      height: 870px;
+      border-radius: 40px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .pixelated {
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-6xl mx-auto pb-28">
+
+  <!-- CABEÇALHO DA APRESENTAÇÃO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      🎯 ETAPA 3 • 3 VARIAÇÕES DO CONCEITO 1 (TERMINAL VAULT)
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      Terminal Vault de Alta Precisão
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-2xl mx-auto font-medium">
+      Ajustado para lançamentos específicos (sem botões de soma), com suporte completo a <b>Multi-Linhas</b>, <b>Vínculos</b>, <b>Sub-tipos</b> e <b>Cálculo de Troco/Sobra</b>:
+    </p>
+
+    <!-- SELETOR DAS 3 VARIAÇÕES -->
+    <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 bg-[#121216] p-1.5 rounded-2xl border border-zinc-800 max-w-3xl mx-auto">
+      <button onclick="setVaultVariation(1)" id="btn-v1" class="py-2.5 rounded-xl text-xs font-black bg-emerald-500 text-zinc-950 shadow transition-all">
+        1A. Vault Pro (Toolbar de Ferramentas)
+      </button>
+      <button onclick="setVaultVariation(2)" id="btn-v2" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        1B. Vault Split (Lado a Lado Venda/Troco)
+      </button>
+      <button onclick="setVaultVariation(3)" id="btn-v3" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        1C. Vault Modular (Gavetas Expansíveis)
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER DO CELULAR -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- CABEÇALHO DO APP -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="text-base font-black uppercase tracking-tighter text-white">DINHEIRO</span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span class="text-[11px] font-black text-zinc-400 uppercase">27 AGO</span>
+        </div>
+        <div id="variation-tag" class="px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-black uppercase">
+          Variação 1A: Vault Pro
+        </div>
+      </div>
+
+      <!-- CORPO DINÂMICO DA TELA -->
+      <div id="screen-body" class="flex-1 overflow-y-auto p-3.5 space-y-3 relative pb-36">
+        <!-- Injetado via JS -->
+      </div>
+
+      <!-- BARRA FLUTUANTE OFICIAL (DINHEIRO ATIVO) -->
+      <div class="absolute bottom-6 left-0 right-0 px-3 z-50 flex items-center justify-center pointer-events-auto">
+        <div class="bg-[#141418]/95 backdrop-blur-2xl border border-zinc-700/80 rounded-full p-1.5 px-2 flex items-center gap-1 shadow-[0_20px_50px_rgba(0,0,0,0.95)]">
+          <button class="h-10 w-10 rounded-full flex items-center justify-center text-zinc-400"><i data-lucide="layout-dashboard" class="w-4 h-4"></i></button>
+          <button class="flex items-center gap-2 py-2 px-4 rounded-full bg-white text-zinc-950 shadow-md font-black">
+            <i data-lucide="banknote" class="w-4 h-4 stroke-[2.5]"></i>
+            <span class="text-[10.5px] uppercase tracking-tight font-sans">Dinheiro</span>
+          </button>
+          <button class="h-10 w-10 rounded-full flex items-center justify-center text-zinc-400"><i data-lucide="credit-card" class="w-4 h-4"></i></button>
+          <button class="h-10 w-10 rounded-full flex items-center justify-center text-zinc-400"><i data-lucide="building-2" class="w-4 h-4"></i></button>
+          <button class="h-10 w-10 rounded-full flex items-center justify-center text-zinc-400 relative">
+            <i data-lucide="check-square" class="w-4 h-4"></i>
+            <span class="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-blue-500 text-[8.5px] font-black text-white shadow-sm">22</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- DESCRIÇÃO DETALHADA DA VARIAÇÃO -->
+    <div id="variation-description" class="mt-6 max-w-xl text-left bg-[#121216] p-5 rounded-2xl border border-zinc-800 text-xs text-zinc-300 space-y-2">
+      <!-- Injetado via JS -->
+    </div>
+
+  </div>
+
+  <script>
+    let currentVar = 1;
+    let selectedNatureza = 'entrada';
+    let selectedCat = 'dinheiro';
+    let selectedSubTipo = null;
+    let isMulti = false;
+    let isCalcOpen = false;
+    let isLinkOpen = false;
+    let activeFilter = 'todas';
+
+    function setVaultVariation(n) {
+      currentVar = n;
+
+      for (let i = 1; i <= 3; i++) {
+        const btn = document.getElementById('btn-v' + i);
+        if (i === n) {
+          btn.className = 'py-2.5 rounded-xl text-xs font-black bg-emerald-500 text-zinc-950 shadow transition-all';
+        } else {
+          btn.className = 'py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all';
+        }
+      }
+
+      render();
+    }
+
+    function setNatureza(nat) {
+      selectedNatureza = nat;
+      render();
+    }
+
+    function setCat(cat) {
+      selectedCat = cat;
+      if (cat !== 'entrada_prestacao') selectedSubTipo = null;
+      render();
+    }
+
+    function setSubTipo(sub) {
+      selectedSubTipo = sub;
+      render();
+    }
+
+    function toggleMulti() {
+      isMulti = !isMulti;
+      render();
+    }
+
+    function toggleCalc() {
+      isCalcOpen = !isCalcOpen;
+      render();
+    }
+
+    function toggleLink() {
+      isLinkOpen = !isLinkOpen;
+      render();
+    }
+
+    function setFilter(f) {
+      activeFilter = f;
+      render();
+    }
+
+    function render() {
+      const body = document.getElementById('screen-body');
+      const tag = document.getElementById('variation-tag');
+      const desc = document.getElementById('variation-description');
+
+      if (currentVar === 1) {
+        // =========================================================================
+        // VARIAÇÃO 1A: VAULT PRO (TOOLBAR DE FERRAMENTAS INTELIGENTES)
+        // =========================================================================
+        tag.innerText = 'Variação 1A: Vault Pro';
+        tag.className = 'px-2.5 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-black uppercase';
+        
+        desc.innerHTML = `
+          <div class="font-black text-white uppercase text-sm mb-1">👑 Variação 1A — Vault Pro (Toolbar Inteligente):</div>
+          <div><b>• Sem Botões de Soma Genéricos:</b> Foco total em digitação precisa do valor exato.</div>
+          <div><b>• Toolbar de Ações Rápidas:</b> Botões compactos de <code>[ 🧮 Troco ]</code>, <code>[ 📑 Multi-Linhas ]</code> e <code>[ 🔗 Vincular ]</code> ativam recursos avançados apenas sob demanda.</div>
+          <div><b>• Sub-tipos Dinâmicos:</b> Ao clicar em <i>Prestação</i>, abre os botões de <i>Renegociação</i>, <i>Quitação</i> e <i>Entrada</i> de forma fluida.</div>
+          <div><b>• Filtros Rápidos em Abas:</b> Filtre instantaneamente entre <i>Todas (22)</i>, <i>Dinheiro</i>, <i>Prestações</i> e <i>Sangrias</i>.</div>
+        `;
+
+        body.innerHTML = `
+          <!-- 1. HERO DO SALDO EM GAVETA -->
+          <div class="bg-[#121216] border border-zinc-800/80 rounded-[28px] p-4 shadow-xl">
+            <div class="flex items-center justify-between text-xs font-black uppercase text-zinc-400 mb-1">
+              <span>Dinheiro Físico na Gaveta</span>
+              <span class="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">22 Entradas</span>
+            </div>
+            <div class="mono text-[32px] font-black text-emerald-400 leading-tight">
+              <span class="text-zinc-500 text-base font-bold">R$</span> 1.051<span class="text-emerald-300 text-xl font-extrabold">,00</span>
+            </div>
+            <div class="flex items-center justify-between text-[10px] text-zinc-400 font-bold mt-2 pt-2 border-t border-zinc-800/60">
+              <div class="flex items-center gap-1.5">
+                <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+                <span>Entradas: <b class="text-white">+R$ 1.051,00</b></span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="h-2 w-2 rounded-full bg-red-400"></span>
+                <span>Sangrias: <b class="text-white">-R$ 0,00</b></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 2. FORMULÁRIO VAULT PRO -->
+          <div class="bg-[#121216] border border-zinc-800/80 rounded-[26px] p-3.5 shadow-xl space-y-3">
+            
+            <!-- Switcher: Entrada vs Sangria -->
+            <div class="grid grid-cols-2 gap-1.5 bg-[#09090c] p-1 rounded-2xl border border-zinc-800">
+              <button onclick="setNatureza('entrada')" class="py-2 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all ${selectedNatureza === 'entrada' ? 'bg-emerald-500 text-zinc-950 shadow-md' : 'text-zinc-400 hover:text-white'}">
+                <i data-lucide="arrow-down-left" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+                <span>+ Entrada</span>
+              </button>
+              <button onclick="setNatureza('sangria')" class="py-2 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all ${selectedNatureza === 'sangria' ? 'bg-red-500 text-white shadow-md' : 'text-zinc-400 hover:text-red-400'}">
+                <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+                <span>- Sangria</span>
+              </button>
+            </div>
+
+            <!-- Categorias em Pílulas -->
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+              ${[
+                { id: 'dinheiro', label: 'Dinheiro', icon: 'banknote' },
+                { id: 'entrada_prestacao', label: 'Prestação', icon: 'arrow-down-circle' },
+                { id: 'multiplo', label: 'Misto', icon: 'split' },
+                { id: 'compra_vista', label: 'À Vista', icon: 'shopping-cart' }
+              ].map(c => `
+                <button onclick="setCat('${c.id}')" class="px-3 py-1.5 rounded-xl text-[10.5px] font-black uppercase flex items-center gap-1.5 border transition-all flex-shrink-0 ${selectedCat === c.id ? 'bg-zinc-100 border-zinc-100 text-zinc-950' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-white'}">
+                  <i data-lucide="${c.icon}" class="w-3 h-3"></i>
+                  <span>${c.label}</span>
+                </button>
+              `).join('')}
+            </div>
+
+            <!-- Sub-tipos Dinâmicos quando for Prestação -->
+            ${selectedCat === 'entrada_prestacao' ? `
+              <div class="bg-[#09090c] p-2 rounded-xl border border-blue-500/30 flex items-center gap-1.5">
+                <span class="text-[9px] font-black uppercase text-blue-400 ml-1 mr-1">Tipo:</span>
+                ${['Renegociação', 'Quitação', 'Entrada (Compra)'].map(sub => `
+                  <button onclick="setSubTipo('${sub}')" class="px-2.5 py-1 rounded-lg text-[9.5px] font-black uppercase border transition-all ${selectedSubTipo === sub ? 'bg-blue-500 text-white border-blue-400' : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-white'}">
+                    ${sub}
+                  </button>
+                `).join('')}
+              </div>
+            ` : ''}
+
+            <!-- Display de Valor Hero de Precisão -->
+            <div class="bg-[#09090c] p-3 px-4 rounded-2xl border border-zinc-800 flex items-center justify-between">
+              <div class="flex-1">
+                <div class="text-[9.5px] font-bold uppercase text-zinc-500">Valor do Lançamento</div>
+                <div class="flex items-baseline font-black mono text-2xl ${selectedNatureza === 'entrada' ? 'text-emerald-400' : 'text-red-400'}">
+                  <span class="text-xs mr-1 font-bold ${selectedNatureza === 'entrada' ? 'text-emerald-500' : 'text-red-500'}">${selectedNatureza === 'entrada' ? '+' : '-'}</span>
+                  <span class="text-zinc-500 text-sm font-bold mr-0.5">R$</span>
+                  <input type="text" value="0,00" class="bg-transparent font-black mono text-2xl ${selectedNatureza === 'entrada' ? 'text-emerald-400' : 'text-red-400'} focus:outline-none w-full" />
+                </div>
+              </div>
+
+              <!-- Toolbar de Ações Rápidas no Formulário -->
+              <div class="flex items-center gap-1">
+                <button onclick="toggleCalc()" class="h-8 px-2.5 rounded-xl border flex items-center gap-1 text-xs font-bold transition-all ${isCalcOpen ? 'bg-purple-500/20 border-purple-500/40 text-purple-300' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-purple-300'}">
+                  <i data-lucide="calculator" class="w-3.5 h-3.5"></i>
+                  <span class="text-[9px] uppercase font-black">Troco</span>
+                </button>
+                <button onclick="toggleMulti()" class="h-8 px-2.5 rounded-xl border flex items-center gap-1 text-xs font-bold transition-all ${isMulti ? 'bg-blue-500/20 border-blue-500/40 text-blue-300' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-blue-300'}">
+                  <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                  <span class="text-[9px] uppercase font-black">Multi</span>
+                </button>
+                <button onclick="toggleLink()" class="h-8 px-2 rounded-xl border flex items-center justify-center text-xs font-bold transition-all ${isLinkOpen ? 'bg-amber-500/20 border-amber-500/40 text-amber-300' : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-amber-300'}">
+                  <i data-lucide="link" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Calculadora de Troco Expansível -->
+            ${isCalcOpen ? `
+              <div class="bg-[#14121a] p-3 rounded-2xl border border-purple-500/30 space-y-2">
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <div class="text-[9px] font-bold text-purple-300 uppercase">Recebido do Cliente</div>
+                    <input type="text" placeholder="R$ 0,00" class="bg-[#09090c] border border-purple-500/20 rounded-xl px-3 py-2 text-white mono font-black text-sm w-full mt-1" />
+                  </div>
+                  <div>
+                    <div class="text-[9px] font-bold text-purple-300 uppercase">Troco Devolvido</div>
+                    <input type="text" placeholder="R$ 0,00" class="bg-[#09090c] border border-purple-500/20 rounded-xl px-3 py-2 text-white mono font-black text-sm w-full mt-1" />
+                  </div>
+                </div>
+                <div class="bg-[#09090c] p-2 px-3 rounded-xl border border-zinc-800 flex items-center justify-between">
+                  <span class="text-[9.5px] font-bold text-zinc-400 uppercase">Diferença / Sobra:</span>
+                  <span class="mono font-black text-xs text-emerald-400">+ R$ 0,00 (Exato)</span>
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Multi-Linhas Expansível -->
+            ${isMulti ? `
+              <div class="bg-[#0e121a] p-3 rounded-2xl border border-blue-500/30 space-y-2">
+                <div class="flex items-center justify-between text-[9.5px] font-black uppercase text-blue-400">
+                  <span>Linhas de Pagamento</span>
+                  <button class="text-blue-300 hover:underline">+ Adicionar Linha</button>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                  <input type="text" placeholder="Valor #1" class="bg-[#09090c] border border-zinc-800 rounded-xl px-2.5 py-1.5 text-xs text-white mono font-bold" />
+                  <input type="text" placeholder="Desc. #1" class="bg-[#09090c] border border-zinc-800 rounded-xl px-2.5 py-1.5 text-xs text-white font-medium" />
+                  <input type="text" placeholder="Contrato" class="bg-[#09090c] border border-zinc-800 rounded-xl px-2 py-1.5 text-xs text-center text-zinc-300 uppercase font-bold" />
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Vínculo Expansível -->
+            ${isLinkOpen ? `
+              <div class="bg-[#18140c] p-3 rounded-2xl border border-amber-500/30">
+                <div class="text-[9.5px] font-black uppercase text-amber-300 mb-1">Vincular a uma Venda Anterior:</div>
+                <input type="text" placeholder="Buscar venda por valor ou descrição..." class="w-full bg-[#09090c] border border-amber-500/20 rounded-xl px-3 py-2 text-xs text-white" />
+              </div>
+            ` : ''}
+
+            <!-- Descrição & Contrato em Linha Simétrica -->
+            <div class="grid grid-cols-5 gap-2">
+              <div class="col-span-3">
+                <input type="text" placeholder="Descrição (ex: Venda Balcão)" class="w-full bg-[#09090c] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white font-medium focus:outline-none focus:border-zinc-700" />
+              </div>
+              <div class="col-span-2">
+                <input type="text" placeholder="Nº Contrato" class="w-full bg-[#09090c] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-center text-zinc-300 font-bold focus:outline-none focus:border-zinc-700 uppercase" />
+              </div>
+            </div>
+
+            <!-- Botão Salvar Principal -->
+            <button onclick="alert('Lançamento Registrado com Sucesso!')" class="w-full py-3 rounded-2xl ${selectedNatureza === 'entrada' ? 'bg-emerald-500 hover:bg-emerald-400 text-zinc-950 shadow-emerald-500/20' : 'bg-red-500 hover:bg-red-400 text-white shadow-red-500/20'} font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg active:scale-[0.98] transition-all">
+              <i data-lucide="check" class="w-4 h-4 stroke-[3]"></i>
+              <span>${selectedNatureza === 'entrada' ? 'Registrar Entrada' : 'Registrar Sangria'}</span>
+            </button>
+
+          </div>
+
+          <!-- 3. ABAS DE FILTROS RÁPIDOS & BUSCA -->
+          <div class="space-y-2">
+            <div class="flex items-center gap-1.5 overflow-x-auto pb-0.5">
+              ${[
+                { id: 'todas', label: 'Todas (22)' },
+                { id: 'dinheiro', label: 'Dinheiro (18)' },
+                { id: 'prestacao', label: 'Prestações (4)' },
+                { id: 'sangria', label: 'Sangrias (0)' }
+              ].map(f => `
+                <button onclick="setFilter('${f.id}')" class="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase transition-all flex-shrink-0 ${activeFilter === f.id ? 'bg-zinc-200 text-zinc-950 shadow' : 'bg-[#121216] border border-zinc-800 text-zinc-400 hover:text-white'}">
+                  ${f.label}
+                </button>
+              `).join('')}
+            </div>
+
+            <div class="bg-[#121216] border border-zinc-800/80 rounded-xl px-3 py-2 flex items-center gap-2">
+              <i data-lucide="search" class="w-3.5 h-3.5 text-zinc-500"></i>
+              <input type="text" placeholder="Filtrar por contrato, valor..." class="bg-transparent text-xs text-white focus:outline-none w-full font-medium" />
+            </div>
+          </div>
+
+          <!-- 4. FEED DE TRANSAÇÕES REFINADO (36PX) -->
+          <div class="space-y-2">
+            
+            <!-- Card 1 -->
+            <div class="bg-[#121216] border border-zinc-800/80 hover:border-zinc-700 rounded-2xl p-3 flex items-center justify-between shadow-sm transition-all">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="h-9 w-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400 flex-shrink-0">
+                  <i data-lucide="banknote" class="w-4.5 h-4.5"></i>
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] font-black uppercase text-emerald-400 tracking-wider">Dinheiro</span>
+                    <span class="text-[9px] text-zinc-500 font-bold">• 14:32:05</span>
+                    <span class="text-[8px] font-black bg-zinc-800 text-zinc-400 px-1.5 py-0.2 rounded border border-zinc-700">#40921</span>
+                  </div>
+                  <div class="text-xs font-bold text-white truncate mt-0.5">Venda Balcão Balas</div>
+                </div>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <div class="mono font-black text-emerald-400 text-base leading-tight">+R$ 150,00</div>
+                <div class="flex items-center justify-end gap-1.5 mt-0.5">
+                  <button class="p-1 text-zinc-500 hover:text-zinc-300"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                  <button class="p-1 text-zinc-500 hover:text-red-400"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="bg-[#121216] border border-zinc-800/80 hover:border-zinc-700 rounded-2xl p-3 flex items-center justify-between shadow-sm transition-all">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="h-9 w-9 rounded-xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400 flex-shrink-0">
+                  <i data-lucide="arrow-down-circle" class="w-4.5 h-4.5"></i>
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] font-black uppercase text-blue-400 tracking-wider">Prestação</span>
+                    <span class="text-[9px] text-zinc-500 font-bold">• 13:15:22</span>
+                    <span class="text-[8px] font-black bg-emerald-500/15 text-emerald-400 px-1.5 py-0.2 rounded border border-emerald-500/30">+ R$ 0,05</span>
+                  </div>
+                  <div class="text-xs font-bold text-white truncate mt-0.5">Renegociação João Silva</div>
+                </div>
+              </div>
+              <div class="text-right flex-shrink-0">
+                <div class="mono font-black text-blue-300 text-base leading-tight">+R$ 280,00</div>
+                <div class="flex items-center justify-end gap-1.5 mt-0.5">
+                  <button class="p-1 text-zinc-500 hover:text-zinc-300"><i data-lucide="edit-3" class="w-3.5 h-3.5"></i></button>
+                  <button class="p-1 text-zinc-500 hover:text-red-400"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        `;
+      } else if (currentVar === 2) {
+        // =========================================================================
+        // VARIAÇÃO 1B: VAULT SPLIT (LADO A LADO VENDA & TROCO)
+        // =========================================================================
+        tag.innerText = 'Variação 1B: Vault Split';
+        tag.className = 'px-2.5 py-1 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-black uppercase';
+        
+        desc.innerHTML = `
+          <div class="font-black text-white uppercase text-sm mb-1">⚡ Variação 1B — Vault Split (Lado a Lado):</div>
+          <div><b>• Duas Colunas de Acerto:</b> O valor da venda e o acerto de troco ficam lado a lado com atualização em tempo real.</div>
+          <div><b>• Indicador de Sobra/Falta Integrado:</b> Feedback cromático imediato no rodapé do formulário.</div>
+        `;
+
+        body.innerHTML = `
+          <!-- HERO RESUMO -->
+          <div class="bg-[#121216] border border-zinc-800/80 rounded-[28px] p-4 shadow-xl">
+            <div class="flex items-center justify-between text-xs font-black uppercase text-zinc-400 mb-1">
+              <span>Dinheiro Físico na Gaveta</span>
+              <span class="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">22 Entradas</span>
+            </div>
+            <div class="mono text-[32px] font-black text-emerald-400 leading-tight">
+              <span class="text-zinc-500 text-base font-bold">R$</span> 1.051<span class="text-emerald-300 text-xl font-extrabold">,00</span>
+            </div>
+          </div>
+
+          <!-- FORMULÁRIO SPLIT -->
+          <div class="bg-[#121216] border border-zinc-800/80 rounded-[26px] p-3.5 shadow-xl space-y-3">
+            
+            <div class="grid grid-cols-2 gap-1.5 bg-[#09090c] p-1 rounded-2xl border border-zinc-800">
+              <button onclick="setNatureza('entrada')" class="py-2 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 ${selectedNatureza === 'entrada' ? 'bg-emerald-500 text-zinc-950 shadow-md' : 'text-zinc-400'}">+ Entrada</button>
+              <button onclick="setNatureza('sangria')" class="py-2 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 ${selectedNatureza === 'sangria' ? 'bg-red-500 text-white shadow-md' : 'text-zinc-400'}">- Sangria</button>
+            </div>
+
+            <!-- DUAS COLUNAS LADO A LADO -->
+            <div class="grid grid-cols-2 gap-2">
+              <div class="bg-[#09090c] p-3 rounded-2xl border border-zinc-800">
+                <div class="text-[9px] font-bold uppercase text-zinc-500">Valor da Venda</div>
+                <div class="mono font-black text-lg text-emerald-400 mt-1">R$ 0,00</div>
+              </div>
+              <div class="bg-[#09090c] p-3 rounded-2xl border border-zinc-800">
+                <div class="text-[9px] font-bold uppercase text-zinc-500">Ficou na Gaveta</div>
+                <div class="mono font-black text-lg text-white mt-1">R$ 0,00</div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-5 gap-2">
+              <input type="text" placeholder="Descrição" class="col-span-3 bg-[#09090c] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white" />
+              <input type="text" placeholder="Contrato" class="col-span-2 bg-[#09090c] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-center text-zinc-300 font-bold uppercase" />
+            </div>
+
+            <button onclick="alert('Lançamento Registrado!')" class="w-full py-3 rounded-2xl bg-emerald-500 text-zinc-950 font-black text-xs uppercase tracking-wider shadow-lg">
+              Confirmar Lançamento
+            </button>
+          </div>
+        `;
+      } else if (currentVar === 3) {
+        // =========================================================================
+        // VARIAÇÃO 1C: VAULT MODULAR (GAVETAS EXPANSÍVEIS ULTRA-COMPACTAS)
+        // =========================================================================
+        tag.innerText = 'Variação 1C: Vault Modular';
+        tag.className = 'px-2.5 py-1 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-black uppercase';
+        
+        desc.innerHTML = `
+          <div class="font-black text-white uppercase text-sm mb-1">🌌 Variação 1C — Vault Modular (Ultra-Compacto):</div>
+          <div><b>• Altura Mínima:</b> Por padrão, o formulário ocupa menos de 190px.</div>
+          <div><b>• Módulos sob Demanda:</b> As ferramentas avançadas se expandem apenas quando solicitadas.</div>
+        `;
+
+        body.innerHTML = `
+          <!-- HERO RESUMO -->
+          <div class="bg-[#121216] border border-zinc-800/80 rounded-[28px] p-4 shadow-xl">
+            <div class="flex items-center justify-between text-xs font-black uppercase text-zinc-400 mb-1">
+              <span>Dinheiro Físico na Gaveta</span>
+              <span class="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">22 Entradas</span>
+            </div>
+            <div class="mono text-[32px] font-black text-emerald-400 leading-tight">
+              <span class="text-zinc-500 text-base font-bold">R$</span> 1.051<span class="text-emerald-300 text-xl font-extrabold">,00</span>
+            </div>
+          </div>
+
+          <!-- FORMULÁRIO ULTRA COMPACTO -->
+          <div class="bg-[#121216] border border-zinc-800/80 rounded-[26px] p-3.5 shadow-xl space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-black uppercase text-white">Lançar no Caixa</span>
+                <span class="text-[9px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">+ Entrada</span>
+              </div>
+              <button onclick="alert('Alternando para Sangria')" class="text-[10px] font-bold text-red-400 hover:underline">Mudar p/ Sangria ›</button>
+            </div>
+
+            <div class="bg-[#09090c] p-3 px-4 rounded-2xl border border-zinc-800 flex items-center justify-between">
+              <span class="text-xs font-bold text-zinc-500 uppercase">R$</span>
+              <input type="text" value="0,00" class="bg-transparent font-black mono text-2xl text-emerald-400 text-right focus:outline-none w-full" />
+            </div>
+
+            <div class="grid grid-cols-5 gap-2">
+              <input type="text" placeholder="Descrição" class="col-span-3 bg-[#09090c] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-white" />
+              <input type="text" placeholder="Contrato" class="col-span-2 bg-[#09090c] border border-zinc-800 rounded-xl px-3 py-2 text-xs text-center text-zinc-300 font-bold uppercase" />
+            </div>
+
+            <button onclick="alert('Registrado!')" class="w-full py-3 rounded-2xl bg-emerald-500 text-zinc-950 font-black text-xs uppercase tracking-wider">
+              Registrar
+            </button>
+          </div>
+        `;
+      }
+
+      lucide.createIcons();
+    }
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Formatos Inovadores (Sem Repetir Grid)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 420px;
+      border-radius: 40px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-6xl mx-auto pb-28">
+
+  <!-- CABEÇALHO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      ✨ DESIGN SEM REPETIÇÃO: BATE-PAPO & ATIVIDADES
+    </div>
+    <h1 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-white">
+      Formatos Únicos (Sem Repetir o Grid do POS)
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-2xl mx-auto font-medium">
+      Como o <b>POS & Convênios</b> já usam o Grid de 2 colunas, veja 6 formatos totalmente diferentes para o Bate-papo e Atividades:
+    </p>
+
+    <!-- SELETOR DOS FORMATOS -->
+    <div class="mt-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 bg-[#121216] p-2 rounded-2xl border border-zinc-800 max-w-4xl mx-auto">
+      <button onclick="setFormat(1)" id="btn-fmt1" class="py-2.5 px-2 rounded-xl text-xs font-black bg-emerald-500 text-black shadow transition-all">
+        1. Master Card 2 Andares
+      </button>
+      <button onclick="setFormat(2)" id="btn-fmt2" class="py-2.5 px-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        2. Barra Chat + Carrossel
+      </button>
+      <button onclick="setFormat(3)" id="btn-fmt3" class="py-2.5 px-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        3. Timeline Extrato
+      </button>
+      <button onclick="setFormat(4)" id="btn-fmt4" class="py-2.5 px-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        4. Barra 70/30 Status
+      </button>
+      <button onclick="setFormat(5)" id="btn-fmt5" class="py-2.5 px-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        5. Abas Deslizantes
+      </button>
+      <button onclick="setFormat(6)" id="btn-fmt6" class="py-2.5 px-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        6. Notificação Live
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER CENTRAL -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- CABEÇALHO DO APP -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-4 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-lg font-black uppercase tracking-tighter text-white">CAIXA</span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span class="text-[11px] font-black text-zinc-400 uppercase">27 AGO</span>
+        </div>
+        <div id="fmt-tag" class="text-xs font-black text-emerald-400 uppercase bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20">
+          Formato 1: Master Card 2 Andares
+        </div>
+      </div>
+
+      <!-- CORPO COM A HIERARQUIA COMPLETA DA TELA -->
+      <div class="p-3.5 space-y-3">
+        
+        <!-- 1. RESUMO TOPO -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-[26px] p-3.5 opacity-50">
+          <div class="flex justify-between items-center text-xs text-zinc-400">
+            <span class="font-bold uppercase tracking-wider">Total do Caixa</span>
+            <span class="mono font-black text-white text-sm">R$ 7.340,98</span>
+          </div>
+        </div>
+
+        <!-- 2. DOCK DE SAÍDAS & CANHOTOS -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-2.5 px-3.5 flex items-center opacity-60">
+          <div class="flex-1 text-xs font-bold text-zinc-300">Saídas: R$ 0,00</div>
+          <div class="w-px h-6 bg-zinc-800 mx-2"></div>
+          <div class="flex-1 text-xs font-bold text-blue-400">Canhotos: 22 de 22</div>
+        </div>
+
+        <!-- 3. GRID DO POS (O QUE JÁ EXISTE ACIMA) -->
+        <div class="grid grid-cols-2 gap-2 opacity-70">
+          <div class="bg-[#121216] border border-blue-500/20 rounded-2xl p-2.5 text-xs font-bold text-blue-400">
+            💳 POS Cartões: R$ 1.840,50
+          </div>
+          <div class="bg-[#121216] border border-purple-500/20 rounded-2xl p-2.5 text-xs font-bold text-purple-400">
+            🏢 Convênios: R$ 650,00
+          </div>
+        </div>
+
+        <!-- DIVISOR -->
+        <div class="flex items-center gap-2 px-1 pt-1">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-emerald-400"></i>
+          <span class="text-[11px] font-black uppercase tracking-[2px] text-emerald-400">Bate-papo & Atividades</span>
+          <div class="flex-1 h-px bg-zinc-800"></div>
+        </div>
+
+        <!-- ÁREA DINÂMICA DO FORMATO -->
+        <div id="format-container">
+          <!-- Renderizado via JS -->
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- DESCRIÇÃO -->
+    <div id="fmt-description" class="mt-6 max-w-xl text-center bg-[#121216] p-4 rounded-2xl border border-zinc-800 text-xs text-zinc-300">
+      <!-- Injetado via JS -->
+    </div>
+
+  </div>
+
+  <script>
+    let currentFmt = 1;
+    let tabState = 'chat';
+
+    function setFormat(n) {
+      currentFmt = n;
+
+      for (let i = 1; i <= 6; i++) {
+        const btn = document.getElementById('btn-fmt' + i);
+        if (i === n) {
+          btn.className = 'py-2.5 px-2 rounded-xl text-xs font-black bg-emerald-500 text-black shadow transition-all';
+        } else {
+          btn.className = 'py-2.5 px-2 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all';
+        }
+      }
+
+      render();
+    }
+
+    function setTabState(t) {
+      tabState = t;
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById('format-container');
+      const tag = document.getElementById('fmt-tag');
+      const desc = document.getElementById('fmt-description');
+
+      if (currentFmt === 1) {
+        // FORMATO 1: MASTER CARD 2 ANDARES
+        tag.innerText = 'Formato 1: Master Card 2 Andares';
+        tag.className = 'text-xs font-black text-emerald-400 uppercase bg-emerald-500/10 px-2.5 py-1 rounded-xl border border-emerald-500/20';
+        desc.innerHTML = `<b>Formato 1 — Master Card 2 Andares:</b> Um único card nobre e coeso. O andar de cima é o <b>Bate-papo ao vivo</b> com botão de responder; o andar de baixo mostra a <b>Última Atividade</b> e o atalho para a timeline completa.`;
+
+        container.innerHTML = `
+          <div class="bg-[#121216] border border-zinc-800/90 rounded-[24px] p-3.5 shadow-xl space-y-3">
+            
+            <!-- Andar 1: Bate-papo -->
+            <div class="flex items-center justify-between gap-2.5">
+              <div class="flex items-center gap-2.5 flex-1 mr-1">
+                <div class="h-8 w-8 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 flex-shrink-0">
+                  <i data-lucide="message-square" class="w-4 h-4"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[11px] font-black uppercase text-indigo-300 tracking-wider">Bate-papo</span>
+                    <span class="text-[10px] text-zinc-500 font-bold">• 14:32</span>
+                  </div>
+                  <p class="text-xs text-zinc-200 font-semibold truncate">Maria: "Troco do gás às 16h!"</p>
+                </div>
+              </div>
+              <button class="px-3 py-1.5 rounded-xl bg-indigo-500/20 text-indigo-300 text-xs font-black hover:bg-indigo-500/30 active:scale-95 transition-all flex-shrink-0">
+                Responder
+              </button>
+            </div>
+
+            <!-- Divisor Suave -->
+            <div class="h-px bg-zinc-800/80"></div>
+
+            <!-- Andar 2: Última Atividade -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2.5">
+                <div class="h-7 w-7 rounded-lg bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <i data-lucide="arrow-down-left" class="w-3.5 h-3.5"></i>
+                </div>
+                <div>
+                  <div class="text-xs font-bold text-zinc-200">Último: Venda Dinheiro</div>
+                  <div class="text-[10px] text-zinc-500">Há 4 min • Baixa #22</div>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="mono text-xs font-black text-emerald-400">+R$ 45,00</div>
+                <button class="text-[10px] text-zinc-400 hover:text-white font-bold">Ver todas ›</button>
+              </div>
+            </div>
+
+          </div>
+        `;
+      } else if (currentFmt === 2) {
+        // FORMATO 2: BARRA DE BATE-PAPO + CARROSSEL HORIZONTAL DE ATIVIDADES
+        tag.innerText = 'Formato 2: Barra Chat + Carrossel';
+        tag.className = 'text-xs font-black text-indigo-400 uppercase bg-indigo-500/10 px-2.5 py-1 rounded-xl border border-indigo-500/20';
+        desc.innerHTML = `<b>Formato 2 — Barra Chat + Carrossel Horizontal:</b> Uma barra horizontal limpa para o <b>Bate-papo</b> e, logo abaixo, <b>3 micro-cards roláveis</b> com as últimas vendas e sangrias do caixa.`;
+
+        container.innerHTML = `
+          <!-- Barra de Bate-papo -->
+          <div class="bg-[#121216] border border-indigo-500/30 rounded-2xl p-3 px-3.5 shadow-lg flex items-center justify-between">
+            <div class="flex items-center gap-2.5 flex-1 mr-2">
+              <div class="h-8 w-8 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 flex-shrink-0">
+                <i data-lucide="message-circle" class="w-4 h-4"></i>
+              </div>
+              <div class="flex-1">
+                <div class="text-[10.5px] font-black uppercase text-indigo-300">Bate-papo • Maria</div>
+                <p class="text-xs text-zinc-200 font-bold truncate">"Fulano vem buscar o troco às 16h!"</p>
+              </div>
+            </div>
+            <button class="px-3 py-1.5 rounded-xl bg-indigo-500/20 text-indigo-300 text-xs font-black">Abrir ›</button>
+          </div>
+
+          <!-- Carrossel de Atividades Recentes -->
+          <div class="flex gap-2 overflow-x-auto py-1">
+            <!-- Item 1 -->
+            <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-2.5 min-w-[135px] flex-shrink-0 shadow">
+              <div class="flex items-center gap-1.5 text-[10px] text-emerald-400 font-bold uppercase mb-1">
+                <i data-lucide="arrow-down-left" class="w-3 h-3"></i> Venda
+              </div>
+              <div class="mono text-xs font-black text-white">+R$ 45,00</div>
+              <div class="text-[9.5px] text-zinc-500 mt-0.5">Há 4 min • Espécie</div>
+            </div>
+
+            <!-- Item 2 -->
+            <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-2.5 min-w-[135px] flex-shrink-0 shadow">
+              <div class="flex items-center gap-1.5 text-[10px] text-indigo-400 font-bold uppercase mb-1">
+                <i data-lucide="smartphone" class="w-3 h-3"></i> Pix Caixa
+              </div>
+              <div class="mono text-xs font-black text-indigo-200">+R$ 120,50</div>
+              <div class="text-[9.5px] text-zinc-500 mt-0.5">Há 18 min • Cliente</div>
+            </div>
+
+            <!-- Item 3 -->
+            <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-2.5 min-w-[135px] flex-shrink-0 shadow">
+              <div class="flex items-center gap-1.5 text-[10px] text-red-400 font-bold uppercase mb-1">
+                <i data-lucide="arrow-up-right" class="w-3 h-3"></i> Sangria
+              </div>
+              <div class="mono text-xs font-black text-red-400">-R$ 500,00</div>
+              <div class="text-[9.5px] text-zinc-500 mt-0.5">Há 1h • Cofre</div>
+            </div>
+          </div>
+        `;
+      } else if (currentFmt === 3) {
+        // FORMATO 3: TIMELINE EXTRATO ESTILO NUBANK
+        tag.innerText = 'Formato 3: Timeline Extrato';
+        tag.className = 'text-xs font-black text-purple-400 uppercase bg-purple-500/10 px-2.5 py-1 rounded-xl border border-purple-500/20';
+        desc.innerHTML = `<b>Formato 3 — Timeline Extrato:</b> O Bate-papo fica como um aviso fixado no topo e, embaixo, uma <b>Timeline conectada</b> das últimas ações do turno.`;
+
+        container.innerHTML = `
+          <!-- Bate-papo Notificação -->
+          <div class="bg-[#121216] border border-purple-500/30 rounded-2xl p-3 flex items-center justify-between shadow-lg mb-2">
+            <div class="flex items-center gap-2.5">
+              <i data-lucide="message-square" class="w-4 h-4 text-purple-400"></i>
+              <div>
+                <span class="text-[10.5px] font-black uppercase text-purple-300">Bate-papo: Maria</span>
+                <p class="text-xs text-zinc-200 font-semibold">"Troco do gás às 16h!"</p>
+              </div>
+            </div>
+            <i data-lucide="chevron-right" class="w-4 h-4 text-zinc-500"></i>
+          </div>
+
+          <!-- Timeline Conectada -->
+          <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-3.5 shadow-lg space-y-2.5">
+            <div class="text-[11px] font-black uppercase text-zinc-400 tracking-wider mb-1">Linha do Tempo</div>
+
+            <div class="flex items-center justify-between border-l-2 border-emerald-500/40 pl-3 py-0.5">
+              <div>
+                <div class="text-xs font-bold text-zinc-200">Venda no Balcão</div>
+                <div class="text-[10px] text-zinc-500">14:28 • Dinheiro</div>
+              </div>
+              <span class="mono text-xs font-black text-emerald-400">+R$ 45,00</span>
+            </div>
+
+            <div class="flex items-center justify-between border-l-2 border-indigo-500/40 pl-3 py-0.5">
+              <div>
+                <div class="text-xs font-bold text-zinc-200">Pix Recebido</div>
+                <div class="text-[10px] text-zinc-500">14:10 • App Loja</div>
+              </div>
+              <span class="mono text-xs font-black text-indigo-300">+R$ 120,50</span>
+            </div>
+          </div>
+        `;
+      } else if (currentFmt === 4) {
+        // FORMATO 4: BARRA 70/30 STATUS INTEGRADA
+        tag.innerText = 'Formato 4: Barra 70/30 Status';
+        tag.className = 'text-xs font-black text-blue-400 uppercase bg-blue-500/10 px-2.5 py-1 rounded-xl border border-blue-500/20';
+        desc.innerHTML = `<b>Formato 4 — Barra 70/30 Status:</b> Uma única barra horizontal fluida: <b>70% do espaço</b> dedicado ao Bate-papo da equipe e <b>30% do espaço</b> exibindo a última baixa. Ocupa pouquíssimo espaço!`;
+
+        container.innerHTML = `
+          <div class="bg-[#121216] border border-zinc-800/90 rounded-2xl p-3 px-3.5 shadow-lg flex items-center justify-between min-h-[64px]">
+            
+            <!-- Lado Esquerdo (70%): Bate-papo -->
+            <button class="flex items-center gap-2.5 flex-1 mr-2 text-left active:scale-98">
+              <div class="h-8 w-8 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 flex-shrink-0">
+                <i data-lucide="message-square" class="w-4 h-4"></i>
+              </div>
+              <div class="flex-1">
+                <div class="text-[10px] font-black uppercase text-indigo-300 tracking-wider">Bate-papo • Maria</div>
+                <p class="text-xs text-zinc-200 font-bold truncate">"Troco do gás às 16h!"</p>
+              </div>
+            </button>
+
+            <!-- Divisor -->
+            <div class="w-px h-8 bg-zinc-800 mx-2"></div>
+
+            <!-- Lado Direito (30%): Última Ação -->
+            <button class="text-right pl-1 active:scale-98">
+              <span class="text-[10px] font-black uppercase text-zinc-500 block">Último</span>
+              <span class="mono text-xs font-black text-emerald-400">+R$ 45,00</span>
+            </button>
+
+          </div>
+        `;
+      } else if (currentFmt === 5) {
+        // FORMATO 5: ABAS DESLIZANTES
+        tag.innerText = 'Formato 5: Abas Deslizantes';
+        tag.className = 'text-xs font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/20';
+        desc.innerHTML = `<b>Formato 5 — Abas Deslizantes:</b> Alterna entre <b>Bate-papo</b> e <b>Atividades</b> com um toque. Mantém a tela compacta e organizada.`;
+
+        let content = '';
+        if (tabState === 'chat') {
+          content = `
+            <div class="bg-[#09090c] p-3 rounded-xl border border-zinc-800/80 flex items-center justify-between">
+              <div>
+                <span class="text-[11px] font-bold text-amber-400 uppercase">Maria (Gerência)</span>
+                <p class="text-xs text-zinc-200 font-semibold mt-0.5">"Troco do gás às 16h!"</p>
+              </div>
+              <button class="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 text-xs font-bold">Responder</button>
+            </div>
+          `;
+        } else {
+          content = `
+            <div class="space-y-1.5">
+              <div class="flex justify-between items-center text-xs p-2 rounded-xl bg-[#09090c]">
+                <span class="text-zinc-300">14:28 • Venda Dinheiro</span>
+                <span class="mono font-bold text-emerald-400">+R$ 45,00</span>
+              </div>
+              <div class="flex justify-between items-center text-xs p-2 rounded-xl bg-[#09090c]">
+                <span class="text-zinc-300">14:10 • Pix Loja</span>
+                <span class="mono font-bold text-indigo-300">+R$ 120,50</span>
+              </div>
+            </div>
+          `;
+        }
+
+        container.innerHTML = `
+          <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-1.5 flex gap-1 shadow-lg mb-2">
+            <button onclick="setTabState('chat')" class="flex-1 py-2 rounded-xl text-xs font-black ${tabState === 'chat' ? 'bg-amber-500 text-black shadow' : 'text-zinc-400 hover:text-white'} transition-all">
+              💬 Bate-papo (1)
+            </button>
+            <button onclick="setTabState('feed')" class="flex-1 py-2 rounded-xl text-xs font-black ${tabState === 'feed' ? 'bg-amber-500 text-black shadow' : 'text-zinc-400 hover:text-white'} transition-all">
+              ⚡ Atividades (22)
+            </button>
+          </div>
+
+          <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-3 shadow-lg">
+            ${content}
+          </div>
+        `;
+      } else if (currentFmt === 6) {
+        // FORMATO 6: NOTIFICAÇÃO LIVE DINÂMICA
+        tag.innerText = 'Formato 6: Notificação Live';
+        tag.className = 'text-xs font-black text-pink-400 uppercase bg-pink-500/10 px-2.5 py-1 rounded-xl border border-pink-500/20';
+        desc.innerHTML = `<b>Formato 6 — Notificação Live:</b> Estilo Ilha Dinâmica com pílula de recado vivo e botão de acesso rápido à auditoria.`;
+
+        container.innerHTML = `
+          <div class="bg-[#121216] border border-pink-500/30 rounded-[24px] p-3.5 shadow-xl flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="h-9 w-9 rounded-2xl bg-pink-500/15 border border-pink-500/30 flex items-center justify-center text-pink-400">
+                <i data-lucide="bell" class="w-4.5 h-4.5"></i>
+              </div>
+              <div>
+                <div class="text-[10px] font-black uppercase text-pink-400 tracking-wider">Recado em Destaque</div>
+                <p class="text-xs text-white font-bold leading-tight mt-0.5">Maria: "Troco do gás às 16h!"</p>
+              </div>
+            </div>
+            <button class="px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 text-zinc-300 text-xs font-bold hover:text-white">
+              Abrir
+            </button>
+          </div>
+        `;
+      }
+
+      lucide.createIcons();
+    }
+
+    render();
+  </script>
+</body>
+</html>

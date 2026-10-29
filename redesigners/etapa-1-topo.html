@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Painel Completo Oficial</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 420px;
+      border-radius: 40px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+    }
+    .pixelated {
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+    }
+    @keyframes pixelTail {
+      0%, 100% { transform: rotate(0deg) translateY(0); }
+      50% { transform: rotate(-8deg) translateY(-2px); }
+    }
+    @keyframes pixelBreathe {
+      0%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(0.92); }
+    }
+    @keyframes pixelNutFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+    .anim-tail { animation: pixelTail 1.2s ease-in-out infinite; transform-origin: bottom right; }
+    .anim-body { animation: pixelBreathe 1.2s ease-in-out infinite; transform-origin: bottom center; }
+    .anim-nut { animation: pixelNutFloat 1.2s ease-in-out infinite; }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-5xl mx-auto pb-24">
+
+  <!-- CABEÇALHO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      ✨ DESIGN OFICIAL PERFEITO & HARMONIOSO
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      Experiência Unificada do Caixa
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-xl mx-auto font-medium">
+      Total imponente • Composição do Malote Lado a Lado • Bate-papo proporcional • Atividades com R$ espaçado.
+    </p>
+  </div>
+
+  <!-- CONTAINER CENTRAL -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- 1. CABEÇALHO OFICIAL DO APP -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-4 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2 flex-wrap flex-1 mr-2">
+          <div>
+            <div class="text-lg font-black uppercase tracking-tighter text-white">CAIXA</div>
+            <div class="text-[11px] font-black uppercase tracking-[2px] text-zinc-400">27 AGO • 2701</div>
+          </div>
+          <div class="h-6 px-2.5 flex items-center justify-center rounded-full gap-1.5 bg-emerald-500/10 border border-emerald-500/30">
+            <i data-lucide="cloud" class="w-3.5 h-3.5 text-emerald-400"></i>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-shrink-0">
+          <button class="h-10 w-10 rounded-2xl border border-zinc-800 bg-[#121216] active:bg-zinc-800 flex items-center justify-center relative">
+            <i data-lucide="ghost" class="w-4 h-4 text-zinc-300"></i>
+            <span class="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-amber-500 border-2 border-[#09090b]"></span>
+          </button>
+          <button class="h-10 w-10 rounded-2xl border border-zinc-800 bg-[#121216] active:bg-zinc-800 flex items-center justify-center">
+            <i data-lucide="calendar-days" class="w-4 h-4 text-zinc-300"></i>
+          </button>
+          <button class="h-10 w-10 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 active:bg-emerald-500/20 flex items-center justify-center">
+            <i data-lucide="unlock" class="w-4 h-4 text-emerald-400"></i>
+          </button>
+          <button class="h-10 w-10 rounded-2xl border border-zinc-800 bg-[#121216] active:bg-zinc-800 flex items-center justify-center">
+            <i data-lucide="more-horizontal" class="w-4 h-4 text-zinc-300"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- CORPO DO PAINEL -->
+      <div class="p-3.5 space-y-3">
+        
+        <!-- 2. CARD TOTAL HERO (40px) -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-[30px] p-4.5 p-4 shadow-2xl">
+          
+          <!-- Topo do Card: "Total do Caixa" + Badge de Quebra/Sobra -->
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="flex items-center gap-2">
+              <i data-lucide="monitor" class="w-4 h-4 text-zinc-400"></i>
+              <span class="text-[12px] font-black uppercase tracking-[2px] text-zinc-200">Total do Caixa</span>
+            </div>
+            
+            <span class="text-[11.5px] font-black px-2.5 py-0.5 rounded-full bg-red-500/15 border border-red-500/40 text-red-300 flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-400"></i>
+              -R$ 0,09 Quebra
+            </span>
+          </div>
+
+          <!-- Total Hero (LINHA 100% EXCLUSIVA E LIVRE) -->
+          <div class="my-1 mb-2.5">
+            <div class="flex items-baseline font-black tracking-tight mono leading-none">
+              <span class="text-zinc-400 text-[22px] font-bold mr-1">R$</span>
+              <span class="text-[40px] text-white font-black">7.340</span>
+              <span class="text-zinc-300 text-[28px] font-extrabold">,98</span>
+            </div>
+          </div>
+
+          <!-- Barra de Proporção -->
+          <div class="h-2 w-full bg-zinc-900 rounded-full flex overflow-hidden mb-3 p-0.5 border border-zinc-800/80">
+            <div style="width: 14.3%" class="bg-amber-400 rounded-full mr-0.5"></div>
+            <div style="width: 85.7%" class="bg-indigo-400 rounded-full"></div>
+          </div>
+
+          <!-- CABEÇALHO DO MALOTE (POSIÇÃO 3: RÓTULO + BAIXAS) -->
+          <div class="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-zinc-500 pt-1 pb-2 border-t border-zinc-800/80">
+            <span>Composição do Malote</span>
+            <span class="text-zinc-300 font-extrabold">22 baixas</span>
+          </div>
+
+          <!-- COMPOSIÇÃO DO MALOTE EXCLUSIVAMENTE LADO A LADO -->
+          <div class="grid grid-cols-2 gap-2.5">
+            
+            <!-- Dinheiro no Saco -->
+            <div class="bg-[#09090c] p-3 px-3.5 rounded-2xl border border-zinc-800/90 flex flex-col justify-between min-h-[78px]">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <div class="h-6 w-6 rounded-lg bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                    <i data-lucide="banknote" class="w-3.5 h-3.5"></i>
+                  </div>
+                  <span class="text-[11.5px] font-black uppercase tracking-wider text-amber-400">Dinheiro</span>
+                </div>
+                <span class="text-[10.5px] text-zinc-500 font-bold">14%</span>
+              </div>
+
+              <div class="mt-1">
+                <div class="flex items-baseline font-black mono tracking-tight">
+                  <span class="text-zinc-400 text-xs font-bold mr-0.5">R$</span>
+                  <span class="text-[19px] text-white font-black">1.051</span>
+                  <span class="text-zinc-300 text-xs font-bold">,00</span>
+                </div>
+                <div class="text-[10px] text-zinc-400 font-medium mt-0.5">No saco físico</div>
+              </div>
+            </div>
+
+            <!-- Pix a Transferir -->
+            <div class="bg-[#09090c] p-3 px-3.5 rounded-2xl border border-zinc-800/90 flex flex-col justify-between min-h-[78px]">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-1.5">
+                  <div class="h-6 w-6 rounded-lg bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                    <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+                  </div>
+                  <span class="text-[11.5px] font-black uppercase tracking-wider text-indigo-300">Pix Repasse</span>
+                </div>
+                <span class="text-[10.5px] text-indigo-300/70 font-bold">12x</span>
+              </div>
+
+              <div class="mt-1">
+                <div class="flex items-baseline font-black mono tracking-tight">
+                  <span class="text-indigo-400/80 text-xs font-bold mr-0.5">R$</span>
+                  <span class="text-[19px] text-indigo-200 font-black">6.289</span>
+                  <span class="text-indigo-300 text-xs font-bold">,98</span>
+                </div>
+                <div class="text-[10px] text-indigo-300/80 font-medium mt-0.5">A transferir</div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- 3. DOCK DE SAÍDAS & CANHOTOS -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-3 px-4 flex items-center shadow-lg min-h-[74px]">
+          <!-- Lado 1: Saídas -->
+          <div class="flex-1 px-1">
+            <div class="text-[12px] font-bold text-zinc-300 uppercase flex items-center gap-1.5">
+              <i data-lucide="arrow-up-right" class="w-4 h-4 text-red-400"></i> Saídas
+            </div>
+            <div class="flex items-baseline font-black mono tracking-tight mt-0.5">
+              <span class="text-zinc-400 text-xs font-bold mr-0.5">R$</span>
+              <span class="text-[20px] text-white font-black">0</span>
+              <span class="text-zinc-300 text-sm font-bold">,00</span>
+            </div>
+            <div class="text-[11px] text-zinc-400 font-medium">0 retiradas</div>
+          </div>
+          
+          <!-- Divisor Vertical -->
+          <div class="w-[1px] h-12 bg-zinc-800 self-center mx-2.5"></div>
+          
+          <!-- Lado 2: Canhotos -->
+          <button class="flex-1 px-1 text-left hover:opacity-80 active:scale-95 transition-all">
+            <div class="text-[12px] font-bold text-blue-400 uppercase flex items-center gap-1.5">
+              <i data-lucide="check-square" class="w-4 h-4 text-blue-400"></i> Canhotos
+            </div>
+            <div class="text-[20px] font-black text-blue-300 mono tracking-tight mt-0.5">22 de 22</div>
+            <div class="text-[11px] text-blue-300/90 font-medium">Toque p/ abrir</div>
+          </button>
+        </div>
+
+        <!-- 4. AJUSTE DA GAVETA (CALIBRAÇÃO PERFEITA) -->
+        <div id="ajuste-card" class="bg-[#121216] p-3 px-3.5 rounded-2xl border border-zinc-800/80 flex items-center justify-between gap-3 shadow-lg transition-all min-h-[66px]">
+          
+          <div class="flex items-center gap-3 flex-1">
+            <div id="ajuste-icon-box" class="h-9 w-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center transition-all flex-shrink-0">
+              <i id="ajuste-icon" data-lucide="sliders-horizontal" class="w-4.5 h-4.5 text-zinc-400"></i>
+            </div>
+            <div class="flex-1">
+              <div id="ajuste-label" class="text-[11px] font-bold uppercase tracking-wider text-zinc-400 leading-none mb-1">Ajuste da Gaveta</div>
+              <input 
+                id="ajuste-input" 
+                type="text" 
+                value="R$ 0,00" 
+                oninput="handleInput(this.value)"
+                class="w-full bg-transparent text-[20px] font-black text-white mono focus:outline-none tracking-tight leading-none"
+              />
+            </div>
+          </div>
+
+          <!-- BOTÃO +1 INTEGRADO -->
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            <button id="btn-zerar" onclick="zerar()" class="hidden px-2.5 py-1.5 rounded-xl bg-zinc-900 border border-zinc-800 active:scale-90 text-xs font-bold text-zinc-400 hover:text-white transition-all">
+              Zerar
+            </button>
+            <button onclick="addUm()" class="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 hover:bg-amber-500/25 active:scale-95 text-xs font-black text-amber-300 flex items-center gap-1 shadow transition-all">
+              <i data-lucide="plus" class="w-3.5 h-3.5 text-amber-300 stroke-[3]"></i>
+              1,00
+            </button>
+          </div>
+
+        </div>
+
+        <!-- 5. OUTROS RECEBIMENTOS (POS & CONVÊNIOS) -->
+        <div class="grid grid-cols-2 gap-2.5">
+          
+          <!-- Card POS Cartões -->
+          <div class="bg-[#121216] border border-blue-500/30 rounded-2xl p-3.5 shadow-lg flex flex-col justify-between min-h-[92px]">
+            <div class="flex items-center gap-2">
+              <div class="h-6 w-6 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
+              </div>
+              <span class="text-[11.5px] font-black uppercase text-blue-400 tracking-wider">POS Cartões</span>
+            </div>
+
+            <div class="mt-1.5">
+              <div class="flex items-baseline font-black mono tracking-tight">
+                <span class="text-blue-400/80 text-xs font-bold mr-0.5">R$</span>
+                <span class="text-[20px] text-white font-black">1.840</span>
+                <span class="text-zinc-300 text-sm font-bold">,50</span>
+              </div>
+              <div class="text-[11px] text-blue-300/80 font-medium mt-0.5">8 comprovantes ›</div>
+            </div>
+          </div>
+
+          <!-- Card Convênios -->
+          <div class="bg-[#121216] border border-purple-500/30 rounded-2xl p-3.5 shadow-lg flex flex-col justify-between min-h-[92px]">
+            <div class="flex items-center gap-2">
+              <div class="h-6 w-6 rounded-lg bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                <i data-lucide="building-2" class="w-3.5 h-3.5"></i>
+              </div>
+              <span class="text-[11.5px] font-black uppercase text-purple-400 tracking-wider">Convênios</span>
+            </div>
+
+            <div class="mt-1.5">
+              <div class="flex items-baseline font-black mono tracking-tight">
+                <span class="text-purple-400/80 text-xs font-bold mr-0.5">R$</span>
+                <span class="text-[20px] text-white font-black">650</span>
+                <span class="text-zinc-300 text-sm font-bold">,00</span>
+              </div>
+              <div class="text-[11px] text-purple-300/80 font-medium mt-0.5">3 clientes ›</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 6. O MEIO: BARRA DE BATE-PAPO DA EQUIPE -->
+        <div class="bg-[#121216] border border-indigo-500/30 hover:border-indigo-500/50 rounded-2xl p-3.5 shadow-lg flex items-center justify-between gap-3 min-h-[78px] active:scale-98 transition-all cursor-pointer">
+          <div class="flex items-center gap-3 flex-1 mr-1">
+            <div class="h-10 w-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 flex-shrink-0">
+              <i data-lucide="message-square" class="w-5 h-5"></i>
+            </div>
+            <div class="flex-1">
+              <div class="flex items-center gap-1.5 mb-0.5">
+                <span class="text-[11px] font-black uppercase text-indigo-300 tracking-wider">Bate-papo da Equipe</span>
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                <span class="text-[10px] text-zinc-500 font-bold">• 14:32</span>
+              </div>
+              <p class="text-[12.5px] text-zinc-200 font-bold leading-tight">Maria: "Fulano vem buscar o troco às 16h!"</p>
+            </div>
+          </div>
+          
+          <button class="px-3.5 py-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-black hover:bg-indigo-500/30 active:scale-95 transition-all flex-shrink-0">
+            Abrir ›
+          </button>
+        </div>
+
+        <!-- 7. CABEÇALHO DO CARROSSEL COM BOTÃO DE AUDITORIA COMPLETA -->
+        <div class="flex items-center justify-between px-1 pt-0.5">
+          <div class="flex items-center gap-2">
+            <i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i>
+            <span class="text-[11.5px] font-black uppercase tracking-[2px] text-zinc-300">Atividades Recentes</span>
+          </div>
+          <button onclick="alert('Abrindo Auditoria Geral!')" class="flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-zinc-900 border border-zinc-800 text-indigo-300 text-[11px] font-black uppercase tracking-wider hover:text-white active:scale-95 transition-all">
+            <i data-lucide="history" class="w-3.5 h-3.5 text-indigo-400"></i>
+            Auditoria (22) ›
+          </button>
+        </div>
+
+        <!-- 8. CARROSSEL HORIZONTAL DE ATIVIDADES ESPAÇOSO (min-h-[92px]) -->
+        <div class="flex gap-2.5 overflow-x-auto pb-1.5">
+          
+          <!-- Item 1: Venda Balcão -->
+          <div class="bg-[#121216] border border-emerald-500/30 rounded-2xl p-3 px-3.5 min-w-[155px] max-w-[170px] flex flex-col justify-between min-h-[92px] shadow-lg flex-shrink-0">
+            <div class="flex items-center gap-1.5">
+              <div class="h-5 w-5 rounded-md bg-emerald-500/15 flex items-center justify-center">
+                <i data-lucide="arrow-down-left" class="w-3 h-3 text-emerald-400"></i>
+              </div>
+              <span class="text-[10.5px] font-black uppercase tracking-wider text-emerald-400">Venda Balcão</span>
+            </div>
+
+            <div class="mt-1">
+              <div class="flex items-baseline font-black mono tracking-tight text-emerald-400">
+                <span class="text-xs font-bold mr-1">+</span>
+                <span class="text-zinc-400 text-xs font-bold mr-0.5">R$</span>
+                <span class="text-[18px] text-white font-black">45</span>
+                <span class="text-zinc-300 text-xs font-bold">,00</span>
+              </div>
+              <div class="text-[10px] text-zinc-400 font-medium mt-0.5">14:28 • Espécie</div>
+            </div>
+          </div>
+
+          <!-- Item 2: Pix Recebido -->
+          <div class="bg-[#121216] border border-indigo-500/30 rounded-2xl p-3 px-3.5 min-w-[155px] max-w-[170px] flex flex-col justify-between min-h-[92px] shadow-lg flex-shrink-0">
+            <div class="flex items-center gap-1.5">
+              <div class="h-5 w-5 rounded-md bg-indigo-500/15 flex items-center justify-center">
+                <i data-lucide="smartphone" class="w-3.5 h-3.5 text-indigo-400"></i>
+              </div>
+              <span class="text-[10.5px] font-black uppercase tracking-wider text-indigo-300">Pix Recebido</span>
+            </div>
+
+            <div class="mt-1">
+              <div class="flex items-baseline font-black mono tracking-tight text-indigo-300">
+                <span class="text-xs font-bold mr-1">+</span>
+                <span class="text-indigo-400/80 text-xs font-bold mr-0.5">R$</span>
+                <span class="text-[18px] text-indigo-200 font-black">120</span>
+                <span class="text-indigo-300 text-xs font-bold">,50</span>
+              </div>
+              <div class="text-[10px] text-indigo-300/80 font-medium mt-0.5">14:10 • App Loja</div>
+            </div>
+          </div>
+
+          <!-- Item 3: Sangria -->
+          <div class="bg-[#121216] border border-red-500/30 rounded-2xl p-3 px-3.5 min-w-[155px] max-w-[170px] flex flex-col justify-between min-h-[92px] shadow-lg flex-shrink-0">
+            <div class="flex items-center gap-1.5">
+              <div class="h-5 w-5 rounded-md bg-red-500/15 flex items-center justify-center">
+                <i data-lucide="arrow-up-right" class="w-3.5 h-3.5 text-red-400"></i>
+              </div>
+              <span class="text-[10.5px] font-black uppercase tracking-wider text-red-400">Sangria</span>
+            </div>
+
+            <div class="mt-1">
+              <div class="flex items-baseline font-black mono tracking-tight text-red-400">
+                <span class="text-xs font-bold mr-1">-</span>
+                <span class="text-zinc-400 text-xs font-bold mr-0.5">R$</span>
+                <span class="text-[18px] text-red-300 font-black">500</span>
+                <span class="text-red-400 text-xs font-bold">,00</span>
+              </div>
+              <div class="text-[10px] text-zinc-400 font-medium mt-0.5">13:40 • Cofre</div>
+            </div>
+          </div>
+
+          <!-- Card Final: Ver Todas -->
+          <div onclick="alert('Abrindo Auditoria Geral!')" class="bg-[#0c0c0e] border border-dashed border-zinc-800 hover:border-zinc-700 rounded-2xl p-3 min-w-[130px] flex flex-col items-center justify-center min-h-[92px] shadow flex-shrink-0 cursor-pointer active:scale-95 transition-all">
+            <i data-lucide="history" class="w-4.5 h-4.5 text-zinc-400 mb-1"></i>
+            <span class="text-[10.5px] font-black uppercase text-zinc-300 text-center">Ver Todas (22) ›</span>
+          </div>
+
+        </div>
+
+        <!-- 9. FOOTER: ANIMAÇÃO EM PIXEL ART 2D FLAT (ESQUILINHO & NOZ) -->
+        <div class="pt-3 pb-1 flex items-center justify-center">
+          <div class="relative w-14 h-14 flex items-center justify-center pixelated">
+            <svg viewBox="0 0 32 32" class="w-full h-full">
+              <!-- Rabinho Animado -->
+              <g class="anim-tail">
+                <rect x="4" y="10" width="6" height="4" fill="#d97706" />
+                <rect x="2" y="14" width="8" height="6" fill="#f59e0b" />
+                <rect x="4" y="20" width="6" height="4" fill="#b45309" />
+                <rect x="6" y="8" width="4" height="2" fill="#fbbf24" />
+              </g>
+
+              <!-- Corpo Animado -->
+              <g class="anim-body">
+                <rect x="18" y="6" width="3" height="4" fill="#b45309" />
+                <rect x="19" y="7" width="1" height="2" fill="#fde68a" />
+                <rect x="23" y="8" width="3" height="3" fill="#b45309" />
+                <rect x="16" y="10" width="10" height="8" fill="#f59e0b" />
+                <rect x="20" y="12" width="2" height="2" fill="#18181b" />
+                <rect x="25" y="14" width="2" height="2" fill="#451a03" />
+                <rect x="18" y="15" width="5" height="3" fill="#fef3c7" />
+                <rect x="12" y="18" width="10" height="8" fill="#d97706" />
+                <rect x="14" y="19" width="6" height="6" fill="#fef3c7" />
+                <rect x="12" y="26" width="4" height="2" fill="#b45309" />
+                <rect x="18" y="26" width="4" height="2" fill="#b45309" />
+              </g>
+
+              <!-- Noz Flutuante -->
+              <g class="anim-nut">
+                <rect x="22" y="18" width="4" height="4" fill="#f59e0b" />
+                <rect x="23" y="17" width="2" height="1" fill="#78350f" />
+                <rect x="23" y="19" width="2" height="2" fill="#fef08a" />
+              </g>
+
+              <!-- Graminha Pixelada -->
+              <rect x="0" y="28" width="32" height="2" fill="#27272a" />
+              <rect x="6" y="27" width="2" height="1" fill="#10b981" />
+              <rect x="14" y="27" width="3" height="1" fill="#10b981" />
+              <rect x="26" y="27" width="2" height="1" fill="#10b981" />
+            </svg>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- BARRA FLUTUANTE OFICIAL (MANEIRA 3 COM MICRO-CONTADOR 22) -->
+      <div class="absolute bottom-6 left-0 right-0 px-3 z-50 flex items-center justify-center pointer-events-auto">
+        <div id="main-nav-bar" class="bg-[#141418]/95 backdrop-blur-2xl border border-zinc-700/80 rounded-full p-1.5 px-2 flex items-center gap-1 shadow-[0_20px_50px_rgba(0,0,0,0.95)]">
+          <!-- Injetado via JS -->
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    let activeNavTab = 'painel';
+    const navItems = [
+      { key: 'painel', label: 'Painel', icon: 'layout-dashboard' },
+      { key: 'dinheiro', label: 'Dinheiro', icon: 'banknote' },
+      { key: 'pos', label: 'POS', icon: 'credit-card' },
+      { key: 'convenio', label: 'Convênio', icon: 'building-2' },
+      { key: 'check', label: 'Check', icon: 'check-square', badge: '22' }
+    ];
+
+    function selectNav(key) {
+      activeNavTab = key;
+      renderNavBar();
+    }
+
+    function renderNavBar() {
+      const container = document.getElementById('main-nav-bar');
+      if (!container) return;
+
+      container.innerHTML = navItems.map(item => {
+        const isActive = activeNavTab === item.key;
+        if (isActive) {
+          return `
+            <button onclick="selectNav('${item.key}')" class="flex items-center gap-2 py-2 px-4 rounded-full bg-white text-zinc-950 shadow-md font-black transition-all">
+              <i data-lucide="${item.icon}" class="w-4 h-4 stroke-[2.5]"></i>
+              <span class="text-[10.5px] uppercase tracking-tight font-sans">${item.label}</span>
+            </button>
+          `;
+        } else {
+          return `
+            <button onclick="selectNav('${item.key}')" class="h-10 w-10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white active:scale-90 transition-all relative">
+              <i data-lucide="${item.icon}" class="w-4 h-4 stroke-[2]"></i>
+              ${item.badge ? `<span class="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-blue-500 text-[8.5px] font-black text-white shadow-sm">${item.badge}</span>` : ''}
+            </button>
+          `;
+        }
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    renderNavBar();
+
+
+    let valAjuste = 0.00;
+
+    function addUm() {
+      valAjuste = Math.round((valAjuste + 1.00) * 100) / 100;
+      updateUI();
+    }
+
+    function zerar() {
+      valAjuste = 0.00;
+      updateUI();
+    }
+
+    function handleInput(val) {
+      const num = parseFloat(val.replace('R$', '').replace('.', '').replace(',', '.')) || 0;
+      valAjuste = num;
+      updateColors();
+    }
+
+    function updateUI() {
+      const inp = document.getElementById('ajuste-input');
+      inp.value = (valAjuste < 0 ? '-R$ ' : 'R$ ') + Math.abs(valAjuste).toFixed(2).replace('.', ',');
+      updateColors();
+    }
+
+    function updateColors() {
+      const card = document.getElementById('ajuste-card');
+      const iconBox = document.getElementById('ajuste-icon-box');
+      const icon = document.getElementById('ajuste-icon');
+      const label = document.getElementById('ajuste-label');
+      const inp = document.getElementById('ajuste-input');
+      const btnZerar = document.getElementById('btn-zerar');
+
+      if (Math.abs(valAjuste) > 0.001) {
+        card.className = 'bg-[#14130e] p-3 px-4 rounded-2xl border border-amber-500/40 flex items-center justify-between gap-3 shadow-lg shadow-amber-500/5 transition-all min-h-[70px]';
+        iconBox.className = 'h-9 w-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center transition-all flex-shrink-0';
+        icon.className = 'w-4.5 h-4.5 text-amber-300';
+        label.className = 'text-[11px] font-bold uppercase tracking-wider text-amber-300';
+        inp.className = 'w-full bg-transparent text-[22px] font-black text-amber-300 mono focus:outline-none tracking-tight leading-tight';
+        btnZerar.classList.remove('hidden');
+      } else {
+        card.className = 'bg-[#121216] p-3 px-4 rounded-2xl border border-zinc-800/80 flex items-center justify-between gap-3 shadow-lg transition-all min-h-[70px]';
+        iconBox.className = 'h-9 w-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center transition-all flex-shrink-0';
+        icon.className = 'w-4.5 h-4.5 text-zinc-400';
+        label.className = 'text-[11px] font-bold uppercase tracking-wider text-zinc-400';
+        inp.className = 'w-full bg-transparent text-[22px] font-black text-white mono focus:outline-none tracking-tight leading-tight';
+        btnZerar.classList.add('hidden');
+      }
+    }
+  </script>
+</body>
+</html>

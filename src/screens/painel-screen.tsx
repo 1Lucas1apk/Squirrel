@@ -1,8 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, memo } from "react";
 import { Text, View, ScrollView } from "react-native";
 import { 
   SlidersHorizontal, 
   ArrowUpRight, 
+  ArrowDownLeft,
   RefreshCcw, 
   Banknote, 
   Smartphone,
@@ -21,46 +22,130 @@ import {
   Ghost,
   AlertTriangle,
   Trash2,
-  Link
+  Link,
+  MessageSquare,
+  MessageCircle,
+  ChevronRight
 } from "lucide-react-native";
 import { MoneyInput } from "../components/common/money-input";
 import { PainelPrincipal } from "../components/dashboard/painel-principal";
+import { PixelSquirrelFooter } from "../components/dashboard/pixel-squirrel-footer";
 import { TotaisTurno, LembreteFantasma, Transacao, LogAlteracao } from "../types/domain";
 import { toBrl } from "../utils/currency";
-import { Pressable, TextInput, Modal, FlatList, ActivityIndicator } from "react-native";
+import { useAppSettings } from "../hooks/use-app-settings";
+import { useChatStore } from "../store/chat-store";
+import { getFirebaseAuth } from "../services/firebase/client";
+import { formatGoogleDriveThumbnailUrl } from "../services/google-drive-direct-service";
+import { AuditModal } from "./audit-modal";
+import { Pressable, TextInput, Modal, FlatList, ActivityIndicator, KeyboardAvoidingView, Platform, Image } from "react-native";
 
 interface PainelScreenProps {
   totais: TotaisTurno;
   fantasmas: LembreteFantasma[];
   transacoes: Transacao[];
   logs?: LogAlteracao[];
+  registrosPOS: import("../types/domain").RegistroPOS[];
+  registrosConvenio: import("../types/domain").RegistroConvenio[];
   notaDia?: string;
-  onSaveNota?: (texto: string) => void;
-  ajusteManualSobra: number;
-  onAjusteSobra: (value: number) => void;
+  onSaveNota?: (nota: string) => Promise<void>;
+  ajusteManualSobra?: number;
+  onAjusteSobra?: (ajuste: number | ((prev: number) => number)) => Promise<void>;
   isFechado?: boolean;
   isDiscreto?: boolean;
   onOpenChat?: () => void;
   ultimaMensagemGlobal?: string;
-  onVincularRegistros?: (transacaoId: string, fantasmaId: string) => Promise<void>;
+  ultimoAutorMsg?: {
+    text: string;
+    senderId: string;
+    senderName: string;
+    senderUsername?: string;
+    senderCargo?: string;
+    senderPhotoUrl?: string | null;
+  } | null;
+  onVincularRegistros?: (fId: string, tId: string) => void;
+  onNavigateToChecklist?: () => void;
 }
 
-export function PainelScreen({
+function PainelScreenComponent({
   totais,
   fantasmas = [],
   transacoes = [],
   logs = [],
+  registrosPOS = [],
+  registrosConvenio = [],
   notaDia = "",
   onSaveNota,
-  ajusteManualSobra,
+  ajusteManualSobra = 0,
   onAjusteSobra,
   isFechado,
   isDiscreto,
   onOpenChat,
   ultimaMensagemGlobal,
-  onVincularRegistros
+  ultimoAutorMsg,
+  onVincularRegistros,
+  onNavigateToChecklist
 }: PainelScreenProps) {
+  const { settings } = useAppSettings();
+  const myProfile = useChatStore(s => s.myProfile);
+  const authUser = getFirebaseAuth()?.currentUser;
+  const myUserId = authUser?.uid || "";
+  const fallbackEmailName = authUser?.email ? authUser.email.split("@")[0] : "Operador";
+  const isProfileMatch = Boolean(myProfile && (!myProfile.userId || myProfile.userId === myUserId));
+  const operatorName = (isProfileMatch ? myProfile?.displayName : null) || authUser?.displayName || fallbackEmailName;
+  const myPhotoUrl = (isProfileMatch ? myProfile?.photoUrl : null) || null;
+  const myUsername = (isProfileMatch ? myProfile?.username : null) || fallbackEmailName.toLowerCase();
+  const contatos = useChatStore(s => s.contatos);
+  const presencas = useChatStore(s => s.presencas);
+  const [avatarLoadError, setAvatarLoadError] = useState(false);
+
+  const lastAuthorAvatarInfo = useMemo(() => {
+    if (!ultimoAutorMsg) {
+      return {
+        hasPhoto: Boolean(myPhotoUrl),
+        photoUrl: myPhotoUrl || null,
+        initials: (operatorName || "OP").substring(0, 2).toUpperCase(),
+        isMe: true,
+        displayName: operatorName
+      };
+    }
+
+    const sId = (ultimoAutorMsg.senderId || "").toLowerCase();
+    const sUser = (ultimoAutorMsg.senderUsername || "").toLowerCase().replace(/^@/, "");
+    const isMe = sId === (myUserId || "").toLowerCase() || (sUser && sUser === (myUsername || "").toLowerCase());
+
+    if (isMe) {
+      return {
+        hasPhoto: Boolean(myPhotoUrl),
+        photoUrl: myPhotoUrl || null,
+        initials: (operatorName || "OP").substring(0, 2).toUpperCase(),
+        isMe: true,
+        displayName: operatorName
+      };
+    }
+
+    // Procura foto do remetente em presenças ou contatos
+    const match = presencas.find(p => (p.id && p.id.toLowerCase() === sId) || (sUser && p.username?.toLowerCase().replace(/^@/, "") === sUser))
+      || contatos.find(c => (c.id && c.id.toLowerCase() === sId) || (sUser && c.username?.toLowerCase().replace(/^@/, "") === sUser));
+
+    const photoUrl = match?.photoUrl || ultimoAutorMsg.senderPhotoUrl || null;
+    const name = match?.displayName || ultimoAutorMsg.senderName || sUser || "Operador";
+
+    return {
+      hasPhoto: Boolean(photoUrl),
+      photoUrl,
+      initials: (name || "OP").substring(0, 2).toUpperCase(),
+      isMe: false,
+      displayName: name
+    };
+  }, [ultimoAutorMsg, myPhotoUrl, myUserId, myUsername, operatorName, presencas, contatos]);
+
+  useEffect(() => {
+    setAvatarLoadError(false);
+  }, [myPhotoUrl, lastAuthorAvatarInfo.photoUrl]);
+
   const [modalNota, setModalNota] = useState(false);
+  const [modalAjuste, setModalAjuste] = useState(false);
+  const [tempAjuste, setTempAjuste] = useState(ajusteManualSobra);
   const [textoNota, setTextoNota] = useState(notaDia);
   const [tapCount, setTapCount] = useState(0);
   const [showFullAudit, setShowFullAudit] = useState(false);
@@ -123,26 +208,40 @@ export function PainelScreen({
     const activities: any[] = [];
     
     (transacoes || []).forEach(t => {
+      const isSangria = t.categoria === 'sangria';
+      const isCancel = t.categoria === 'cancelamento';
+      const isDinheiro = t.categoria === 'dinheiro';
+      
+      const title = isSangria ? 'Sangria' : isCancel ? 'Cancelamento' : isDinheiro ? 'Venda Dinheiro' : 'Lançamento';
+      const subtitle = t.descricao ? t.descricao : isSangria ? 'Saída de Cofre' : isDinheiro ? 'Espécie' : 'Balcão';
+
       activities.push({
         id: `t_${t.id}`,
         dbId: t.id,
         type: 'new',
+        category: t.categoria,
         raw: t,
-        title: 'Novo Lançamento',
-        subtitle: `${toBrl(t.valorSistema)} - ${t.categoria === 'sangria' ? 'Sangria' : t.categoria === 'cancelamento' ? 'Cancelamento' : 'Movimento'}`,
+        title,
+        subtitle,
         timestamp: t.timestamp,
         valorToCompare: t.valorSistema
       });
     });
 
     (fantasmas || []).forEach(f => {
+      const isEmprestimo = f.tipo === 'dinheiro_emprestado';
+      const isDestroca = f.tipo === 'destroca_pix_por_nota';
+      const title = isEmprestimo ? 'Empréstimo' : isDestroca ? 'Destroca' : 'Pix Recebido';
+      const subtitle = f.pessoa ? f.pessoa : f.descricao || 'Pendência';
+
       activities.push({
         id: `f_${f.id}`,
         dbId: f.id,
         type: 'ghost',
+        category: f.tipo,
         raw: f,
-        title: 'Pendência Adicionada',
-        subtitle: `${f.pessoa} - ${toBrl(f.valorReferencia)}`,
+        title,
+        subtitle,
         timestamp: f.timestamp,
         valorToCompare: f.valorReferencia
       });
@@ -219,21 +318,32 @@ export function PainelScreen({
     // Ordena final decrescente
     const sorted = sortedForTotal.sort((a, b) => b.timestamp - a.timestamp);
 
-    // Identifica sugestoes de vinculo
+    // Indexa candidatos de vínculo por valorToCompare para busca O(1)
+    const candidatesByValue = new Map<number, any[]>();
+    for (let i = 0; i < sorted.length; i++) {
+      const item = sorted[i];
+      if ((item.type === 'new' || item.type === 'ghost') && !item.raw.transacaoVinculadaId) {
+        const list = candidatesByValue.get(item.valorToCompare) || [];
+        list.push(item);
+        candidatesByValue.set(item.valorToCompare, list);
+      }
+    }
+
+    // Identifica sugestões de vínculo sem varrer o array completo
     for (let i = 0; i < sorted.length; i++) {
       const act = sorted[i];
       if ((act.type === 'new' || act.type === 'ghost') && !act.raw.transacaoVinculadaId) {
-        const nearby = sorted.find(other => 
-          other !== act &&
-          (other.type === 'new' || other.type === 'ghost') && 
-          other.type !== act.type &&
-          !other.raw.transacaoVinculadaId &&
-          other.valorToCompare === act.valorToCompare &&
-          Math.abs(other.timestamp - act.timestamp) <= 15 * 60 * 1000 // 15 minutos
-        );
-        if (nearby) {
-          act.suggestedLinkId = nearby.dbId;
-          act.suggestedLinkType = nearby.type;
+        const pool = candidatesByValue.get(act.valorToCompare);
+        if (pool) {
+          const nearby = pool.find(other => 
+            other !== act &&
+            other.type !== act.type &&
+            Math.abs(other.timestamp - act.timestamp) <= 15 * 60 * 1000 // 15 minutos
+          );
+          if (nearby) {
+            act.suggestedLinkId = nearby.dbId;
+            act.suggestedLinkType = nearby.type;
+          }
         }
       }
     }
@@ -242,7 +352,7 @@ export function PainelScreen({
   }, [transacoes, fantasmas, logs]);
 
   return (
-    <View className="gap-8 pb-32">
+    <View className="gap-2.5 pb-28">
       {/* MODAL DE EDIÇÃO DA NOTA */}
       <Modal visible={modalNota} transparent animationType="fade">
         <View className="flex-1 bg-black/90 items-center justify-center p-6">
@@ -275,20 +385,20 @@ export function PainelScreen({
 
       {/* ALERTA DE EXCESSO DE ESPÉCIE */}
       {totais.gavetaFisico > 10000 && (
-        <View className="bg-orange-500/10 border border-orange-500/20 p-5 rounded-3xl flex-row gap-3 items-center">
-          <AlertCircle size={24} color="#f97316" />
+        <View className="bg-orange-500/10 border border-orange-500/20 p-3.5 rounded-2xl flex-row gap-2.5 items-center">
+          <AlertCircle size={18} color="#f97316" />
           <View className="flex-1">
-            <Text className="text-[10px] font-black uppercase text-orange-400 tracking-widest mb-1">
+            <Text className="text-[10px] font-black uppercase text-orange-400 tracking-wider">
               Alto Volume de Dinheiro
             </Text>
-            <Text className="text-orange-500/80 text-xs font-bold leading-4">
-              A gaveta possui mais de R$ 10.000,00 em espécie. Fique atento ao limite de segurança.
+            <Text className="text-orange-500/80 text-[11px] font-medium leading-4">
+              A gaveta possui mais de R$ 10.000,00 em espécie.
             </Text>
           </View>
         </View>
       )}
 
-      {/* PAINEL PRINCIPAL (SISTEMA, GAVETA E GABARITO) */}
+      {/* PAINEL PRINCIPAL (SISTEMA, GAVETA, PIX, DUPLA DE ATALHOS E AJUSTE INTELIGENTE) */}
       <PainelPrincipal 
         totais={totais} 
         pendenciasFantasma={pendencias.length}
@@ -296,23 +406,15 @@ export function PainelScreen({
         isDiscreto={isDiscreto}
         onOpenChat={onOpenChat}
         ultimaMensagemGlobal={ultimaMensagemGlobal}
+        transacoes={transacoes}
+        fantasmas={fantasmas}
+        registrosPOS={registrosPOS}
+        registrosConvenio={registrosConvenio}
+        ajusteManualSobra={ajusteManualSobra}
+        onAjusteSobra={onAjusteSobra}
+        onNavigateToChecklist={onNavigateToChecklist}
+        isFechado={isFechado}
       />
-
-      {/* 2. AJUSTE DE SOBRA */}
-      {!isDiscreto && (
-        <View className={`rounded-[40px] border p-6 shadow-2xl ${isFechado ? 'border-zinc-900 bg-zinc-900/30' : 'border-zinc-800 bg-ink-900'}`}>
-          <View className="flex-row items-center gap-3 mb-4 ml-1">
-            <SlidersHorizontal size={14} color="#71717a" />
-            <Text className="text-[11px] font-black uppercase tracking-[3px] text-zinc-500">Ajuste de Quebra</Text>
-          </View>
-          <MoneyInput
-            editable={!isFechado}
-            className={`rounded-[24px] border px-6 py-5 text-3xl font-black shadow-inner ${isFechado ? 'border-zinc-800 bg-zinc-900 text-zinc-600' : 'border-zinc-700 bg-ink-800 text-zinc-100'}`}
-            value={ajusteManualSobra}
-            onChangeValue={onAjusteSobra}
-          />
-        </View>
-      )}
 
       {/* NOVO: LISTA DE AUDITORIA (ERROS) - Só aparece se estiver fechado e não for discreto */}
       {isFechado && !isDiscreto && transacoesComErro.length > 0 && (
@@ -341,391 +443,188 @@ export function PainelScreen({
         </View>
       )}
 
-      {/* 4. INFORMATIVO DE MOVIMENTAÇÃO (O "PORQUÊ" DOS NÚMEROS) */}
+      {/* 4. MEIO DA TELA: BATE-PAPO DA EQUIPE + CARROSSEL DE ATIVIDADES RECENTES + BOTÃO AUDITORIA */}
       {!isDiscreto && (
-        <View className="rounded-[40px] border border-zinc-800 bg-ink-950 p-8">
-        <View className="flex-row items-center gap-3 mb-8">
-          <Info size={18} color="#a78bfa" />
-          <Text className="text-xl font-black text-white uppercase tracking-widest">Resumo de Movimentação</Text>
-        </View>
-
-        <View className="gap-6">
-          {/* NOVO: RESUMO DE SAÍDAS DO DIA */}
-          <View className="bg-red-500/5 rounded-3xl p-5 border border-red-500/20">
-            <View className="flex-row items-center gap-3 mb-3">
-              <ArrowUpRight size={16} color="#f87171" />
-              <Text className="text-[10px] font-black text-red-400 uppercase tracking-widest">Saídas da Gaveta</Text>
-            </View>
-            <Text className="text-zinc-500 text-xs leading-5">
-              Hoje já foram retirados <Text className="text-red-400 font-bold">{toBrl(transacoes.filter(t => t.categoria === 'sangria' || t.categoria === 'cancelamento').reduce((acc, t) => acc + t.valorSistema, 0))}</Text> do seu caixa entre pagamentos de contas, vales ou cancelamentos. Esse valor já foi abatido do seu saldo final.
-            </Text>
-          </View>
-
-          {/* JUSTIFICATIVA DO PIX NO CELULAR */}
-          <View className="bg-ink-900 rounded-3xl p-5 border border-zinc-800">
-            <View className="flex-row items-center gap-3 mb-3">
-              <Smartphone size={16} color="#a78bfa" />
-              <Text className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Saldo no seu Celular</Text>
-            </View>
-            <Text className="text-zinc-500 text-xs leading-5">
-              Você possui <Text className="text-purple-400 font-bold">{toBrl(totais.pixNoCaixa)}</Text> guardados no seu Pix pessoal. Este valor entrou por trocas informais e <Text className="text-white font-bold underline">NÃO DEVE</Text> ser colocado no saco físico de dinheiro.
-            </Text>
-            
-            {pixRecebido.filter(f => f.destinoPix === 'Meu Pix' || f.destinoPix === 'Operador' || !f.destinoPix).length > 0 && (
-              <View className="mt-4 pt-4 border-t border-zinc-800 gap-2">
-                {pixRecebido.filter(f => f.destinoPix === 'Meu Pix' || f.destinoPix === 'Operador' || !f.destinoPix).map(f => (
-                  <View key={f.id} className="flex-row justify-between items-center">
-                    <Text className="text-[10px] font-bold text-zinc-600 uppercase">{f.pessoa}</Text>
-                    <Text className="text-[10px] font-black text-purple-400">+{toBrl(f.valorReferencia)}</Text>
-                  </View>
-                ))}
+        <View className="gap-3 mt-1">
+          
+          {/* BARRA DE BATE-PAPO DA EQUIPE (CALIBRADA: MIN-H 76px) */}
+          <Pressable 
+            onPress={() => {
+              if (onOpenChat) onOpenChat();
+              else setModalNota(true);
+            }}
+            className="bg-[#121216] border border-indigo-500/30 rounded-2xl p-3.5 shadow-lg flex-row items-center justify-between min-h-[76px] active:scale-98"
+          >
+            <View className="flex-row items-center gap-3 flex-1 mr-2">
+              <View className="relative flex-shrink-0">
+                <View className="h-10 w-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 items-center justify-center overflow-hidden shadow-sm">
+                  {lastAuthorAvatarInfo.hasPhoto && lastAuthorAvatarInfo.photoUrl && !avatarLoadError ? (
+                    <Image 
+                      source={{ uri: formatGoogleDriveThumbnailUrl(lastAuthorAvatarInfo.photoUrl, 96) }} 
+                      className="w-full h-full"
+                      resizeMode="cover"
+                      onError={() => setAvatarLoadError(true)}
+                    />
+                  ) : lastAuthorAvatarInfo.initials ? (
+                    <Text className="text-xs font-black text-indigo-300 uppercase">
+                      {lastAuthorAvatarInfo.initials}
+                    </Text>
+                  ) : (
+                    <MessageSquare size={18} color="#818cf8" />
+                  )}
+                </View>
+                {/* Indicador LED de Conexão no topo do Avatar */}
+                <View className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-[#121216]" />
               </View>
-            )}
-          </View>
-
-          {/* JUSTIFICATIVA DO PIX DIRETO PARA A LOJA */}
-          {totais.pixDiretoLoja > 0 && (
-            <View className="bg-blue-500/5 rounded-3xl p-5 border border-blue-500/20">
-              <View className="flex-row items-center gap-3 mb-3">
-                <Banknote size={16} color="#60a5fa" />
-                <Text className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Pix Direto p/ Loja</Text>
+              <View className="flex-1">
+                <View className="flex-row items-center gap-1.5 mb-0.5">
+                  <Text className="text-[11px] font-black uppercase text-indigo-300 tracking-wider">
+                    Bate-papo da Equipe
+                  </Text>
+                  <View className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                </View>
+                <Text className="text-xs text-zinc-200 font-bold truncate" numberOfLines={1}>
+                  {ultimaMensagemGlobal || "Nenhuma mensagem recente no mural"}
+                </Text>
               </View>
-              <Text className="text-blue-500/60 text-xs font-bold leading-5">
-                Já foi enviado <Text className="text-blue-400">{toBrl(totais.pixDiretoLoja)}</Text> diretamente para a conta da Loja/Gerente. O sistema já abateu esse valor do seu malote final.
+            </View>
+            <View className="px-3.5 py-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30 items-center justify-center flex-shrink-0">
+              <Text className="text-xs font-black text-indigo-300">
+                Abrir ›
               </Text>
             </View>
-          )}
+          </Pressable>
 
-          {/* JUSTIFICATIVA DO DINHEIRO FÍSICO (EMPRÉSTIMOS) */}
-          <View className="bg-ink-900 rounded-3xl p-5 border border-zinc-800">
-            <View className="flex-row items-center gap-3 mb-3">
-              <Banknote size={16} color="#fb923c" />
-              <Text className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Dinheiro de Terceiros</Text>
-            </View>
-            <Text className="text-zinc-500 text-xs leading-5">
-              Há <Text className="text-orange-400 font-bold">{toBrl(emprestimos.reduce((acc, i) => acc + i.valorReferencia, 0))}</Text> na gaveta que pertencem a outras pessoas (Empréstimos/Trocos). Este valor será devolvido e não pertence à loja.
-            </Text>
-            
-            {emprestimos.map(f => (
-              <View key={f.id} className="mt-3 flex-row items-center gap-2">
-                <ArrowRight size={10} color="#71717a" />
-                <Text className="text-[10px] font-bold text-orange-400 uppercase">{f.pessoa}: {toBrl(f.valorReferencia)}</Text>
-              </View>
-            ))}
-          </View>
-
-          {/* ALERTAS DE DESTROCA */}
-          {destrocas.length > 0 && (
-            <View className="bg-emerald-500/5 rounded-3xl p-5 border border-emerald-500/20">
-              <View className="flex-row items-center gap-3 mb-3">
-                <RefreshCcw size={16} color="#34d399" />
-                <Text className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Aviso de Destroca</Text>
-              </View>
-              <Text className="text-emerald-500/60 text-[10px] font-bold uppercase leading-4">
-                Você repôs {toBrl(destrocas.reduce((acc, i) => acc + i.valorReferencia, 0))} em notas para "limpar" seu Pix de repasse.
+          {/* CABEÇALHO DO FEED DE ATIVIDADES COM BOTÃO DE AUDITORIA */}
+          <View className="flex-row items-center justify-between px-1 pt-1">
+            <View className="flex-row items-center gap-2">
+              <Activity size={14} color="#34d399" />
+              <Text className="text-[11.5px] font-black uppercase tracking-[2px] text-zinc-300">
+                Atividades Recentes
               </Text>
             </View>
-          )}
-        </View>
-
-        <View className="mt-8 pt-6 border-t border-zinc-900 items-center mb-6">
-          <Text className="text-[9px] font-black text-zinc-700 uppercase tracking-[2px] text-center">
-            Resumo detalhado gerado pelo sistema de auditoria.
-          </Text>
-        </View>
-      </View>
-      )}
-
-      {/* MODAL AUDITORIA SECRETA */}
-      <Modal visible={showFullAudit} transparent animationType="slide">
-        <View className="flex-1 bg-ink-950 px-4 pt-12 pb-6">
-          <View className="flex-row items-center justify-between mb-8 px-2">
-            <View className="flex-row items-center gap-3">
-              <View className="h-10 w-10 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 items-center justify-center">
-                <Activity size={18} color="#a78bfa" />
-              </View>
-              <View>
-                <Text className="text-xl font-black text-white uppercase tracking-widest">Auditoria Geral</Text>
-                <Text className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{feedActivities.length} registros encontrados</Text>
-              </View>
-            </View>
-            <Pressable onPress={() => setShowFullAudit(false)} className="h-12 w-12 items-center justify-center rounded-full bg-ink-900 border border-zinc-800">
-              <X size={20} color="#71717a" />
+            <Pressable 
+              onPress={() => setShowFullAudit(true)}
+              className="flex-row items-center gap-1.5 py-1.5 px-3 rounded-xl bg-zinc-900 border border-zinc-800 active:bg-zinc-800 active:scale-95"
+            >
+              <History size={13} color="#818cf8" />
+              <Text className="text-[11px] font-black text-indigo-300 uppercase tracking-wider">
+                Auditoria ({feedActivities.length}) ›
+              </Text>
             </Pressable>
           </View>
 
-          <FlatList
-            data={feedActivities}
-            keyExtractor={item => item.id}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ gap: 16, paddingBottom: 40 }}
-            renderItem={({ item: act }) => {
-              const dateObj = new Date(act.timestamp);
-              const timeStr = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
-              
-              let IconComp = PlusCircle;
-              let iconColor = "#34d399";
-              let bgClass = "bg-emerald-500/10 border-emerald-500/20";
-              
-              if (act.type === 'edit') {
-                IconComp = Edit3; iconColor = "#60a5fa"; bgClass = "bg-blue-500/10 border-blue-500/20";
-              } else if (act.type === 'ghost') {
-                IconComp = Ghost; iconColor = "#facc15"; bgClass = "bg-amber-500/10 border-amber-500/20";
-              } else if (act.type === 'check') {
-                IconComp = CheckCircle2; iconColor = "#34d399"; bgClass = "bg-emerald-500/10 border-emerald-500/20";
-              } else if (act.type === 'error') {
-                IconComp = AlertTriangle; iconColor = "#f87171"; bgClass = "bg-red-500/10 border-red-500/20";
-              } else if (act.type === 'delete') {
-                IconComp = Trash2; iconColor = "#f87171"; bgClass = "bg-red-500/10 border-red-500/20";
-              }
-              
-              const isTransacao = act.id.startsWith('t_');
-              const isFantasma = act.id.startsWith('f_');
-              const isLog = act.id.startsWith('l_');
-              
-              return (
-                <View className="bg-ink-900 border border-zinc-800 p-1 mb-4 rounded-[32px] shadow-2xl">
-                  {/* HEADER MINIMALISTA */}
-                  <View className="flex-row items-center justify-between p-4 px-5">
-                    <View className="flex-row items-center gap-3">
-                      <View className={`h-10 w-10 rounded-2xl items-center justify-center border ${bgClass}`}>
-                        <IconComp size={16} color={iconColor} />
-                      </View>
-                      <View>
-                        <Text className="text-[9px] font-black uppercase text-zinc-500 tracking-[2px]">{timeStr} • {isTransacao ? 'Transação' : isFantasma ? 'Pendência' : 'Auditoria'}</Text>
-                        <Text className="text-sm font-black uppercase text-zinc-100">{act.title}</Text>
-                      </View>
-                    </View>
-                    {isTransacao && act.raw.metodoPagamento && (
-                      <View className="bg-zinc-800/80 px-3 py-1.5 rounded-full border border-zinc-700">
-                        <Text className="text-[9px] font-black text-zinc-300 uppercase tracking-widest">{act.raw.metodoPagamento}</Text>
-                      </View>
-                    )}
-                  </View>
+          {/* CARROSSEL HORIZONTAL DE ATIVIDADES ESPAÇOSO (MIN-H 92px) */}
+          {feedActivities.length === 0 ? (
+            <View className="bg-[#121216] border border-zinc-800/80 rounded-2xl p-4 items-center justify-center">
+              <Text className="text-xs font-bold text-zinc-500">Nenhuma movimentação registrada ainda hoje.</Text>
+            </View>
+          ) : (
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 10, paddingRight: 10 }}
+            >
+              {feedActivities.slice(0, 6).map((act) => {
+                const dateObj = new Date(act.timestamp);
+                const timeStr = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
+                
+                const isSangria = act.category === 'sangria' || act.category === 'cancelamento';
+                const isDinheiro = act.category === 'dinheiro';
+                const isPix = act.type === 'ghost' || act.category === 'entrada_prestacao';
+                
+                const borderClass = isSangria 
+                  ? 'border-red-500/30 bg-red-500/5' 
+                  : isDinheiro 
+                    ? 'border-emerald-500/30 bg-emerald-500/5' 
+                    : isPix 
+                      ? 'border-indigo-500/30 bg-indigo-500/5' 
+                      : 'border-zinc-800/80 bg-[#121216]';
 
-                  {/* BODY COM DETALHES DE ALTA FIDELIDADE */}
-                  <View className="bg-ink-950 rounded-[28px] p-5 border border-zinc-900/50">
-                    
-                    {/* EXTRATO (SALDO ANTERIOR E ATUAL) */}
-                    <View className="flex-row justify-between items-center mb-4 pb-4 border-b border-zinc-800/50">
-                       <View>
-                         <Text className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Total Anterior</Text>
-                         <Text className="text-xs font-bold text-zinc-400">{toBrl(act.saldoAnterior)}</Text>
-                       </View>
-                       <ArrowRight size={12} color="#3f3f46" />
-                       <View className="items-end">
-                         <Text className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1">Total Atualizado</Text>
-                         <Text className="text-xs font-black text-zinc-100">{toBrl(act.saldoAtual)}</Text>
-                       </View>
-                    </View>
+                const iconColor = isSangria ? '#f87171' : isDinheiro ? '#34d399' : '#818cf8';
+                const prefixColor = isSangria ? 'text-red-400' : isDinheiro ? 'text-emerald-400' : 'text-indigo-300';
+                const numColor = isSangria ? 'text-red-300' : isDinheiro ? 'text-white' : 'text-indigo-200';
+                const valSign = isSangria ? '-' : '+';
 
-                    {isTransacao && (
-                      <View className="gap-4">
-                        <View className="flex-row justify-between items-center">
-                          <Text className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Valor Lançado</Text>
-                          <Text className="text-xl font-black text-emerald-400">{toBrl(act.raw.valorSistema)}</Text>
-                        </View>
-                        
-                        {act.raw.valorRecebidoFisico !== undefined && act.raw.valorRecebidoFisico !== act.raw.valorSistema && (
-                          <View className="flex-row justify-between items-center bg-red-500/10 px-4 py-3 rounded-2xl border border-red-500/20">
-                            <View className="flex-row items-center gap-2">
-                              <AlertTriangle size={12} color="#f87171" />
-                              <Text className="text-[9px] font-black text-red-400 uppercase tracking-widest">Valor Real (Na Gaveta)</Text>
-                            </View>
-                            <Text className="text-sm font-black text-red-400">{toBrl(act.raw.valorRecebidoFisico)}</Text>
-                          </View>
-                        )}
-                        
-                        <View className="h-px bg-zinc-800/40 w-full" />
-                        
-                        <View>
-                          <Text className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1.5">Descrição Registrada</Text>
-                          <Text className="text-xs font-bold text-zinc-300 uppercase leading-5">{act.raw.descricao || 'Sem descrição'}</Text>
-                        </View>
-                        {act.raw.transacaoVinculadaId && (() => {
-                          const refF = fantasmas?.find(f => f.id === act.raw.transacaoVinculadaId);
-                          const refT = transacoes?.find(t => t.id === act.raw.transacaoVinculadaId);
-                          const refName = refF ? `PIX/PENDÊNCIA (${refF.pessoa || 'S/N'})` : (refT ? `VENDA (${refT.descricao || 'S/D'})` : 'VINCULADO');
-                          return (
-                            <View className="mt-2 bg-blue-500/10 border border-blue-500/20 p-3 rounded-xl flex-row items-center gap-2">
-                              <Link size={12} color="#60a5fa" />
-                              <Text className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Ref: {refName}</Text>
-                            </View>
-                          );
-                        })()}
-                      </View>
-                    )}
-                    
-                    {isFantasma && (
-                      <View className="gap-4">
-                        <View className="flex-row justify-between items-center">
-                          <Text className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Responsável / Origem</Text>
-                          <Text className="text-sm font-black text-amber-400 uppercase">{act.raw.pessoa || 'Não informada'}</Text>
-                        </View>
-                        <View className="flex-row justify-between items-center">
-                          <Text className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Valor Pendente</Text>
-                          <Text className="text-lg font-black text-zinc-100">{toBrl(act.raw.valorReferencia)}</Text>
-                        </View>
-                        <View className="h-px bg-zinc-800/40 w-full" />
-                        <View>
-                          <Text className="text-[9px] font-black text-zinc-600 uppercase tracking-widest mb-1.5">Detalhes da Pendência</Text>
-                          <Text className="text-xs font-bold text-zinc-300 uppercase leading-5">{act.raw.descricao || 'Nenhuma observação extra'}</Text>
-                        </View>
-                        {act.raw.transacaoVinculadaId && (() => {
-                          const refT = transacoes?.find(t => t.id === act.raw.transacaoVinculadaId);
-                          const refName = refT ? `VENDA (${refT.descricao || 'S/D'})` : 'VINCULADO';
-                          return (
-                            <View className="mt-2 bg-blue-500/10 border border-blue-500/20 p-3 rounded-xl flex-row items-center gap-2">
-                              <Link size={12} color="#60a5fa" />
-                              <Text className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Ref: {refName}</Text>
-                            </View>
-                          );
-                        })()}
-                      </View>
-                    )}
+                // Separa reais e centavos para renderização perfeita
+                const valNum = Math.abs(act.valorToCompare || 0);
+                const formattedStr = valNum.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const [reaisStr, centsStr] = formattedStr.split(',');
 
-                    {isLog && (
-                      <View className="gap-4">
-                        <View className="flex-row justify-between items-center">
-                          <Text className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Campo Editado</Text>
-                          <View className="bg-blue-500/10 px-2.5 py-1 rounded-md border border-blue-500/20">
-                            <Text className="text-[9px] font-black text-blue-400 uppercase tracking-widest">{act.raw.campoAlterado}</Text>
-                          </View>
-                        </View>
-                        
-                        <View className="flex-row items-center gap-3 mt-1">
-                          <View className="flex-1 bg-ink-900 p-4 rounded-2xl border border-zinc-800">
-                            <Text className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1.5">Valor Antigo</Text>
-                            <Text className="text-xs font-black text-zinc-400 uppercase" numberOfLines={2}>{String(act.raw.valorAntigo)}</Text>
-                          </View>
-                          <View className="bg-zinc-800/50 p-1.5 rounded-full">
-                            <ArrowRight size={12} color="#a1a1aa" />
-                          </View>
-                          <View className="flex-1 bg-ink-900 p-4 rounded-2xl border border-zinc-800">
-                            <Text className="text-[8px] font-black text-blue-400 uppercase tracking-widest mb-1.5">Novo Valor</Text>
-                            <Text className="text-xs font-black text-zinc-100 uppercase" numberOfLines={2}>{String(act.raw.valorNovo)}</Text>
-                          </View>
-                        </View>
-                        
-                        {act.raw.motivo && (
-                          <View className="mt-2 bg-zinc-800/30 p-3 rounded-xl">
-                            <Text className="text-[9px] font-black text-zinc-500 uppercase tracking-widest mb-1">Motivo / Justificativa</Text>
-                            <Text className="text-[10px] font-bold text-zinc-300 uppercase italic">"{act.raw.motivo}"</Text>
-                          </View>
+                return (
+                  <Pressable 
+                    key={act.id}
+                    onPress={() => setShowFullAudit(true)}
+                    className={`p-3.5 rounded-2xl border ${borderClass} min-w-[155px] max-w-[170px] justify-between min-h-[92px] shadow-lg active:scale-95`}
+                  >
+                    <View className="flex-row items-center gap-1.5 mb-1">
+                      <View className="h-5 w-5 rounded-md bg-zinc-900/80 items-center justify-center">
+                        {isSangria ? (
+                          <ArrowUpRight size={12} color={iconColor} />
+                        ) : isDinheiro ? (
+                          <ArrowDownLeft size={12} color={iconColor} />
+                        ) : (
+                          <Smartphone size={12} color={iconColor} />
                         )}
                       </View>
-                    )}
+                      <Text style={{ color: iconColor }} className="text-[10.5px] font-black uppercase tracking-wider flex-1" numberOfLines={1}>
+                        {act.title}
+                      </Text>
+                    </View>
 
-                    {/* SUGESTÃO DE VÍNCULO INTELIGENTE */}
-                    {act.suggestedLinkId && !vinculosAtivos[act.id] && (
-                      <View className="mt-6 bg-indigo-500/10 border border-indigo-500/20 p-4 rounded-2xl">
-                        <View className="flex-row items-center gap-2 mb-2">
-                          <Link size={12} color="#818cf8" />
-                          <Text className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Sugestão de Vínculo</Text>
-                        </View>
-                        <Text className="text-xs font-bold text-indigo-300 leading-5 mb-4">
-                          O sistema detectou um {act.suggestedLinkType === 'new' ? 'lançamento' : 'fantasma/pendência'} com este MESMO valor e num horário muito próximo. Isso foi apenas uma conversão?
+                    <View className="mt-1">
+                      {act.valorToCompare > 0 ? (
+                        <Text numberOfLines={1} adjustsFontSizeToFit className="font-mono">
+                          <Text className={`font-black text-xs ${prefixColor}`}>{valSign} </Text>
+                          <Text className="text-zinc-400 font-bold text-xs">R$ </Text>
+                          <Text className={`font-black text-[17px] ${numColor}`}>{reaisStr}</Text>
+                          <Text className={`font-bold text-xs ${prefixColor}`}>,{centsStr}</Text>
                         </Text>
-                        <Pressable 
-                          className="bg-indigo-500 py-4 rounded-[16px] items-center shadow-lg"
-                          onPress={() => handleSimularVinculo(act)}
-                        >
-                          <Text className="text-[10px] font-black text-white uppercase tracking-widest">Confirmar e Vincular</Text>
-                        </Pressable>
-                      </View>
-                    )}
+                      ) : (
+                        <Text className="text-xs font-black text-blue-400 uppercase" numberOfLines={1}>
+                          {act.subtitle}
+                        </Text>
+                      )}
+                      <Text className="text-[10px] text-zinc-500 font-medium mt-0.5" numberOfLines={1}>
+                        {timeStr} • {act.subtitle}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
 
-                    {vinculosAtivos[act.id] === 'loading' && (
-                      <View className="mt-6 bg-indigo-500/10 border border-indigo-500/20 p-6 rounded-2xl items-center justify-center">
-                        <ActivityIndicator color="#818cf8" size="small" />
-                        <Text className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mt-3">Sincronizando Banco de Dados...</Text>
-                      </View>
-                    )}
+              {/* Card Final de Acesso Total */}
+              <Pressable 
+                onPress={() => setShowFullAudit(true)}
+                className="p-3.5 rounded-2xl border border-dashed border-zinc-800 bg-[#0c0c0e] min-w-[130px] items-center justify-center min-h-[92px] shadow flex-shrink-0 active:scale-95"
+              >
+                <History size={18} color="#a1a1aa" />
+                <Text className="text-[10.5px] font-black uppercase text-zinc-300 text-center mt-1.5">
+                  Ver Todas ({feedActivities.length}) ›
+                </Text>
+              </Pressable>
+            </ScrollView>
+          )}
 
-                    {vinculosAtivos[act.id] === 'success' && (
-                      <View className="mt-6 bg-emerald-500/10 border border-emerald-500/20 p-5 rounded-2xl flex-row items-center justify-center gap-3">
-                        <CheckCircle2 size={16} color="#34d399" />
-                        <Text className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Registros Vinculados com Sucesso!</Text>
-                      </View>
-                    )}
-
-                  </View>
-                </View>
-              );
-            }}
-          />
-        </View>
-      </Modal>
-
-      {/* FEED DE ATIVIDADES */}
-      {!isDiscreto && feedActivities.length > 0 && (
-        <View className="rounded-[40px] border border-zinc-800 bg-ink-900 p-6 shadow-2xl">
-          <Pressable onPress={handleAuditTap} className="flex-row items-center gap-2 mb-6">
-            <History size={14} color="#a78bfa" />
-            <Text className="text-[11px] font-black uppercase tracking-[3px] text-zinc-500">
-              Feed de Atividades
-            </Text>
-          </Pressable>
-          <View className="gap-3">
-            {feedActivities.slice(0, 3).map(act => {
-              const dateObj = new Date(act.timestamp);
-              const timeStr = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
-              
-              let IconComp = PlusCircle;
-              let iconColor = "#34d399";
-              let bgClass = "bg-emerald-500/10 border-emerald-500/20";
-              
-              if (act.type === 'edit') {
-                IconComp = Edit3; iconColor = "#60a5fa"; bgClass = "bg-blue-500/10 border-blue-500/20";
-              } else if (act.type === 'ghost') {
-                IconComp = Ghost; iconColor = "#facc15"; bgClass = "bg-amber-500/10 border-amber-500/20";
-              } else if (act.type === 'check') {
-                IconComp = CheckCircle2; iconColor = "#34d399"; bgClass = "bg-emerald-500/10 border-emerald-500/20";
-              } else if (act.type === 'error') {
-                IconComp = AlertTriangle; iconColor = "#f87171"; bgClass = "bg-red-500/10 border-red-500/20";
-              } else if (act.type === 'delete') {
-                IconComp = Trash2; iconColor = "#f87171"; bgClass = "bg-red-500/10 border-red-500/20";
-              }
-              
-              return (
-                <View key={act.id} className="flex-row items-center gap-4">
-                  <View className={`h-10 w-10 rounded-2xl items-center justify-center border ${bgClass}`}>
-                    <IconComp size={14} color={iconColor} />
-                  </View>
-                  <View className="flex-1">
-                    <Text className="text-xs font-black uppercase text-zinc-300">{act.title}</Text>
-                    <Text className="text-[10px] font-bold uppercase text-zinc-500">{timeStr} • {act.subtitle}</Text>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
         </View>
       )}
 
-      {/* MURAL DE RECADOS GLOBAL (AVISO DO DIA) */}
-      {!isDiscreto && (
-        <View className="mt-2 mb-8">
-          <Pressable 
-            onPress={onOpenChat}
-            className="rounded-[32px] border border-blue-500/20 bg-ink-900 p-6 flex-row items-center gap-4 shadow-xl"
-            style={{ shadowColor: "#3b82f6", elevation: 15 }}
-          >
-            <View className="h-12 w-12 items-center justify-center rounded-2xl bg-blue-500/10">
-              <Pin size={20} color="#3b82f6" strokeWidth={2.5} />
-            </View>
-            <View className="flex-1">
-              <Text className="text-[10px] font-black uppercase tracking-[2px] text-blue-400 mb-1">Mural Global do Turno</Text>
-              <Text className="text-xs font-bold leading-5 text-zinc-300" numberOfLines={2}>
-                {ultimaMensagemGlobal || "Nenhum recado. Toque para adicionar uma mensagem para todos."}
-              </Text>
-            </View>
-            <View className="h-8 w-8 items-center justify-center rounded-full bg-ink-800">
-              <Edit3 size={14} color="#71717a" />
-            </View>
-          </Pressable>
-        </View>
-      )}
+      {/* RODAPÉ COM ANIMAÇÃO 2D PIXEL ART (ESQUILO & NOZ IDLE) */}
+      <PixelSquirrelFooter operador={operatorName ? operatorName.trim().toUpperCase() : undefined} />
+
+      {/* MODAL AUDITORIA AVANÇADA */}
+      <AuditModal
+        visible={showFullAudit}
+        onClose={() => setShowFullAudit(false)}
+        transacoes={transacoes}
+        fantasmas={fantasmas}
+        logs={logs}
+        totais={totais}
+        operadorName={operatorName || "Operador"}
+      />
     </View>
   );
 }
+
+export const PainelScreen = memo(PainelScreenComponent);
+

@@ -1,8 +1,11 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { onAuthStateChanged } from "firebase/auth";
+import { getFirebaseAuth } from "../services/firebase/client";
 import { calcularTotaisTurno } from "../features/fechamento/calculos";
 import {
   atualizarConferenciaTransacao,
   buscarUltimoTurnoAberto,
+  buscarTurnoPorId,
   criarNovoTurno,
   atualizarStatusTurno,
   listarTurnosRecentes,
@@ -40,35 +43,43 @@ import {
   atualizarTurnoAtivoConta,
   ouvirTurnoAtivoConta,
   restaurarTurnoExcluido,
+  importarBackupCompletoNuvem,
 } from "../services/repositories/caixa-repository";
-import { LembreteFantasma, Transacao, Turno, ContagemCedulas, LogAlteracao } from "../types/domain";
+import { LembreteFantasma, Transacao, Turno, ContagemCedulas, LogAlteracao, RegistroPOS, RegistroConvenio } from "../types/domain";
 import { getTodayReferenceDate } from "../utils/date";
-import { clearCurrentShiftCache, saveCurrentShiftCache, loadCurrentShiftCache, saveSnapshot } from "../services/local-storage";
-import { scheduleInactivityAlert } from "../services/notifications";
+import { clearCurrentShiftCache, saveCurrentShiftCache, loadCurrentShiftCache, saveSnapshot, saveHistoricoTurnosCache, loadHistoricoTurnosCache } from "../services/local-storage";
 import { useCaixaStore } from "../store/caixa-store";
+import { scheduleInactivityAlert } from "../services/notifications";
+
+let debounceAjusteTimer: any = null;
+let debounceNotaTimer: any = null;
+let lastLocalAjusteTime = 0;
+let lastLocalNotaTime = 0;
 
 export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
   const state = useCaixaStore();
   const { turno, transacoes, fantasmas, registrosPOS, registrosConvenio, logs, historicoTurnos, loading, error, isTransacoesLoaded, isFantasmasLoaded, isRegistrosPOSLoaded, isRegistrosConvenioLoaded } = state;
+  const isAllLoaded = isTransacoesLoaded && isFantasmasLoaded && isRegistrosPOSLoaded && isRegistrosConvenioLoaded;
+  const localDeletedIdsRef = useRef<Set<string>>(new Set());
+  const localCreatedIdsRef = useRef<Set<string>>(new Set());
+  const recentCreatedTokensRef = useRef<Map<string, number>>(new Map());
 
-  // Carregamento Inicial: Cache local PRIMEIRO, depois Firebase
+  // Carregamento Inicial: Cache local PRIMEIRO (0ms), depois sincronização em segundo plano
   useEffect(() => {
     async function init() {
       useCaixaStore.setState({ loading: true, error: null });
       try {
-        // PASSO 1: Carrega do cache local (MMKV) imediatamente para mostrar dados na tela
-        // Isso resolve o bug de abrir o app e não ver as transações
-        const cached = await loadCurrentShiftCache();
-        if (cached.turno && !useCaixaStore.getState().turno) {
-          console.log("[CaixaSeguro] Restaurando dados do cache local...");
+        // PASSO 1: Carrega do cache local EXCLUSIVAMENTE o turno ativo de hoje (0ms)
+        const cachedShift = await loadCurrentShiftCache();
+
+        if (cachedShift.turno && !useCaixaStore.getState().turno) {
           useCaixaStore.setState({
-            turno: cached.turno,
-            transacoes: cached.transacoes,
-            fantasmas: cached.fantasmas,
-            logs: cached.logs,
-            registrosPOS: cached.registrosPOS || [],
-            registrosConvenio: cached.registrosConvenio || [],
-            // NÃO marca como loaded — os listeners do Firestore vão sobrescrever com dados atualizados
+            turno: cachedShift.turno,
+            transacoes: cachedShift.transacoes,
+            fantasmas: cachedShift.fantasmas,
+            logs: cachedShift.logs,
+            registrosPOS: cachedShift.registrosPOS || [],
+            registrosConvenio: cachedShift.registrosConvenio || [],
             isTransacoesLoaded: false,
             isFantasmasLoaded: false,
             isRegistrosPOSLoaded: false,
@@ -76,27 +87,23 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
           });
         }
 
-        // PASSO 2: Busca o último turno aberto do Firebase (pode sobrescrever o cache)
-        if (!useCaixaStore.getState().turno) {
-          const ultimo = await buscarUltimoTurnoAberto();
-          if (ultimo) {
+        // Libera a tela IMEDIATAMENTE para uso em 0ms
+        useCaixaStore.setState({ loading: false });
+
+        // PASSO 2: Sincronização rápida em segundo plano apenas do turno aberto atual
+        buscarUltimoTurnoAberto().then((ultimo) => {
+          if (ultimo && !useCaixaStore.getState().turno) {
             useCaixaStore.setState({ turno: ultimo });
           }
-        }
-        await carregarHistoricoTurnos();
+        }).catch(() => {});
       } catch (err) {
-        console.error("[CaixaSeguro] Erro ao iniciar:", err);
-        // Se falhou mas tem cache, não mostra erro — o usuário pode usar offline
-        const currentState = useCaixaStore.getState();
-        if (!currentState.turno) {
-          useCaixaStore.setState({ error: "Erro ao iniciar o caixa." });
-        }
+        console.error("[CaixaSeguro] Erro ao iniciar do cache:", err);
       } finally {
         useCaixaStore.setState({ loading: false });
       }
     }
     init();
-    
+
     // Sincronização multi-dispositivo: ouve mudanças de turno ativo na conta
     const unsub = ouvirTurnoAtivoConta((activeId) => {
       if (!activeId) return;
@@ -106,16 +113,12 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
         if (t) {
           useCaixaStore.setState({ turno: t, transacoes: [], fantasmas: [], registrosPOS: [], registrosConvenio: [], logs: [], isTransacoesLoaded: false, isFantasmasLoaded: false, isRegistrosPOSLoaded: false, isRegistrosConvenioLoaded: false });
         } else {
-          // Se não encontrou no histórico local ainda, recarrega o histórico e tenta de novo
-          import("../services/repositories/caixa-repository").then(repo => {
-            repo.listarTurnosRecentes().then(todos => {
-              useCaixaStore.setState({ historicoTurnos: todos });
-              const t2 = todos.find(x => x.id === activeId);
-              if (t2) {
-                useCaixaStore.setState({ turno: t2, transacoes: [], fantasmas: [], registrosPOS: [], registrosConvenio: [], logs: [], isTransacoesLoaded: false, isFantasmasLoaded: false, isRegistrosPOSLoaded: false, isRegistrosConvenioLoaded: false });
-              }
-            });
-          });
+          // Busca pontualmente apenas o turno ativo especificado, sem baixar todo o banco
+          buscarTurnoPorId(activeId).then((t2) => {
+            if (t2) {
+              useCaixaStore.setState({ turno: t2, transacoes: [], fantasmas: [], registrosPOS: [], registrosConvenio: [], logs: [], isTransacoesLoaded: false, isFantasmasLoaded: false, isRegistrosPOSLoaded: false, isRegistrosConvenioLoaded: false });
+            }
+          }).catch(() => {});
         }
       }
     });
@@ -125,12 +128,20 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
     };
   }, []);
 
-  // Backup em Local Storage (inclui POS e Convênio agora)
+  // Backup em Local Storage (apenas grava após hidratação completa dos dados)
   useEffect(() => {
-    if (turno) {
+    const isHydrated = isAllLoaded || transacoes.length > 0 || fantasmas.length > 0 || registrosPOS.length > 0 || registrosConvenio.length > 0;
+    if (turno && isHydrated) {
       void saveCurrentShiftCache(turno, transacoes, fantasmas, logs, registrosPOS, registrosConvenio);
     }
-  }, [turno, transacoes, fantasmas, logs, registrosPOS, registrosConvenio]);
+  }, [turno, transacoes, fantasmas, logs, registrosPOS, registrosConvenio, isAllLoaded]);
+
+  // Limpeza de memória dos Sets temporários ao mudar ou fechar turno
+  useEffect(() => {
+    localDeletedIdsRef.current.clear();
+    localCreatedIdsRef.current.clear();
+    recentCreatedTokensRef.current.clear();
+  }, [turno?.id]);
 
   // Ouvintes do Banco de Dados (Firestore / RTDB)
   // Proteção contra perda de dados: se o Firestore retorna vazio do cache mas
@@ -139,44 +150,76 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
     if (!turno?.id) return;
     
     const unsubTurno = ouvirTurno(turno.id, (data) => {
-      useCaixaStore.setState({ turno: data || null });
+      if (!data) {
+        useCaixaStore.setState({ turno: null });
+        return;
+      }
+      const current = useCaixaStore.getState().turno;
+      if (current) {
+        const isRecentAjuste = Date.now() - lastLocalAjusteTime < 3000;
+        const isRecentNota = Date.now() - lastLocalNotaTime < 3000;
+        if (isRecentAjuste || isRecentNota) {
+          useCaixaStore.setState({
+            turno: {
+              ...data,
+              ajusteManualSobra: isRecentAjuste ? current.ajusteManualSobra : data.ajusteManualSobra,
+              notaDia: isRecentNota ? current.notaDia : data.notaDia,
+            }
+          });
+          return;
+        }
+      }
+      useCaixaStore.setState({ turno: data });
     });
     
-    // Helper: aceita dados do Firestore apenas se faz sentido
-    // Previne o bug de "abrir o app e as transações sumirem"
-    const handleFirestoreData = <T>(
+    // Helper: aceita dados do Firestore e faz UNIÃO CAUSAL com dados locais não sincronizados
+    // Garante que NENHUM pagamento ou venda feita offline seja deletada ou sobrescrita
+    const handleFirestoreData = <T extends { id: string; timestamp?: number }>(
       key: "transacoes" | "fantasmas" | "registrosPOS" | "registrosConvenio",
       loadedKey: "isTransacoesLoaded" | "isFantasmasLoaded" | "isRegistrosPOSLoaded" | "isRegistrosConvenioLoaded",
       data: T[],
       isSuspectEmpty?: boolean
     ) => {
       const state = useCaixaStore.getState();
-      const currentData = state[key] as T[];
+      const currentData = (state[key] as unknown as T[]) || [];
       const isNewTurno = state.turno && (Date.now() - state.turno.criadoEm < 5 * 60 * 1000);
-      const alreadyLoaded = state[loadedKey];
 
       // Caso 1: dados vieram vazios do cache do Firestore (suspeito)
-      // E já temos dados locais — NÃO sobrescreve, espera o servidor
-      if (isSuspectEmpty && !isNewTurno) {
-        if (currentData.length > 0) {
-          // Já temos dados no estado (do cache MMKV), mantém eles
-          console.log(`[CaixaSeguro] ${key}: Firestore cache vazio mas temos ${currentData.length} itens locais. Mantendo local.`);
-          return;
-        }
-        // Se não temos dados locais E é a primeira vez, espera 3s antes de aceitar vazio
-        if (!alreadyLoaded) {
-          setTimeout(() => {
-            if (!useCaixaStore.getState()[loadedKey]) {
-              console.log(`[CaixaSeguro] ${key}: Timeout - aceitando resultado vazio.`);
-              useCaixaStore.setState({ [key]: data, [loadedKey]: true } as any);
-            }
-          }, 3000);
-          return;
-        }
+      // E já temos dados locais — NUNCA sobrescreve com vazio, preserva o local
+      if (isSuspectEmpty && !isNewTurno && currentData.length > 0) {
+        console.log(`[CaixaSeguro] ${key}: Firestore cache vazio mas temos ${currentData.length} itens locais. Preservando local.`);
+        useCaixaStore.setState({ [loadedKey]: true } as any);
+        return;
       }
 
-      // Caso 2: dados vieram com conteúdo, ou turno é novo — aceita normalmente
-      useCaixaStore.setState({ [key]: data, [loadedKey]: true } as any);
+      // Caso 2: União Causal Inteligente (Merge por ID com Tombstones de exclusão intencional)
+      const remoteMap = new Map((data || []).map(item => [item.id, item]));
+      const mergedList = [...(data || [])].filter(item => !localDeletedIdsRef.current.has(item.id));
+
+      // Remove da lista de pendentes os itens que o servidor já confirmou
+      (data || []).forEach(item => {
+        localCreatedIdsRef.current.delete(item.id);
+      });
+
+      currentData.forEach(localItem => {
+        if (
+          localItem?.id && 
+          !remoteMap.has(localItem.id) && 
+          !localDeletedIdsRef.current.has(localItem.id)
+        ) {
+          // Mantém se foi criado localmente e ainda aguarda sincronização, OU se veio de cache suspeito
+          const isPendingLocalCreation = localCreatedIdsRef.current.has(localItem.id);
+          const itemAge = Date.now() - (localItem.timestamp || 0);
+          if (isPendingLocalCreation || (isSuspectEmpty && itemAge < 24 * 60 * 60 * 1000)) {
+            mergedList.push(localItem);
+          }
+        }
+      });
+
+      // Ordena por timestamp decrescente (mais recente no topo)
+      mergedList.sort((a, b) => (Number(b.timestamp || 0) - Number(a.timestamp || 0)));
+
+      useCaixaStore.setState({ [key]: mergedList, [loadedKey]: true } as any);
     };
 
     const unsubTransacoes = ouvirTransacoes(turno.id, (data, isSuspectEmpty) => {
@@ -209,22 +252,40 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
     };
   }, [turno?.id]);
 
-  const isAllLoaded = isTransacoesLoaded && isFantasmasLoaded && isRegistrosPOSLoaded && isRegistrosConvenioLoaded;
+  const lastSavedTotaisJsonRef = useRef("");
 
   const totais = useMemo(() => {
     // Enquanto carrega, mostra os totais que já estavam salvos no banco para não piscar R$ 0,00 na tela
     if (!isAllLoaded && turno?.totais) {
       return turno.totais;
     }
-    return calcularTotaisTurno(transacoes, fantasmas, registrosPOS, registrosConvenio, turno?.ajusteManualSobra ?? 0, turno?.posRelatorioTotal ?? 0, posSomaOutrosTurnos);
-  }, [isAllLoaded, turno, transacoes, fantasmas, registrosPOS, registrosConvenio, posSomaOutrosTurnos]);
+    return calcularTotaisTurno(
+      transacoes, 
+      fantasmas, 
+      registrosPOS, 
+      registrosConvenio, 
+      turno?.ajusteManualSobra ?? 0, 
+      turno?.posRelatorioTotal ?? 0, 
+      posSomaOutrosTurnos
+    );
+  }, [isAllLoaded, turno?.ajusteManualSobra, turno?.posRelatorioTotal, turno?.totais, transacoes, fantasmas, registrosPOS, registrosConvenio, posSomaOutrosTurnos]);
 
-  // Calcula Totais e salva na nuvem (Debounce natural já ocorre pelo design de UI)
+  // Calcula Totais e salva na nuvem apenas quando há mudança real
   useEffect(() => {
     if (turno && turno.statusTurno === "aberto" && isAllLoaded) {
-      // Só salva se realmente houve alteração nos totais para evitar sobrescritas indevidas e writes desnecessários
-      const mudou = JSON.stringify(totais) !== JSON.stringify(turno.totais);
-      if (mudou) {
+      // Proteção Anti-Zeramento: Se o turno já tinha saldo/movimento anterior,
+      // e um recálculo transitório gerou 0 por oscilação de rede, ABORTA
+      const tinhaSaldoAnterior = (turno.totais?.sistema && turno.totais.sistema !== 0) || (turno.totais?.gavetaFisico && turno.totais.gavetaFisico !== 0);
+      const calculouZero = totais.sistema === 0 && totais.gavetaFisico === 0 && transacoes.length === 0;
+      if (tinhaSaldoAnterior && calculouZero) {
+        return;
+      }
+
+      // Só salva se realmente houve alteração nos totais
+      const totaisJson = JSON.stringify(totais);
+      const turnoTotaisJson = JSON.stringify(turno.totais);
+      if (totaisJson !== turnoTotaisJson && totaisJson !== lastSavedTotaisJsonRef.current) {
+        lastSavedTotaisJsonRef.current = totaisJson;
         void salvarTotaisTurno(turno.id, totais);
       }
     }
@@ -251,9 +312,39 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
       const idsDeletados = lixoAntigo.map(t => t.id);
       const historicoAtualizado = todos.filter(t => !idsDeletados.includes(t.id));
       
-      useCaixaStore.setState({ historicoTurnos: historicoAtualizado });
+      // União Causal do Histórico de Turnos:
+      // Preserva EXCLUSIVAMENTE turnos criados localmente offline que ainda estão pendentes de sincronização
+      const currentLocalHistorico = useCaixaStore.getState().historicoTurnos || [];
+      const remoteMap = new Map(historicoAtualizado.map(t => [t.id, t]));
+      const mergedHistorico = [...historicoAtualizado];
+      currentLocalHistorico.forEach(localTurno => {
+        const isLocalPending = Boolean(localTurno?.pendingSync || localTurno?.id?.startsWith("local_"));
+        if (
+          localTurno?.id && 
+          isLocalPending &&
+          localTurno.dataReferencia &&
+          localTurno.dataReferencia.trim().length >= 8 &&
+          !remoteMap.has(localTurno.id) && 
+          !localDeletedIdsRef.current.has(localTurno.id) &&
+          !idsDeletados.includes(localTurno.id)
+        ) {
+          const turnoAge = Date.now() - (localTurno.criadoEm || 0);
+          if (turnoAge < 24 * 60 * 60 * 1000) {
+            mergedHistorico.push(localTurno);
+          }
+        }
+      });
+
+      useCaixaStore.setState({ historicoTurnos: mergedHistorico });
+      // Salva no disco local para consulta offline garantida (Read-Only no boot)
+      void saveHistoricoTurnosCache(mergedHistorico);
     } catch (err) {
-      console.warn("Erro ao buscar historico", err);
+      console.warn("[CaixaSeguro] Offline ou erro ao buscar histórico na nuvem. Usando cache local.", err);
+      const cached = await loadHistoricoTurnosCache();
+      if (cached && cached.length > 0) {
+        const validCached = cached.filter(t => t.dataReferencia && t.dataReferencia.trim().length >= 8);
+        useCaixaStore.setState({ historicoTurnos: validCached });
+      }
     }
   }
 
@@ -366,52 +457,117 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
       await carregarHistoricoTurnos();
     },
     deletarDiaPermanente: async (id: string) => {
+      localDeletedIdsRef.current.add(id);
       await deletarTurnoPermanente(id);
       const currentState = useCaixaStore.getState();
-      if (currentState.turno?.id === id) useCaixaStore.setState({ turno: null });
+      const filtered = (currentState.historicoTurnos || []).filter(x => x.id !== id);
+      useCaixaStore.setState({ 
+        historicoTurnos: filtered,
+        turno: currentState.turno?.id === id ? null : currentState.turno 
+      });
+      await saveHistoricoTurnosCache(filtered);
       await carregarHistoricoTurnos();
     },
     // Snapshot manual para o botão de "backup" nas configurações
     criarSnapshotManual: async () => {
       await autoSnapshot("manual");
     },
-    definirAjusteSobra: async (v: number) => {
-      if (!turno) return;
-      await salvarAjusteSobra(turno.id, v);
+    definirAjusteSobra: async (v: number | ((prev: number) => number)) => {
+      const currentTurno = useCaixaStore.getState().turno;
+      if (!currentTurno) return;
+      const currentVal = Number(currentTurno.ajusteManualSobra || 0);
+      const nextVal = typeof v === "function" ? v(currentVal) : v;
+      const rounded = Math.round((Number(nextVal) + Number.EPSILON) * 100) / 100;
+
+      lastLocalAjusteTime = Date.now();
+
+      // 1. Atualização instantânea em memória (UI fluida a 60 FPS sem travar)
+      useCaixaStore.setState(prev => ({
+        turno: prev.turno ? { ...prev.turno, ajusteManualSobra: rounded } : null
+      }));
+
+      // 2. Gravação oficial no banco debounced (150ms)
+      if (debounceAjusteTimer) clearTimeout(debounceAjusteTimer);
+      debounceAjusteTimer = setTimeout(async () => {
+        try {
+          await salvarAjusteSobra(currentTurno.id, rounded);
+        } catch (e) {
+          console.log("[CaixaSeguro] Erro ao sincronizar ajuste:", e);
+        }
+      }, 150);
     },
     definirNotaDia: async (v: string) => {
       if (!turno) return;
-      await salvarNotaDia(turno.id, v);
+      lastLocalNotaTime = Date.now();
+      // 1. Atualização instantânea em memória
+      useCaixaStore.setState(prev => ({
+        turno: prev.turno ? { ...prev.turno, notaDia: v } : null
+      }));
+
+      // 2. Gravação oficial no banco debounced (400ms após o usuário parar de digitar)
+      if (debounceNotaTimer) clearTimeout(debounceNotaTimer);
+      debounceNotaTimer = setTimeout(async () => {
+        try {
+          await salvarNotaDia(turno.id, v);
+        } catch (e) {
+          console.log("[CaixaSeguro] Erro ao sincronizar nota do dia:", e);
+        }
+      }, 400);
     },
     criarTransacao: async (input: any) => {
       if (!turno) return;
+      if (input?.clientLocalId) {
+        const lastSeen = recentCreatedTokensRef.current.get(input.clientLocalId);
+        if (lastSeen && Date.now() - lastSeen < 4000) {
+          console.warn("[CaixaSeguro] Transação duplicada prevenida por clientLocalId:", input.clientLocalId);
+          return;
+        }
+        recentCreatedTokensRef.current.set(input.clientLocalId, Date.now());
+      }
       void scheduleInactivityAlert();
-      await autoSnapshot("Antes de criar transação");
-      await adicionarTransacao(turno.id, input);
+      void autoSnapshot("Antes de criar transação");
+      const id = await adicionarTransacao(turno.id, input);
+      if (id) localCreatedIdsRef.current.add(id);
     },
     excluirTransacao: async (id: string) => {
       if (!turno) return;
-      await autoSnapshot("Antes de excluir transação");
+      localCreatedIdsRef.current.delete(id);
+      localDeletedIdsRef.current.add(id);
+      // Remoção otimista imediata (0ms) na UI sem esperar rede
+      useCaixaStore.setState(prev => ({
+        transacoes: prev.transacoes.filter(item => item.id !== id)
+      }));
+      void autoSnapshot("Antes de excluir transação");
       await removerTransacao(turno.id, id);
     },
     editarLançamento: async (id: string, input: any) => {
       if (!turno) return;
-      await autoSnapshot("Antes de editar transação");
+      void autoSnapshot("Antes de editar transação");
       await editarTransacao(turno.id, id, input);
     },
     alternarConferencia: async (t: Transacao) => {
       if (!turno) return;
       const nextStatus = t.statusConferencia === "pendente" ? "confirmada" : "pendente";
+      // Atualização otimista imediata (0ms) na UI sem esperar rede
+      useCaixaStore.setState(prev => ({
+        transacoes: prev.transacoes.map(item => item.id === t.id ? { ...item, statusConferencia: nextStatus } : item)
+      }));
       await atualizarConferenciaTransacao(turno.id, t.id, nextStatus);
     },
     alternarConferenciaPOS: async (id: string, currentStatus: string) => {
       if (!turno) return;
       const nextStatus = currentStatus === "pendente" ? "confirmada" : "pendente";
+      useCaixaStore.setState(prev => ({
+        registrosPOS: prev.registrosPOS.map(item => item.id === id ? { ...item, statusConferencia: nextStatus } : item)
+      }));
       await atualizarConferenciaPOS(turno.id, id, nextStatus);
     },
     alternarConferenciaConvenio: async (id: string, currentStatus: string) => {
       if (!turno) return;
       const nextStatus = currentStatus === "pendente" ? "confirmada" : "pendente";
+      useCaixaStore.setState(prev => ({
+        registrosConvenio: prev.registrosConvenio.map(item => item.id === id ? { ...item, statusConferencia: nextStatus } : item)
+      }));
       await atualizarConferenciaConvenio(turno.id, id, nextStatus);
     },
     reportarErroTransacao: async (id: string, valorSistemaNovo: number, valorReal: number, justificativa: string) => {
@@ -425,30 +581,55 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
         statusConferencia: "incorreto" as const,
         justificativaTexto: justificativa
       };
+      useCaixaStore.setState(prev => ({
+        transacoes: prev.transacoes.map(item => item.id === id ? { ...item, ...updated } : item)
+      }));
       await editarTransacao(turno.id, id, updated);
     },
     criarFantasma: async (input: any) => {
       if (!turno) return;
-      await autoSnapshot("Antes de adicionar nota");
-      await adicionarFantasma(turno.id, input);
+      if (input?.clientLocalId) {
+        const lastSeen = recentCreatedTokensRef.current.get(input.clientLocalId);
+        if (lastSeen && Date.now() - lastSeen < 4000) {
+          console.warn("[CaixaSeguro] Fantasma duplicado prevenido por clientLocalId:", input.clientLocalId);
+          return;
+        }
+        recentCreatedTokensRef.current.set(input.clientLocalId, Date.now());
+      }
+      void autoSnapshot("Antes de adicionar nota");
+      const id = await adicionarFantasma(turno.id, input);
+      if (id) localCreatedIdsRef.current.add(id);
     },
     editarFantasma: async (id: string, input: any) => {
       if (!turno) return;
-      await autoSnapshot("Antes de editar nota");
+      void autoSnapshot("Antes de editar nota");
       await atualizarFantasmaCompleto(turno.id, id, input);
     },
     excluirFantasma: async (id: string) => {
       if (!turno) return;
-      await autoSnapshot("Antes de excluir nota");
+      localCreatedIdsRef.current.delete(id);
+      localDeletedIdsRef.current.add(id);
+      useCaixaStore.setState(prev => ({
+        fantasmas: prev.fantasmas.filter(item => item.id !== id)
+      }));
+      void autoSnapshot("Antes de excluir nota");
       await removerFantasma(turno.id, id);
     },
     alternarFantasmaResolvido: async (f: LembreteFantasma) => {
       if (!turno) return;
-      await atualizarFantasmaCompleto(turno.id, f.id, { resolvido: !f.resolvido });
+      const nextVal = !f.resolvido;
+      useCaixaStore.setState(prev => ({
+        fantasmas: prev.fantasmas.map(item => item.id === f.id ? { ...item, resolvido: nextVal } : item)
+      }));
+      await atualizarFantasmaCompleto(turno.id, f.id, { resolvido: nextVal });
     },
     alternarFantasmaComprovado: async (f: LembreteFantasma) => {
       if (!turno) return;
-      await atualizarFantasmaCompleto(turno.id, f.id, { comprovadoPix: !f.comprovadoPix });
+      const nextVal = !f.comprovadoPix;
+      useCaixaStore.setState(prev => ({
+        fantasmas: prev.fantasmas.map(item => item.id === f.id ? { ...item, comprovadoPix: nextVal } : item)
+      }));
+      await atualizarFantasmaCompleto(turno.id, f.id, { comprovadoPix: nextVal });
     },
     salvarContagem: async (c: ContagemCedulas) => {
       if (turno) await salvarContagemCedulas(turno.id, c);
@@ -463,17 +644,23 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
     criarRegistroPOS: async (input: any) => {
       if (!turno) return;
       void scheduleInactivityAlert();
-      await autoSnapshot("Antes de adicionar POS");
-      await adicionarRegistroPOS(turno.id, input);
+      void autoSnapshot("Antes de adicionar POS");
+      const id = await adicionarRegistroPOS(turno.id, input);
+      if (id) localCreatedIdsRef.current.add(id);
     },
     editarRegistroPOS: async (id: string, input: any) => {
       if (!turno) return;
-      await autoSnapshot("Antes de editar POS");
+      void autoSnapshot("Antes de editar POS");
       await editarRegistroPOS(turno.id, id, input);
     },
     excluirRegistroPOS: async (id: string) => {
       if (!turno) return;
-      await autoSnapshot("Antes de excluir POS");
+      localCreatedIdsRef.current.delete(id);
+      localDeletedIdsRef.current.add(id);
+      useCaixaStore.setState(prev => ({
+        registrosPOS: prev.registrosPOS.filter(item => item.id !== id)
+      }));
+      void autoSnapshot("Antes de excluir POS");
       await removerRegistroPOS(turno.id, id);
     },
     salvarRelatorioPOSTotal: async (valor: number) => {
@@ -483,22 +670,84 @@ export function useCaixaSeguro(posSomaOutrosTurnos = 0) {
     criarConvenio: async (input: any) => {
       if (!turno) return;
       void scheduleInactivityAlert();
-      await autoSnapshot("Antes de adicionar Convênio");
-      await adicionarConvenio(turno.id, input);
+      void autoSnapshot("Antes de adicionar Convênio");
+      const id = await adicionarConvenio(turno.id, input);
+      if (id) localCreatedIdsRef.current.add(id);
     },
     editarConvenio: async (id: string, input: any) => {
       if (!turno) return;
-      await autoSnapshot("Antes de editar Convênio");
+      void autoSnapshot("Antes de editar Convênio");
       await editarConvenio(turno.id, id, input);
     },
     excluirConvenio: async (id: string) => {
       if (!turno) return;
-      await autoSnapshot("Antes de excluir Convênio");
+      localCreatedIdsRef.current.delete(id);
+      localDeletedIdsRef.current.add(id);
+      useCaixaStore.setState(prev => ({
+        registrosConvenio: prev.registrosConvenio.filter(item => item.id !== id)
+      }));
+      void autoSnapshot("Antes de excluir Convênio");
       await removerConvenio(turno.id, id);
     },
     vincularRegistros: async (transacaoId: string, fantasmaId: string) => {
       if (!turno) return;
       await vincularRegistrosRepository(turno.id, transacaoId, fantasmaId);
+    },
+    importarTurnoCompleto: async (
+      importedTurno: Turno,
+      importedTx: Transacao[],
+      importedFantasmas: LembreteFantasma[],
+      importedLogs: LogAlteracao[] = [],
+      importedPOS: RegistroPOS[] = [],
+      importedConvenio: RegistroConvenio[] = []
+    ) => {
+      useCaixaStore.setState({ loading: true });
+      try {
+        // 1. Atualiza estado imediatamente no Zustand para UI responder em 0ms
+        useCaixaStore.setState({
+          turno: importedTurno,
+          transacoes: importedTx,
+          fantasmas: importedFantasmas,
+          logs: importedLogs,
+          registrosPOS: importedPOS,
+          registrosConvenio: importedConvenio,
+          isTransacoesLoaded: true,
+          isFantasmasLoaded: true,
+          isRegistrosPOSLoaded: true,
+          isRegistrosConvenioLoaded: true,
+          loading: false,
+        });
+
+        // 2. Salva no cache local nativo MMKV
+        await saveCurrentShiftCache(
+          importedTurno,
+          importedTx,
+          importedFantasmas,
+          importedLogs,
+          importedPOS,
+          importedConvenio
+        );
+
+        // 3. Persiste no banco de dados na nuvem (Firestore)
+        try {
+          await importarBackupCompletoNuvem(
+            importedTurno,
+            importedTx,
+            importedFantasmas,
+            importedLogs,
+            importedPOS,
+            importedConvenio
+          );
+          await atualizarTurnoAtivoConta(importedTurno.id);
+        } catch (cloudErr) {
+          console.warn("[CaixaSeguro] Erro ao sincronizar nuvem no import, salvo localmente:", cloudErr);
+        }
+
+        // 4. Recarrega histórico de turnos
+        await carregarHistoricoTurnos();
+      } finally {
+        useCaixaStore.setState({ loading: false });
+      }
     }
   };
 }

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Ajuste Ultra Minimalista & Limpo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 370px;
+      border-radius: 36px;
+      border: 2px solid #27272a;
+      background-color: #09090b;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="p-4 md:p-8 max-w-5xl mx-auto pb-24">
+
+  <!-- CABEÇALHO -->
+  <div class="mb-8 text-center">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-300 text-xs font-black uppercase tracking-widest mb-2">
+      🧼 LIMPEZA & ZERO POLUIÇÃO
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      Ajuste Super Limpo (Sem excesso de botões e textos)
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-xl mx-auto">
+      Tiramos todo o excesso de informações, botões acumulados e textos redundantes. Veja 3 opções ultra limpas:
+    </p>
+  </div>
+
+  <!-- GRID DE 3 OPÇÕES ULTRA LIMPAS -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start justify-center">
+
+    <!-- ========================================================================= -->
+    <!-- OPÇÃO A: LINHA ÚNICA DISCRETA (ESTILO NUBANK / APPLE) -->
+    <!-- ========================================================================= -->
+    <div class="flex flex-col items-center">
+      <div class="text-center mb-3">
+        <span class="text-xs font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+          Opção A • Linha Única
+        </span>
+        <p class="text-[11px] text-zinc-500 mt-1">1 linha só: título na esquerda, valor na direita</p>
+      </div>
+
+      <div class="mobile-frame p-4">
+        <!-- Topo: 2 Pílulas -->
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <div class="bg-[#121216] p-2.5 px-3 rounded-2xl border border-zinc-800 flex items-center justify-between">
+            <div class="text-[11px] font-bold text-zinc-500 uppercase flex items-center gap-1">
+              <i data-lucide="arrow-up-right" class="w-3 h-3 text-red-400"></i> Saídas
+            </div>
+            <div class="text-[13px] font-black text-zinc-200 mono">R$ 0,00</div>
+          </div>
+          <div class="bg-[#121216] p-2.5 px-3 rounded-2xl border border-blue-500/30 flex items-center justify-between">
+            <div class="text-[11px] font-bold text-blue-400 uppercase flex items-center gap-1">
+              <i data-lucide="check-square" class="w-3 h-3 text-blue-400"></i> Canhotos
+            </div>
+            <div class="text-[13px] font-black text-blue-300 mono">22/22</div>
+          </div>
+        </div>
+
+        <!-- AJUSTE: LINHA ÚNICA ELEGANTE -->
+        <div class="bg-[#121216] hover:bg-[#16161c] p-3 px-3.5 rounded-2xl border border-zinc-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-zinc-400"></i>
+            <span class="text-xs font-bold text-zinc-300">Ajuste da Gaveta</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-sm font-black text-amber-300 mono">R$ 0,00</span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-zinc-600"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- OPÇÃO B: CAMPO DIRETO COM +1 COMPACTO -->
+    <!-- ========================================================================= -->
+    <div class="flex flex-col items-center">
+      <div class="text-center mb-3">
+        <span class="text-xs font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
+          Opção B • Campo com +1 Discreto
+        </span>
+        <p class="text-[11px] text-zinc-500 mt-1">Digita direto com 1 botão discreto de +1</p>
+      </div>
+
+      <div class="mobile-frame p-4">
+        <!-- Topo: 2 Pílulas -->
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <div class="bg-[#121216] p-2.5 px-3 rounded-2xl border border-zinc-800 flex items-center justify-between">
+            <div class="text-[11px] font-bold text-zinc-500 uppercase flex items-center gap-1">
+              <i data-lucide="arrow-up-right" class="w-3 h-3 text-red-400"></i> Saídas
+            </div>
+            <div class="text-[13px] font-black text-zinc-200 mono">R$ 0,00</div>
+          </div>
+          <div class="bg-[#121216] p-2.5 px-3 rounded-2xl border border-blue-500/30 flex items-center justify-between">
+            <div class="text-[11px] font-bold text-blue-400 uppercase flex items-center gap-1">
+              <i data-lucide="check-square" class="w-3 h-3 text-blue-400"></i> Canhotos
+            </div>
+            <div class="text-[13px] font-black text-blue-300 mono">22/22</div>
+          </div>
+        </div>
+
+        <!-- AJUSTE: CAMPO DIRETO COM +1 -->
+        <div class="bg-[#121216] p-2.5 px-3 rounded-2xl border border-zinc-800 flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2 flex-1">
+            <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5 text-zinc-500"></i>
+            <input type="text" value="R$ 0,00" class="bg-transparent text-sm font-black text-amber-300 mono w-24 focus:outline-none" />
+          </div>
+          <button class="px-2.5 py-1 rounded-xl bg-zinc-900 border border-zinc-800 active:scale-95 text-xs font-black text-zinc-300">
+            +1
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- OPÇÃO C: TOTALMENTE INTEGRADO (SEM BOTÕES EXTRAS) -->
+    <!-- ========================================================================= -->
+    <div class="flex flex-col items-center">
+      <div class="text-center mb-3">
+        <span class="text-xs font-black uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
+          Opção C • Campo Puro & Direto
+        </span>
+        <p class="text-[11px] text-zinc-500 mt-1">Apenas a caixinha limpa para digitar o valor</p>
+      </div>
+
+      <div class="mobile-frame p-4">
+        <!-- Topo: 2 Pílulas -->
+        <div class="grid grid-cols-2 gap-2 mb-3">
+          <div class="bg-[#121216] p-2.5 px-3 rounded-2xl border border-zinc-800 flex items-center justify-between">
+            <div class="text-[11px] font-bold text-zinc-500 uppercase flex items-center gap-1">
+              <i data-lucide="arrow-up-right" class="w-3 h-3 text-red-400"></i> Saídas
+            </div>
+            <div class="text-[13px] font-black text-zinc-200 mono">R$ 0,00</div>
+          </div>
+          <div class="bg-[#121216] p-2.5 px-3 rounded-2xl border border-blue-500/30 flex items-center justify-between">
+            <div class="text-[11px] font-bold text-blue-400 uppercase flex items-center gap-1">
+              <i data-lucide="check-square" class="w-3 h-3 text-blue-400"></i> Canhotos
+            </div>
+            <div class="text-[13px] font-black text-blue-300 mono">22/22</div>
+          </div>
+        </div>
+
+        <!-- AJUSTE: CAMPO PURO -->
+        <div class="bg-[#121216] p-2.5 px-3.5 rounded-2xl border border-zinc-800 flex items-center justify-between">
+          <span class="text-xs font-bold text-zinc-400">Ajuste Manual</span>
+          <input type="text" value="R$ 0,00" class="bg-transparent text-sm font-black text-amber-300 mono text-right w-24 focus:outline-none" />
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

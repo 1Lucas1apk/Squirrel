@@ -5,7 +5,8 @@ import {
   History, 
   Settings,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Upload
 } from "lucide-react-native";
 
 interface TurnoScreenProps {
@@ -15,6 +16,7 @@ interface TurnoScreenProps {
   onContinuar: () => void;
   onVerHistorico: () => void;
   onAbrirAjustes: () => void;
+  onImportar?: () => void;
 }
 
 export function TurnoScreen({
@@ -24,6 +26,7 @@ export function TurnoScreen({
   onContinuar,
   onVerHistorico,
   onAbrirAjustes,
+  onImportar,
 }: TurnoScreenProps) {
   return (
     <View className="flex-1 justify-center bg-ink-950 px-8">
@@ -76,6 +79,15 @@ export function TurnoScreen({
             <Text className="text-[10px] font-black uppercase tracking-[3px] text-zinc-600">Histórico</Text>
           </Pressable>
           <View className="h-1 w-1 rounded-full bg-zinc-800" />
+          {onImportar && (
+            <>
+              <Pressable onPress={onImportar} className="flex-row items-center gap-2">
+                <Upload size={16} color="#71717a" />
+                <Text className="text-[10px] font-black uppercase tracking-[3px] text-zinc-600">Importar</Text>
+              </Pressable>
+              <View className="h-1 w-1 rounded-full bg-zinc-800" />
+            </>
+          )}
           <Pressable onPress={onAbrirAjustes} className="flex-row items-center gap-2">
             <Settings size={16} color="#71717a" />
             <Text className="text-[10px] font-black uppercase tracking-[3px] text-zinc-600">Ajustes</Text>

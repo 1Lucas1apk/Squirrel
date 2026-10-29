@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Simulação Real do App com Upload Pixel Arcade 8-Bit</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Press+Start+2P&family=JetBrains+Mono:wght@500;700;800;900&display=swap');
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050507;
+      color: #f4f4f5;
+    }
+
+    .pixel-font {
+      font-family: 'Press Start 2P', monospace;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .pixelated {
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+    }
+
+    /* Moldura Mobile Fiel ao Celular */
+    .app-phone-container {
+      width: 100%;
+      max-width: 410px;
+      height: 840px;
+      border-radius: 48px;
+      border: 4px solid #27272a;
+      box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.95), 0 0 0 1px #18181b;
+      background-color: #09090c;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Notch do Celular */
+    .phone-notch {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 140px;
+      height: 24px;
+      background-color: #18181b;
+      border-bottom-left-radius: 18px;
+      border-bottom-right-radius: 18px;
+      z-index: 50;
+    }
+
+    /* Animação CRT Scanline */
+    @keyframes crtScan {
+      0% { top: -8%; opacity: 0.8; }
+      50% { opacity: 1; }
+      100% { top: 108%; opacity: 0.8; }
+    }
+    .anim-crt-scan {
+      animation: crtScan 1.4s ease-in-out infinite;
+    }
+
+    /* Animação Esquilinho Mascote Pixel */
+    @keyframes pixelTailWag {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(-12deg) translateY(-2px); }
+    }
+    @keyframes pixelBreathe {
+      0%, 100% { transform: scaleY(1); }
+      50% { transform: scaleY(0.92); }
+    }
+    .anim-pixel-tail {
+      animation: pixelTailWag 0.8s ease-in-out infinite;
+      transform-origin: bottom right;
+    }
+    .anim-pixel-breathe {
+      animation: pixelBreathe 0.8s ease-in-out infinite;
+      transform-origin: bottom center;
+    }
+
+    /* Animação de Surgimento / Pop */
+    @keyframes bubblePop {
+      0% { transform: scale(0.85) translateY(12px); opacity: 0; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .anim-bubble-enter {
+      animation: bubblePop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes successFlash {
+      0% { opacity: 0; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.05); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    .anim-success-flash {
+      animation: successFlash 0.4s ease-out forwards;
+    }
+
+    /* Scrollbar personalizada */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex flex-col items-center justify-center">
+
+  <!-- =========================================================================
+       PAINEL SUPERIOR DE CONTROLE E EXPLICAÇÃO
+       ========================================================================= -->
+  <div class="w-full max-w-5xl mb-6 flex flex-col md:flex-row items-center justify-between gap-4 p-5 bg-[#0e0e13] border border-zinc-800 rounded-3xl shadow-2xl">
+    <div class="flex items-center gap-3.5">
+      <div class="h-12 w-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-2xl">
+        👾
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[10.5px] font-mono font-black uppercase">
+            Simulação Fiel do Aplicativo
+          </span>
+          <span class="text-xs text-zinc-500">•</span>
+          <span class="text-xs text-zinc-400 font-mono">Pixel Arcade 8-Bit no Squirrel Chat & Mural</span>
+        </div>
+        <h1 class="text-xl md:text-2xl font-black text-white tracking-tight mt-0.5">
+          Experiência Real de Upload no App
+        </h1>
+      </div>
+    </div>
+
+    <!-- Botões de Ação do Painel -->
+    <div class="flex flex-wrap items-center gap-2.5">
+      <button onclick="triggerUpload('direto')" class="px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition active:scale-95">
+        <span>📷</span>
+        <span>Enviar Foto no Direto</span>
+      </button>
+
+      <button onclick="triggerUpload('mural')" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-lg transition active:scale-95">
+        <span>📢</span>
+        <span>Enviar Foto no Mural</span>
+      </button>
+
+      <button onclick="resetAllDemo()" class="px-3 py-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-300 font-bold text-xs uppercase transition active:scale-95">
+        ↺ Limpar
+      </button>
+    </div>
+  </div>
+
+
+  <!-- =========================================================================
+       DISPOSITIVO MOBILE COM O APLICATIVO REAL
+       ========================================================================= -->
+  <div class="app-phone-container">
+    
+    <!-- Notch -->
+    <div class="phone-notch"></div>
+
+    <!-- Status Bar iOS/Android -->
+    <div class="pt-2 px-6 pb-1 flex items-center justify-between text-[11px] font-mono text-zinc-400 font-bold z-40 bg-[#0d0d12]">
+      <span>14:45</span>
+      <div class="flex items-center gap-1.5">
+        <span>5G</span>
+        <span>🔋 100%</span>
+      </div>
+    </div>
+
+    <!-- =========================================================================
+         HEADER PRINCIPAL DO CHAT (MEU PERFIL + ABAS)
+         ========================================================================= -->
+    <div class="p-3.5 bg-[#0d0d12] border-b border-zinc-800 flex flex-col gap-3">
+      
+      <!-- Topo: Avatar, Nome @tag, Badge Admin e Botões -->
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5 flex-1 min-w-0">
+          <div class="relative">
+            <div class="h-10 w-10 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-indigo-300 font-black text-sm shadow">
+              LU
+            </div>
+            <div class="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-emerald-500 border-2 border-[#0d0d12]"></div>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-1.5">
+              <span class="text-sm font-black text-white uppercase truncate">Lucas</span>
+              <div class="px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 flex items-center gap-0.5">
+                <span class="text-[8px] text-amber-400">👑</span>
+                <span class="text-[8.5px] font-mono text-amber-300 font-black">ADMIN</span>
+              </div>
+            </div>
+            <div class="text-xs font-mono text-indigo-400 font-bold">@lucas</div>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <div class="h-8 w-8 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xs text-zinc-400">
+            QR
+          </div>
+          <div class="h-8 px-2.5 rounded-xl bg-indigo-600 flex items-center gap-1 text-[11px] font-black text-white uppercase shadow">
+            <span>+</span>
+            <span>Adicionar</span>
+          </div>
+          <div class="h-8 w-8 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xs text-zinc-400">
+            ✕
+          </div>
+        </div>
+      </div>
+
+      <!-- Seletor de Abas (Direto vs Mural) -->
+      <div class="flex p-1 bg-[#09090c] rounded-2xl border border-zinc-800/80 gap-1">
+        <button id="tabBtnDireto" onclick="switchTab('direto')" class="flex-1 h-9 rounded-xl flex items-center justify-center gap-1.5 bg-[#18181f] text-white font-black text-xs uppercase tracking-wider transition shadow-sm">
+          <span>💬</span>
+          <span>Direto</span>
+          <span class="h-4 px-1.5 rounded-full bg-indigo-500 text-[10px] font-black text-white">1</span>
+        </button>
+
+        <button id="tabBtnMural" onclick="switchTab('mural')" class="flex-1 h-9 rounded-xl flex items-center justify-center gap-1.5 text-zinc-400 font-black text-xs uppercase tracking-wider transition">
+          <span>📢</span>
+          <span>Mural Geral</span>
+          <span class="h-4 px-1.5 rounded-full bg-purple-500/30 text-[10px] font-bold text-purple-300">3</span>
+        </button>
+      </div>
+
+    </div>
+
+
+    <!-- =========================================================================
+         CORPO 1: ABA CONVERSA DIRETA (1-ON-1)
+         ========================================================================= -->
+    <div id="viewDireto" class="flex-1 flex flex-col justify-between overflow-hidden bg-[#09090c]">
+      
+      <!-- Sub-Header da Conversa com Contato Ativo -->
+      <div class="px-4 py-2.5 bg-[#0e0e14] border-b border-zinc-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="relative">
+            <div class="h-8 w-8 rounded-xl bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-xs font-black text-purple-300">
+              C1
+            </div>
+            <div class="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border border-[#0e0e14]"></div>
+          </div>
+          <div>
+            <div class="text-xs font-black text-zinc-100 uppercase">Caixa 01 - Manhã</div>
+            <div class="text-[10px] font-mono text-emerald-400">● Online agora</div>
+          </div>
+        </div>
+        <span class="text-[10px] font-mono text-zinc-500">Terminal #04</span>
+      </div>
+
+      <!-- Feed de Mensagens Diretas -->
+      <div id="feedDireto" class="flex-1 p-3.5 overflow-y-auto flex flex-col gap-3">
+        
+        <!-- Mensagem Recebida -->
+        <div class="flex flex-col items-start max-w-[82%]">
+          <div class="p-3 rounded-2xl rounded-tl-sm bg-[#181820] border border-zinc-800 text-xs text-zinc-200 leading-relaxed shadow">
+            Bom dia Lucas! Acabei de fechar o turno da manhã. Estou enviando a foto da fita do POS agora.
+          </div>
+          <span class="text-[9.5px] font-mono text-zinc-500 mt-1 ml-1">14:40</span>
+        </div>
+
+        <!-- Mensagem Enviada Texto -->
+        <div class="flex flex-col items-end max-w-[82%] self-end">
+          <div class="p-3 rounded-2xl rounded-tr-sm bg-indigo-600 text-xs text-white leading-relaxed shadow">
+            Perfeito! Pode mandar a foto com boa iluminação que o sistema já sincroniza com o Drive.
+          </div>
+          <div class="flex items-center gap-1 mt-1 mr-1 text-[9.5px] font-mono text-indigo-300">
+            <span>14:41</span>
+            <span class="text-sky-300 font-bold">✓✓</span>
+          </div>
+        </div>
+
+        <!-- CONTAINER DINÂMICO DE UPLOAD PIXEL ART NO CHAT DIRETO -->
+        <div id="directUploadContainer"></div>
+
+      </div>
+
+      <!-- Barra de Input Direto -->
+      <div class="p-3 bg-[#0d0d12] border-t border-zinc-800 flex items-center gap-2">
+        <button onclick="triggerUpload('direto')" class="h-10 w-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 flex items-center justify-center text-sm active:scale-95 shadow transition">
+          📷
+        </button>
+        <input type="text" placeholder="Escreva uma mensagem..." class="flex-1 h-10 px-3.5 rounded-xl bg-[#14141a] border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500">
+        <button class="h-10 w-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white text-sm shadow active:scale-95">
+          🚀
+        </button>
+      </div>
+
+    </div>
+
+
+    <!-- =========================================================================
+         CORPO 2: ABA MURAL GERAL DA LOJA
+         ========================================================================= -->
+    <div id="viewMural" class="flex-1 flex flex-col justify-between overflow-hidden bg-[#07070a] hidden">
+      
+      <!-- Barra Admin Moderação -->
+      <div class="px-3.5 py-1.5 bg-[#0d0d12] border-b border-zinc-800/80 flex items-center justify-between">
+        <div class="flex items-center gap-1 text-[10.5px] font-mono text-amber-300 font-bold uppercase">
+          <span>👑</span>
+          <span>Moderação Ativa</span>
+        </div>
+        <span class="px-2 py-0.5 rounded bg-red-500/10 border border-red-500/30 text-red-300 text-[9.5px] font-mono font-bold">
+          Limpar Mural
+        </span>
+      </div>
+
+      <!-- Feed do Mural -->
+      <div id="feedMural" class="flex-1 p-3.5 overflow-y-auto flex flex-col gap-3.5">
+        
+        <!-- Aviso Fixado no Topo -->
+        <div class="bg-[#14120c] border-2 border-amber-500/50 rounded-2xl p-3.5 shadow-xl">
+          <div class="flex items-center justify-between pb-2 mb-2 border-b border-amber-500/20">
+            <div class="flex items-center gap-1.5 text-xs font-black uppercase text-amber-300">
+              <span>📌</span>
+              <span>Aviso em Destaque</span>
+            </div>
+            <span class="text-[10px] font-mono text-amber-400/80">Hoje às 08:00</span>
+          </div>
+          <p class="text-xs text-zinc-100 leading-relaxed font-medium">
+            Atenção equipe: todas as sangrias acima de R$ 500 devem conter foto do comprovante anexada aqui no Mural!
+          </p>
+          <div class="flex items-center justify-between mt-2.5 pt-2 border-t border-amber-500/20 text-[10px]">
+            <span class="font-mono text-amber-400 font-bold">@gerencia</span>
+            <span class="text-zinc-500">Fixado no topo</span>
+          </div>
+        </div>
+
+        <!-- Recado Simples no Mural com Reações -->
+        <div class="bg-[#121216] border border-zinc-800 rounded-2xl p-3.5 shadow">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <div class="h-7 w-7 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-xs font-black text-purple-300">
+                M2
+              </div>
+              <div>
+                <span class="text-xs font-black text-zinc-200">Matheus</span>
+                <span class="text-[10px] font-mono text-purple-400 block">@matheus_op</span>
+              </div>
+            </div>
+            <span class="text-[10px] text-zinc-500">12:30</span>
+          </div>
+          <p class="text-xs text-zinc-300 leading-relaxed">
+            Fechamento do POS 02 concluído sem divergências de notas. Gaveta conferida!
+          </p>
+          
+          <!-- Reações -->
+          <div class="flex items-center justify-between mt-2.5 pt-2 border-t border-zinc-800 text-[10.5px]">
+            <div class="flex items-center gap-1.5">
+              <span class="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 font-bold">❤️ 2</span>
+              <span class="px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400">👍 1</span>
+            </div>
+            <span class="text-purple-400 font-bold text-[10px]">Responder</span>
+          </div>
+        </div>
+
+        <!-- CONTAINER DINÂMICO DE UPLOAD PIXEL ART NO MURAL -->
+        <div id="muralUploadContainer"></div>
+
+      </div>
+
+      <!-- Barra de Input Mural -->
+      <div class="p-3 bg-[#0d0d12] border-t border-zinc-800 flex items-center gap-2">
+        <button onclick="triggerUpload('mural')" class="h-10 w-10 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 flex items-center justify-center text-sm active:scale-95 shadow transition">
+          📷
+        </button>
+        <input type="text" placeholder="Publicar recado no mural..." class="flex-1 h-10 px-3.5 rounded-xl bg-[#14141a] border border-zinc-800 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-purple-500">
+        <button class="h-10 w-10 rounded-xl bg-purple-600 flex items-center justify-center text-white text-sm shadow active:scale-95">
+          📢
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================================================================
+       SCRIPT DE CONTROLE DA SIMULAÇÃO E DO UPLOAD PIXEL ART
+       ========================================================================= -->
+  <script>
+    let activeTab = 'direto';
+    let isUploading = false;
+    let uploadTimer = null;
+
+    function switchTab(tab) {
+      activeTab = tab;
+      const isDireto = tab === 'direto';
+
+      document.getElementById('viewDireto').classList.toggle('hidden', !isDireto);
+      document.getElementById('viewMural').classList.toggle('hidden', isDireto);
+
+      const btnD = document.getElementById('tabBtnDireto');
+      const btnM = document.getElementById('tabBtnMural');
+
+      if (isDireto) {
+        btnD.className = "flex-1 h-9 rounded-xl flex items-center justify-center gap-1.5 bg-[#18181f] text-white font-black text-xs uppercase tracking-wider transition shadow-sm";
+        btnM.className = "flex-1 h-9 rounded-xl flex items-center justify-center gap-1.5 text-zinc-400 font-black text-xs uppercase tracking-wider transition";
+      } else {
+        btnM.className = "flex-1 h-9 rounded-xl flex items-center justify-center gap-1.5 bg-[#18181f] text-white font-black text-xs uppercase tracking-wider transition shadow-sm";
+        btnD.className = "flex-1 h-9 rounded-xl flex items-center justify-center gap-1.5 text-zinc-400 font-black text-xs uppercase tracking-wider transition";
+      }
+    }
+
+    // DISPARAR UPLOAD PIXEL ART REAL DENTRO DO FEED
+    function triggerUpload(dest) {
+      if (activeTab !== dest) {
+        switchTab(dest);
+      }
+
+      const container = dest === 'direto' 
+        ? document.getElementById('directUploadContainer') 
+        : document.getElementById('muralUploadContainer');
+
+      // Cria a bolha de mensagem no estilo exato do app
+      const msgId = 'msg_' + Date.now();
+      
+      const htmlUploading = `
+        <div id="${msgId}" class="anim-bubble-enter ${dest === 'direto' ? 'self-end max-w-[92%]' : 'w-full'} mb-2">
+          
+          <!-- MOLDURA PIXEL ARCADE 8-BIT NO CARD -->
+          <div class="bg-[#12141a] border-4 border-[#34d399] p-3 rounded-none relative shadow-[0_0_25px_rgba(52,211,153,0.3)]">
+            
+            <!-- Cantos Pixelados -->
+            <div class="absolute -top-1.5 -left-1.5 w-2.5 h-2.5 bg-[#34d399]"></div>
+            <div class="absolute -top-1.5 -right-1.5 w-2.5 h-2.5 bg-[#34d399]"></div>
+            <div class="absolute -bottom-1.5 -left-1.5 w-2.5 h-2.5 bg-[#34d399]"></div>
+            <div class="absolute -bottom-1.5 -right-1.5 w-2.5 h-2.5 bg-[#34d399]"></div>
+
+            <!-- Topo do Card Retrô -->
+            <div class="flex items-center justify-between pb-1.5 mb-2 border-b-2 border-dashed border-emerald-500/40">
+              <span class="pixel-font text-[8px] text-emerald-400 uppercase tracking-widest">[DRIVE_SYNC.EXE]</span>
+              <span id="${msgId}_status" class="pixel-font text-[7.5px] text-emerald-300">UPLOADING...</span>
+            </div>
+
+              <!-- Imagem com Scanline CRT e Mascote -->
+            <div class="w-full h-40 bg-black relative overflow-hidden border-2 border-emerald-500/40">
+              <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80" class="w-full h-full object-cover opacity-85 pixelated" alt="Preview">
+
+              <!-- Scanline CRT Verde -->
+              <div id="${msgId}_scanline" class="absolute left-0 right-0 h-1.5 bg-emerald-400/80 shadow-[0_0_10px_#34d399] anim-crt-scan"></div>
+
+              <!-- Mascote Esquilinho Pixel Art (SVG) -->
+              <div class="absolute bottom-2 left-2 bg-black/90 border border-emerald-400 px-2 py-0.5 flex items-center gap-1.5 shadow">
+                <svg class="w-5 h-5 anim-pixel-breathe" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path class="anim-pixel-tail" d="M18 16H20V12H22V6H20V4H16V6H14V10H16V14H18V16Z" fill="#f59e0b"/>
+                  <path d="M6 18H14V10H12V8H8V10H6V18Z" fill="#d97706"/>
+                  <rect x="9" y="10" width="2" height="2" fill="#ffffff"/>
+                  <rect x="10" y="10" width="1" height="1" fill="#000000"/>
+                  <rect x="6" y="12" width="2" height="2" fill="#fbbf24"/>
+                  <rect x="6" y="18" width="3" height="2" fill="#78350f"/>
+                  <rect x="11" y="18" width="3" height="2" fill="#78350f"/>
+                  <rect x="4" y="14" width="3" height="3" fill="#34d399"/>
+                </svg>
+                <div class="pixel-font text-[8px] text-emerald-300">
+                  <span id="${msgId}_pct">0</span>%
+                </div>
+              </div>
+            </div>
+
+            <!-- Barra de Blocos de Pixel -->
+            <div class="mt-2.5">
+              <div class="flex items-center justify-between mb-1 text-[8.5px] font-mono font-bold text-emerald-400">
+                <span id="${msgId}_phase">[1/3] AUTENTICANDO OAUTH...</span>
+                <span class="pixel-font text-[8px]"><span id="${msgId}_barPct">0</span>%</span>
+              </div>
+              <div id="${msgId}_blocks" class="w-full h-3.5 bg-black border border-emerald-500/50 p-0.5 flex gap-0.5">
+                <!-- Blocos gerados -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+      `;
+
+      container.innerHTML = htmlUploading;
+
+      // Cria os 20 blocos
+      const blocksContainer = document.getElementById(`${msgId}_blocks`);
+      for (let i = 0; i < 20; i++) {
+        const d = document.createElement('div');
+        d.className = "flex-1 h-full bg-emerald-950/40 rounded-none transition-colors duration-75";
+        d.id = `${msgId}_b_${i}`;
+        blocksContainer.appendChild(d);
+      }
+
+      // Scroll para o fim
+      const feed = dest === 'direto' ? document.getElementById('feedDireto') : document.getElementById('feedMural');
+      feed.scrollTop = feed.scrollHeight;
+
+      // Inicia Animação Progressiva
+      let p = 0;
+      clearInterval(uploadTimer);
+      uploadTimer = setInterval(() => {
+        p += 5;
+        if (p > 100) p = 100;
+
+        document.getElementById(`${msgId}_pct`).innerText = p;
+        document.getElementById(`${msgId}_barPct`).innerText = p;
+
+        // Fases do Drive
+        const phaseLabel = document.getElementById(`${msgId}_phase`);
+        if (p < 30) {
+          phaseLabel.innerText = "[1/3] OAUTH2 HANDSHAKE...";
+        } else if (p < 85) {
+          phaseLabel.innerText = `[2/3] ENVIANDO: ${Math.round((p/100)*2048)}KB/2MB`;
+        } else {
+          phaseLabel.innerText = "[3/3] SALVANDO NO DRIVE...";
+        }
+
+        // Preenche blocos de pixel
+        for (let i = 0; i < 20; i++) {
+          const blk = document.getElementById(`${msgId}_b_${i}`);
+          if (blk) {
+            blk.style.backgroundColor = (i / 20) * 100 <= p ? '#34d399' : 'rgba(6, 78, 59, 0.4)';
+          }
+        }
+
+        // Ao atingir 100%, transiciona imediatamente e diretamente para a foto final sem banners extras
+        if (p >= 100) {
+          clearInterval(uploadTimer);
+          setTimeout(() => {
+            finalizeMessageCard(dest, msgId);
+          }, 350);
+        }
+      }, 90);
+    }
+
+    // Transição suave para o card finalizado com dupla checagem / reações
+    function finalizeMessageCard(dest, msgId) {
+      const el = document.getElementById(msgId);
+      if (!el) return;
+
+      if (dest === 'direto') {
+        el.innerHTML = `
+          <div class="rounded-2xl rounded-tr-sm bg-[#181824] border border-indigo-500/40 p-2 shadow-xl anim-success-flash">
+            <div class="rounded-xl overflow-hidden mb-1.5 border border-zinc-700 relative">
+              <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80" class="w-full h-40 object-cover" alt="Foto POS">
+              <div class="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded bg-black/80 text-[9px] font-mono text-white">
+                Expandir
+              </div>
+            </div>
+            <div class="flex items-center justify-between px-1 text-[10px]">
+              <span class="text-zinc-400">Comprovante POS Fechamento</span>
+              <div class="flex items-center gap-1 text-indigo-300 font-mono">
+                <span>14:46</span>
+                <span class="text-sky-400 font-bold">✓✓</span>
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        el.innerHTML = `
+          <div class="bg-[#121216] border border-purple-500/40 rounded-2xl p-3.5 shadow-xl anim-success-flash">
+            <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center gap-2">
+                <div class="h-7 w-7 rounded-lg bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-xs font-black text-indigo-300">
+                  LU
+                </div>
+                <div>
+                  <span class="text-xs font-black text-zinc-200">Lucas</span>
+                  <span class="text-[10px] font-mono text-indigo-400 block">@lucas</span>
+                </div>
+              </div>
+              <span class="text-[10px] text-zinc-500">14:46</span>
+            </div>
+
+            <div class="rounded-xl overflow-hidden mb-2.5 border border-zinc-700 relative">
+              <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&auto=format&fit=crop&q=80" class="w-full h-40 object-cover" alt="Foto Mural">
+              <div class="absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded bg-black/80 text-[9px] font-mono text-white">
+                Expandir
+              </div>
+            </div>
+
+            <p class="text-xs text-zinc-300 leading-relaxed">
+              Comprovante do fechamento sincronizado com sucesso no Google Drive.
+            </p>
+
+            <div class="flex items-center justify-between mt-2.5 pt-2 border-t border-zinc-800 text-[10.5px]">
+              <div class="flex items-center gap-1.5">
+                <span class="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 font-bold">❤️ 1</span>
+                <span class="px-2 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400">🔥 2</span>
+              </div>
+              <span class="text-purple-400 font-bold text-[10px]">Responder</span>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function resetAllDemo() {
+      clearInterval(uploadTimer);
+      document.getElementById('directUploadContainer').innerHTML = '';
+      document.getElementById('muralUploadContainer').innerHTML = '';
+    }
+  </script>
+
+</body>
+</html>

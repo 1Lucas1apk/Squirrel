@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setDebugModeActive } from '../services/debug-logger';
 
 export type HapticIntensity = 'light' | 'medium' | 'heavy';
 export type MoneyInputMode = 'rtl' | 'manual';
@@ -15,8 +16,13 @@ interface AppSettings {
   convenioEnabled: boolean;
   gasDoPovoValorPadrao: number;
   chatOperatorName: string;
+  chatOperatorCargo: string;
   chatPairingCode: string;
   searchEnabled: boolean;
+  painelLayout: 'grid' | 'stack';
+  fontScale: 'compact' | 'normal' | 'large';
+  indicadoresStyle: 'dock' | 'focus' | 'rows';
+  debugModeEnabled: boolean;
 }
 
 const SETTINGS_KEY = '@squirrel_app_settings';
@@ -40,8 +46,13 @@ export const useAppSettings = create<AppSettingsStore>((set, get) => ({
     convenioEnabled: false,
     gasDoPovoValorPadrao: 120.36,
     chatOperatorName: '',
+    chatOperatorCargo: 'operador',
     chatPairingCode: '',
-    searchEnabled: false
+    searchEnabled: false,
+    painelLayout: 'stack',
+    fontScale: 'normal',
+    indicadoresStyle: 'dock',
+    debugModeEnabled: false
   },
   loading: true,
   
@@ -49,9 +60,15 @@ export const useAppSettings = create<AppSettingsStore>((set, get) => ({
     try {
       const saved = await AsyncStorage.getItem(SETTINGS_KEY);
       if (saved) {
-        // Faz o merge das configs antigas com as novas
+        // Faz o merge das configs do dispositivo (sem contaminar com dados de identidade de usuário)
         const parsed = JSON.parse(saved);
+        delete parsed.chatOperatorName;
+        delete parsed.chatPairingCode;
+        delete parsed.chatOperatorCargo;
         set((state) => ({ settings: { ...state.settings, ...parsed } }));
+        if (typeof parsed.debugModeEnabled === "boolean") {
+          setDebugModeActive(parsed.debugModeEnabled);
+        }
       }
     } catch (e) {
       console.error("Erro ao carregar ajustes", e);
@@ -65,6 +82,9 @@ export const useAppSettings = create<AppSettingsStore>((set, get) => ({
       const { settings } = get();
       const updated = { ...settings, ...newSettings };
       set({ settings: updated });
+      if (typeof newSettings.debugModeEnabled === "boolean") {
+        setDebugModeActive(newSettings.debugModeEnabled);
+      }
       await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(updated));
     } catch (e) {
       console.error("Erro ao salvar ajustes", e);

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — Meio da Tela Calibrado & Harmonioso</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 420px;
+      border-radius: 40px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-5xl mx-auto pb-28">
+
+  <!-- CABEÇALHO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      🎯 CALIBRAÇÃO ERGONÔMICA DO MEIO
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      Bate-papo Imponente + Atividades com Espaço
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-xl mx-auto font-medium">
+      Bate-papo na mesma escala dos outros cards • R$ com respiro perfeito • Cards de atividade espaçosos e elegantes.
+    </p>
+
+    <!-- SELETOR DE ESTILOS DO MEIO -->
+    <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2 bg-[#121216] p-1.5 rounded-2xl border border-zinc-800 max-w-xl mx-auto">
+      <button onclick="setCalib(1)" id="btn-c1" class="py-2.5 rounded-xl text-xs font-black bg-indigo-500 text-white shadow transition-all">
+        1. Pro Carrossel Espaçoso
+      </button>
+      <button onclick="setCalib(2)" id="btn-c2" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        2. Mini Lista 2 Linhas
+      </button>
+      <button onclick="setCalib(3)" id="btn-c3" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        3. Card Duplo Expandido
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER CENTRAL -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- CABEÇALHO DO APP -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-4 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-lg font-black uppercase tracking-tighter text-white">CAIXA</span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span class="text-[11px] font-black text-zinc-400 uppercase">27 AGO</span>
+        </div>
+        <div id="calib-tag" class="text-xs font-black text-indigo-400 uppercase bg-indigo-500/10 px-2.5 py-1 rounded-xl border border-indigo-500/20">
+          Opção 1: Carrossel Espaçoso
+        </div>
+      </div>
+
+      <!-- CORPO COM A ESCALA COMPLETA DA TELA -->
+      <div class="p-3.5 space-y-3">
+        
+        <!-- CARD AJUSTE DA GAVETA (REFERÊNCIA DE TAMANHO ~70px) -->
+        <div class="bg-[#121216] p-3 px-4 rounded-2xl border border-zinc-800/80 flex items-center justify-between min-h-[70px] opacity-70">
+          <div class="flex items-center gap-3">
+            <div class="h-9 w-9 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center text-zinc-400">
+              <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <div class="text-[11px] font-bold uppercase text-zinc-400">Ajuste da Gaveta</div>
+              <div class="text-[20px] font-black text-white mono">R$ 0,00</div>
+            </div>
+          </div>
+          <div class="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 text-xs font-black">
+            + 1,00
+          </div>
+        </div>
+
+        <!-- OUTROS RECEBIMENTOS (REFERÊNCIA ~90px) -->
+        <div class="grid grid-cols-2 gap-2.5 opacity-70">
+          <div class="bg-[#121216] border border-blue-500/20 rounded-2xl p-3 flex flex-col justify-between min-h-[85px]">
+            <span class="text-[11px] font-black uppercase text-blue-400">💳 POS Cartões</span>
+            <div class="mono text-[17px] font-black text-white">R$ 1.840,50</div>
+          </div>
+          <div class="bg-[#121216] border border-purple-500/20 rounded-2xl p-3 flex flex-col justify-between min-h-[85px]">
+            <span class="text-[11px] font-black uppercase text-purple-400">🏢 Convênios</span>
+            <div class="mono text-[17px] font-black text-white">R$ 650,00</div>
+          </div>
+        </div>
+
+        <!-- DIVISOR COM IDENTIDADE -->
+        <div class="flex items-center gap-2 px-1 pt-1">
+          <i data-lucide="messages-square" class="w-3.5 h-3.5 text-indigo-400"></i>
+          <span class="text-[11px] font-black uppercase tracking-[2px] text-indigo-300">Bate-papo & Auditoria</span>
+          <div class="flex-1 h-px bg-zinc-800"></div>
+        </div>
+
+        <!-- CONTAINER DINÂMICO CALIBRADO -->
+        <div id="calib-container" class="space-y-3">
+          <!-- Renderizado via JS -->
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    let currentCalib = 1;
+
+    function setCalib(n) {
+      currentCalib = n;
+
+      for (let i = 1; i <= 3; i++) {
+        const btn = document.getElementById('btn-c' + i);
+        if (i === n) {
+          btn.className = 'py-2.5 rounded-xl text-xs font-black bg-indigo-500 text-white shadow transition-all';
+        } else {
+          btn.className = 'py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all';
+        }
+      }
+
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById('calib-container');
+      const tag = document.getElementById('calib-tag');
+
+      if (currentCalib === 1) {
+        // ==========================================
+        // OPÇÃO 1: PRO CARROSSEL ESPAÇOSO + BATE-PAPO ROBUSTO
+        // ==========================================
+        tag.innerText = 'Opção 1: Pro Carrossel Espaçoso';
+        tag.className = 'text-xs font-black text-indigo-400 uppercase bg-indigo-500/10 px-2.5 py-1 rounded-xl border border-indigo-500/20';
+
+        container.innerHTML = `
+          <!-- 1. CARD BATE-PAPO ROBUSTO (min-h-[76px]) -->
+          <div class="bg-[#121216] border border-indigo-500/30 hover:border-indigo-500/50 rounded-2xl p-3.5 shadow-lg flex items-center justify-between gap-3 min-h-[78px] active:scale-98 transition-all cursor-pointer">
+            <div class="flex items-center gap-3 flex-1 mr-1">
+              <div class="h-10 w-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 flex-shrink-0">
+                <i data-lucide="message-square" class="w-5 h-5"></i>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-1.5 mb-0.5">
+                  <span class="text-[11px] font-black uppercase text-indigo-300 tracking-wider">Bate-papo da Equipe</span>
+                  <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                  <span class="text-[10px] text-zinc-500 font-bold">• 14:32</span>
+                </div>
+                <p class="text-[12.5px] text-zinc-200 font-bold leading-tight">Maria: "Fulano vem buscar o troco às 16h!"</p>
+              </div>
+            </div>
+            
+            <button class="px-3.5 py-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-black hover:bg-indigo-500/30 active:scale-95 transition-all flex-shrink-0">
+              Abrir ›
+            </button>
+          </div>
+
+          <!-- 2. CABEÇALHO DO CARROSSEL COM BOTÃO AUDITORIA -->
+          <div class="flex items-center justify-between px-1 pt-0.5">
+            <div class="flex items-center gap-2">
+              <i data-lucide="activity" class="w-4 h-4 text-emerald-400"></i>
+              <span class="text-[11.5px] font-black uppercase tracking-[2px] text-zinc-300">Atividades Recentes</span>
+            </div>
+            <button class="flex items-center gap-1.5 py-1.5 px-3 rounded-xl bg-zinc-900 border border-zinc-800 text-indigo-300 text-[11px] font-black uppercase tracking-wider hover:text-white active:scale-95 transition-all">
+              <i data-lucide="history" class="w-3.5 h-3.5 text-indigo-400"></i>
+              Auditoria (22) ›
+            </button>
+          </div>
+
+          <!-- 3. CARROSSEL COM ESPAÇAMENTO E R$ CALIBRADO -->
+          <div class="flex gap-2.5 overflow-x-auto pb-1.5">
+            
+            <!-- Card 1: Venda Balcão -->
+            <div class="bg-[#121216] border border-emerald-500/30 rounded-2xl p-3 px-3.5 min-w-[155px] max-w-[170px] flex flex-col justify-between min-h-[92px] shadow-lg flex-shrink-0">
+              <div class="flex items-center gap-1.5">
+                <div class="h-5 w-5 rounded-md bg-emerald-500/15 flex items-center justify-center">
+                  <i data-lucide="arrow-down-left" class="w-3 h-3 text-emerald-400"></i>
+                </div>
+                <span class="text-[10.5px] font-black uppercase tracking-wider text-emerald-400">Venda Balcão</span>
+              </div>
+
+              <div class="mt-1">
+                <!-- R$ com respiro e alinhamento elegante -->
+                <div class="flex items-baseline font-black mono tracking-tight text-emerald-400">
+                  <span class="text-xs font-bold mr-1">+</span>
+                  <span class="text-zinc-400 text-xs font-bold mr-0.5">R$</span>
+                  <span class="text-[18px] text-white font-black">45</span>
+                  <span class="text-zinc-300 text-xs font-bold">,00</span>
+                </div>
+                <div class="text-[10px] text-zinc-400 font-medium mt-0.5">14:28 • Espécie</div>
+              </div>
+            </div>
+
+            <!-- Card 2: Pix Recebido -->
+            <div class="bg-[#121216] border border-indigo-500/30 rounded-2xl p-3 px-3.5 min-w-[155px] max-w-[170px] flex flex-col justify-between min-h-[92px] shadow-lg flex-shrink-0">
+              <div class="flex items-center gap-1.5">
+                <div class="h-5 w-5 rounded-md bg-indigo-500/15 flex items-center justify-center">
+                  <i data-lucide="smartphone" class="w-3 h-3 text-indigo-400"></i>
+                </div>
+                <span class="text-[10.5px] font-black uppercase tracking-wider text-indigo-300">Pix Recebido</span>
+              </div>
+
+              <div class="mt-1">
+                <div class="flex items-baseline font-black mono tracking-tight text-indigo-300">
+                  <span class="text-xs font-bold mr-1">+</span>
+                  <span class="text-indigo-400/80 text-xs font-bold mr-0.5">R$</span>
+                  <span class="text-[18px] text-indigo-200 font-black">120</span>
+                  <span class="text-indigo-300 text-xs font-bold">,50</span>
+                </div>
+                <div class="text-[10px] text-indigo-300/80 font-medium mt-0.5">14:10 • App Loja</div>
+              </div>
+            </div>
+
+            <!-- Card 3: Sangria -->
+            <div class="bg-[#121216] border border-red-500/30 rounded-2xl p-3 px-3.5 min-w-[155px] max-w-[170px] flex flex-col justify-between min-h-[92px] shadow-lg flex-shrink-0">
+              <div class="flex items-center gap-1.5">
+                <div class="h-5 w-5 rounded-md bg-red-500/15 flex items-center justify-center">
+                  <i data-lucide="arrow-up-right" class="w-3 h-3 text-red-400"></i>
+                </div>
+                <span class="text-[10.5px] font-black uppercase tracking-wider text-red-400">Sangria</span>
+              </div>
+
+              <div class="mt-1">
+                <div class="flex items-baseline font-black mono tracking-tight text-red-400">
+                  <span class="text-xs font-bold mr-1">-</span>
+                  <span class="text-zinc-400 text-xs font-bold mr-0.5">R$</span>
+                  <span class="text-[18px] text-red-300 font-black">500</span>
+                  <span class="text-red-400 text-xs font-bold">,00</span>
+                </div>
+                <div class="text-[10px] text-zinc-400 font-medium mt-0.5">13:40 • Cofre</div>
+              </div>
+            </div>
+
+            <!-- Card Final: Ver Todas -->
+            <div class="bg-[#0c0c0e] border border-dashed border-zinc-800 hover:border-zinc-700 rounded-2xl p-3 min-w-[130px] flex flex-col items-center justify-center min-h-[92px] shadow flex-shrink-0 cursor-pointer active:scale-95 transition-all">
+              <i data-lucide="history" class="w-4.5 h-4.5 text-zinc-400 mb-1"></i>
+              <span class="text-[10.5px] font-black uppercase text-zinc-300 text-center">Ver Todas (22) ›</span>
+            </div>
+
+          </div>
+        `;
+      } else if (currentCalib === 2) {
+        // ==========================================
+        // OPÇÃO 2: MINI LISTA 2 LINHAS
+        // ==========================================
+        tag.innerText = 'Opção 2: Mini Lista 2 Linhas';
+        tag.className = 'text-xs font-black text-purple-400 uppercase bg-purple-500/10 px-2.5 py-1 rounded-xl border border-purple-500/20';
+
+        container.innerHTML = `
+          <!-- Bate-papo -->
+          <div class="bg-[#121216] border border-indigo-500/30 rounded-2xl p-3.5 shadow-lg flex items-center justify-between min-h-[78px]">
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-xl bg-indigo-500/15 flex items-center justify-center text-indigo-400">
+                <i data-lucide="message-circle" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <div class="text-[11px] font-black text-indigo-300 uppercase">Bate-papo • Maria</div>
+                <p class="text-xs text-white font-bold">"Fulano vem buscar o troco às 16h!"</p>
+              </div>
+            </div>
+            <button class="px-3 py-1.5 rounded-xl bg-indigo-500/20 text-indigo-300 text-xs font-black">Abrir ›</button>
+          </div>
+
+          <!-- Mini Lista Vertical com 2 itens recentes + Botão Ver Mais -->
+          <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-3.5 shadow-lg space-y-2">
+            <div class="flex justify-between items-center text-xs text-zinc-400 mb-1">
+              <span class="font-black uppercase tracking-wider">Últimos Lançamentos</span>
+              <button class="text-indigo-400 font-bold text-[11px]">Auditoria Geral (22) ›</button>
+            </div>
+
+            <div class="flex justify-between items-center p-2.5 rounded-xl bg-[#09090c] border border-zinc-800/60">
+              <div class="flex items-center gap-2">
+                <i data-lucide="arrow-down-left" class="w-4 h-4 text-emerald-400"></i>
+                <div>
+                  <div class="text-xs font-bold text-zinc-200">Venda Balcão</div>
+                  <div class="text-[10px] text-zinc-500">14:28 • Espécie</div>
+                </div>
+              </div>
+              <div class="mono text-xs font-black text-emerald-400">+ R$ 45,00</div>
+            </div>
+
+            <div class="flex justify-between items-center p-2.5 rounded-xl bg-[#09090c] border border-zinc-800/60">
+              <div class="flex items-center gap-2">
+                <i data-lucide="smartphone" class="w-4 h-4 text-indigo-400"></i>
+                <div>
+                  <div class="text-xs font-bold text-zinc-200">Pix Recebido</div>
+                  <div class="text-[10px] text-zinc-500">14:10 • App Loja</div>
+                </div>
+              </div>
+              <div class="mono text-xs font-black text-indigo-300">+ R$ 120,50</div>
+            </div>
+          </div>
+        `;
+      } else if (currentCalib === 3) {
+        // ==========================================
+        // OPÇÃO 3: CARD DUPLO EXPANDIDO
+        // ==========================================
+        tag.innerText = 'Opção 3: Card Duplo Expandido';
+        tag.className = 'text-xs font-black text-blue-400 uppercase bg-blue-500/10 px-2.5 py-1 rounded-xl border border-blue-500/20';
+
+        container.innerHTML = `
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="bg-[#121216] border border-indigo-500/30 rounded-2xl p-3.5 flex flex-col justify-between min-h-[110px] shadow-lg">
+              <div class="flex items-center gap-2 text-indigo-300 text-[11px] font-black uppercase">
+                <i data-lucide="message-square" class="w-4 h-4"></i> Bate-papo
+              </div>
+              <div>
+                <p class="text-xs text-white font-bold line-clamp-2">"Troco do gás às 16h!"</p>
+                <div class="text-[10px] text-indigo-400 font-bold mt-1">Toque p/ responder ›</div>
+              </div>
+            </div>
+
+            <div class="bg-[#121216] border border-emerald-500/30 rounded-2xl p-3.5 flex flex-col justify-between min-h-[110px] shadow-lg">
+              <div class="flex items-center justify-between text-[11px] font-black uppercase text-emerald-400">
+                <span class="flex items-center gap-1.5"><i data-lucide="activity" class="w-4 h-4"></i> Atividade</span>
+                <span class="text-[9.5px] text-zinc-500">14:28</span>
+              </div>
+              <div>
+                <div class="mono text-[16px] font-black text-white">+ R$ 45,00</div>
+                <div class="text-[10px] text-zinc-400 font-medium">Venda Balcão ›</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      lucide.createIcons();
+    }
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squirrel — 6 Conceitos de Barra Flutuante (Floating Bar)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700;800;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #050505;
+      color: #f4f4f5;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .mobile-frame {
+      width: 100%;
+      max-width: 420px;
+      height: 840px;
+      border-radius: 40px;
+      border: 3px solid #27272a;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px #18181b;
+      background-color: #09090b;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Animações dos Docks */
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.6)); }
+      50% { transform: scale(1.06); filter: drop-shadow(0 0 16px rgba(16, 185, 129, 0.9)); }
+    }
+    .pulse-glow {
+      animation: pulseGlow 2.5s infinite ease-in-out;
+    }
+
+    @keyframes laserSlide {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    .laser-line {
+      animation: laserSlide 2s linear infinite;
+    }
+
+    @keyframes tabBounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+    .tab-active-bounce {
+      animation: tabBounce 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+  </style>
+</head>
+<body class="p-3 md:p-8 max-w-6xl mx-auto pb-28">
+
+  <!-- CABEÇALHO -->
+  <div class="mb-6 text-center">
+    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-black uppercase tracking-widest mb-2 shadow-sm">
+      🚀 SQUIRREL 2.0 • FLOATING BOTTOM BAR
+    </div>
+    <h1 class="text-2xl md:text-3xl font-black uppercase tracking-tight text-white">
+      6 Estilos de Barra Flutuante
+    </h1>
+    <p class="text-zinc-400 text-sm mt-1 max-w-2xl mx-auto font-medium">
+      Projetadas para combinar com o novo design de luxo escuro, proporções áureas e ícones vivos:
+    </p>
+
+    <!-- SELETOR DOS 6 ESTILOS -->
+    <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 bg-[#121216] p-1.5 rounded-2xl border border-zinc-800 max-w-5xl mx-auto">
+      <button onclick="setBarStyle(1)" id="btn-b1" class="py-2.5 rounded-xl text-xs font-black bg-emerald-500 text-zinc-950 shadow transition-all">
+        1. Cyber Glass Capsule
+      </button>
+      <button onclick="setBarStyle(2)" id="btn-b2" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        2. Ação Rápida Central (+)
+      </button>
+      <button onclick="setBarStyle(3)" id="btn-b3" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        3. Segmented Neon Laser
+      </button>
+      <button onclick="setBarStyle(4)" id="btn-b4" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        4. Live Status Pill
+      </button>
+      <button onclick="setBarStyle(5)" id="btn-b5" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        5. Pixel Art Retro-Chic
+      </button>
+      <button onclick="setBarStyle(6)" id="btn-b6" class="py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all">
+        6. Minimal Light Beam
+      </button>
+    </div>
+  </div>
+
+  <!-- CONTAINER CENTRAL -->
+  <div class="flex flex-col items-center justify-center">
+
+    <div class="mobile-frame">
+      
+      <!-- CABEÇALHO DO APP -->
+      <div class="border-b border-zinc-900 bg-[#09090b] px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <div class="flex items-center gap-2">
+          <span class="text-base font-black uppercase tracking-tighter text-white">CAIXA</span>
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span class="text-[11px] font-black text-zinc-400 uppercase">27 AGO</span>
+        </div>
+        <div id="bar-tag" class="text-xs font-black text-emerald-400 uppercase bg-emerald-500/10 px-2.5 py-0.5 rounded-xl border border-emerald-500/20">
+          Estilo 1: Cyber Glass Capsule
+        </div>
+      </div>
+
+      <!-- CORPO DA TELA (CONTEXTO DO DASHBOARD) -->
+      <div class="flex-1 overflow-y-auto p-3.5 space-y-3 relative pb-28">
+        
+        <!-- CARD DO TOTAL HERO -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-[28px] p-4 shadow-xl">
+          <div class="flex items-center justify-between text-xs font-black uppercase text-zinc-400 mb-1">
+            <span>Total do Caixa</span>
+            <span class="text-red-400 bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/20">-R$ 0,09 Quebra</span>
+          </div>
+          <div class="mono text-[34px] font-black text-white leading-tight">
+            <span class="text-zinc-400 text-lg font-bold">R$</span> 7.340<span class="text-zinc-300 text-2xl font-extrabold">,98</span>
+          </div>
+          <div class="h-1.5 w-full bg-zinc-900 rounded-full flex overflow-hidden my-2.5 p-0.5">
+            <div style="width: 14%" class="bg-amber-400 rounded-full mr-0.5"></div>
+            <div style="width: 86%" class="bg-indigo-400 rounded-full"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <div class="bg-[#09090c] p-2.5 rounded-xl border border-zinc-800/80">
+              <div class="text-[11px] font-bold text-amber-400 uppercase">Dinheiro</div>
+              <div class="mono text-base font-black text-white">R$ 1.051,00</div>
+            </div>
+            <div class="bg-[#09090c] p-2.5 rounded-xl border border-zinc-800/80">
+              <div class="text-[11px] font-bold text-indigo-300 uppercase">Pix Repasse</div>
+              <div class="mono text-base font-black text-indigo-200">R$ 6.289,98</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DOCK DE SAÍDAS -->
+        <div class="bg-[#121216] border border-zinc-800/80 rounded-2xl p-3 px-4 flex items-center shadow-lg min-h-[66px]">
+          <div class="flex-1">
+            <div class="text-[11px] font-bold text-zinc-400 uppercase">Saídas</div>
+            <div class="mono text-lg font-black text-white">R$ 0,00</div>
+          </div>
+          <div class="w-px h-8 bg-zinc-800 mx-2"></div>
+          <div class="flex-1">
+            <div class="text-[11px] font-bold text-blue-400 uppercase">Canhotos</div>
+            <div class="mono text-lg font-black text-blue-300">22 de 22</div>
+          </div>
+        </div>
+
+        <!-- BATE-PAPO -->
+        <div class="bg-[#121216] border border-indigo-500/30 rounded-2xl p-3 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="h-8 w-8 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center">
+              <i data-lucide="message-square" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <div class="text-[11px] font-black uppercase text-indigo-300">Bate-papo</div>
+              <div class="text-xs text-white font-bold">Maria: "Troco às 16h..."</div>
+            </div>
+          </div>
+          <span class="text-xs text-indigo-400 font-bold">Abrir ›</span>
+        </div>
+
+        <!-- ESQUILINHO PIXEL FOOTER -->
+        <div class="pt-2 pb-1 flex items-center justify-center opacity-80">
+          <div class="relative w-12 h-12 flex items-center justify-center pixelated">
+            <svg viewBox="0 0 32 32" class="w-full h-full">
+              <rect x="4" y="10" width="6" height="4" fill="#d97706" />
+              <rect x="2" y="14" width="8" height="6" fill="#f59e0b" />
+              <rect x="16" y="10" width="10" height="8" fill="#f59e0b" />
+              <rect x="20" y="12" width="2" height="2" fill="#18181b" />
+              <rect x="12" y="18" width="10" height="8" fill="#d97706" />
+              <rect x="14" y="19" width="6" height="6" fill="#fef3c7" />
+              <rect x="22" y="18" width="4" height="4" fill="#fef08a" />
+              <rect x="0" y="28" width="32" height="2" fill="#27272a" />
+              <rect x="6" y="27" width="2" height="1" fill="#10b981" />
+              <rect x="14" y="27" width="3" height="1" fill="#10b981" />
+            </svg>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ==============================================
+           CONTAINER DA BARRA FLUTUANTE DINÂMICA
+           ============================================== -->
+      <div id="floating-bar-container" class="absolute bottom-4 left-0 right-0 px-3 z-50 flex items-center justify-center pointer-events-auto">
+        <!-- Injetado via JS -->
+      </div>
+
+    </div>
+
+    <!-- DESCRIÇÃO DO CONCEITO -->
+    <div id="bar-description" class="mt-6 max-w-xl text-center bg-[#121216] p-4 rounded-2xl border border-zinc-800 text-xs text-zinc-300">
+      <!-- Injetado via JS -->
+    </div>
+
+  </div>
+
+  <script>
+    let currentStyle = 1;
+    let activeTab = 'painel';
+
+    function setBarStyle(n) {
+      currentStyle = n;
+
+      for (let i = 1; i <= 6; i++) {
+        const btn = document.getElementById('btn-b' + i);
+        if (i === n) {
+          btn.className = 'py-2.5 rounded-xl text-xs font-black bg-emerald-500 text-zinc-950 shadow transition-all';
+        } else {
+          btn.className = 'py-2.5 rounded-xl text-xs font-bold text-zinc-400 hover:text-white transition-all';
+        }
+      }
+
+      render();
+    }
+
+    function selectTab(key) {
+      activeTab = key;
+      render();
+    }
+
+    function render() {
+      const container = document.getElementById('floating-bar-container');
+      const tag = document.getElementById('bar-tag');
+      const desc = document.getElementById('bar-description');
+
+      if (currentStyle === 1) {
+        // ==========================================
+        // ESTILO 1: CYBER GLASS CAPSULE (PÍLULA DE VIDRO PREMIUM)
+        // ==========================================
+        tag.innerText = 'Estilo 1: Cyber Glass Capsule';
+        tag.className = 'text-xs font-black text-emerald-400 uppercase bg-emerald-500/10 px-2.5 py-0.5 rounded-xl border border-emerald-500/20';
+        desc.innerHTML = `<b>Estilo 1 — Cyber Glass Capsule:</b> Pílula flutuante com vidro fumê <b>backdrop-blur-xl</b>, borda sutil em <b>border-zinc-700/60</b> e indicador ativo com <b>fundo branco acetinado contrastante</b>. Transição suave ao trocar de aba.`;
+
+        container.innerHTML = `
+          <div class="bg-[#121216]/90 backdrop-blur-xl border border-zinc-700/60 rounded-full p-1.5 flex items-center gap-1 shadow-[0_20px_40px_rgba(0,0,0,0.9)] max-w-[360px] w-full justify-between">
+            
+            <!-- Tab Painel -->
+            <button onclick="selectTab('painel')" class="flex items-center gap-1.5 py-2 px-3.5 rounded-full transition-all ${activeTab === 'painel' ? 'bg-white text-zinc-950 shadow-md font-black' : 'text-zinc-400 hover:text-white font-bold'}">
+              <i data-lucide="layout-dashboard" class="w-4 h-4 ${activeTab === 'painel' ? 'stroke-[2.5]' : ''}"></i>
+              ${activeTab === 'painel' ? '<span class="text-xs uppercase tracking-tight">Painel</span>' : ''}
+            </button>
+
+            <!-- Tab Dinheiro / Lançamentos -->
+            <button onclick="selectTab('dinheiro')" class="flex items-center gap-1.5 py-2 px-3.5 rounded-full transition-all ${activeTab === 'dinheiro' ? 'bg-white text-zinc-950 shadow-md font-black' : 'text-zinc-400 hover:text-white font-bold'}">
+              <i data-lucide="plus-circle" class="w-4 h-4 ${activeTab === 'dinheiro' ? 'stroke-[2.5]' : ''}"></i>
+              ${activeTab === 'dinheiro' ? '<span class="text-xs uppercase tracking-tight">Dinheiro</span>' : ''}
+            </button>
+
+            <!-- Tab POS Cartões -->
+            <button onclick="selectTab('pos')" class="flex items-center gap-1.5 py-2 px-3.5 rounded-full transition-all ${activeTab === 'pos' ? 'bg-white text-zinc-950 shadow-md font-black' : 'text-zinc-400 hover:text-white font-bold'}">
+              <i data-lucide="credit-card" class="w-4 h-4 ${activeTab === 'pos' ? 'stroke-[2.5]' : ''}"></i>
+              ${activeTab === 'pos' ? '<span class="text-xs uppercase tracking-tight">POS</span>' : ''}
+            </button>
+
+            <!-- Tab Checklist -->
+            <button onclick="selectTab('check')" class="flex items-center gap-1.5 py-2 px-3.5 rounded-full transition-all relative ${activeTab === 'check' ? 'bg-white text-zinc-950 shadow-md font-black' : 'text-zinc-400 hover:text-white font-bold'}">
+              <i data-lucide="check-square" class="w-4 h-4 ${activeTab === 'check' ? 'stroke-[2.5]' : ''}"></i>
+              ${activeTab === 'check' ? '<span class="text-xs uppercase tracking-tight">Check</span>' : ''}
+              ${activeTab !== 'check' ? '<span class="absolute top-1 right-2 w-1.5 h-1.5 rounded-full bg-blue-400"></span>' : ''}
+            </button>
+
+          </div>
+        `;
+      } else if (currentStyle === 2) {
+        // ==========================================
+        // ESTILO 2: AÇÃO RÁPIDA CENTRAL (+) (DYNAMIC ACTION DOCK)
+        // ==========================================
+        tag.innerText = 'Estilo 2: Ação Rápida Central (+)';
+        tag.className = 'text-xs font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-0.5 rounded-xl border border-amber-500/20';
+        desc.innerHTML = `<b>Estilo 2 — Ação Rápida Central (+):</b> O centro do dock possui um <b>botão de ação elevada em esmeralda/dourado</b> com pulso de luz, perfeito para o operador lançar dinheiro ou registrar sangria em 1 toque de qualquer tela.`;
+
+        container.innerHTML = `
+          <div class="relative flex items-center justify-center w-full max-w-[370px]">
+            
+            <!-- Barra de Base -->
+            <div class="bg-[#121216]/95 backdrop-blur-xl border border-zinc-800 rounded-3xl p-2 px-3 flex items-center justify-between w-full shadow-2xl">
+              
+              <!-- Lado Esquerdo -->
+              <div class="flex items-center gap-1">
+                <button onclick="selectTab('painel')" class="p-2.5 px-3 rounded-2xl flex flex-col items-center ${activeTab === 'painel' ? 'text-amber-400 bg-amber-500/15 font-black' : 'text-zinc-400 font-bold'}">
+                  <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                  <span class="text-[9px] uppercase tracking-wider mt-0.5">Painel</span>
+                </button>
+
+                <button onclick="selectTab('pos')" class="p-2.5 px-3 rounded-2xl flex flex-col items-center ${activeTab === 'pos' ? 'text-blue-400 bg-blue-500/15 font-black' : 'text-zinc-400 font-bold'}">
+                  <i data-lucide="credit-card" class="w-4 h-4"></i>
+                  <span class="text-[9px] uppercase tracking-wider mt-0.5">POS</span>
+                </button>
+              </div>
+
+              <!-- Espaço para o Botão Central -->
+              <div class="w-12"></div>
+
+              <!-- Lado Direito -->
+              <div class="flex items-center gap-1">
+                <button onclick="selectTab('check')" class="p-2.5 px-3 rounded-2xl flex flex-col items-center ${activeTab === 'check' ? 'text-emerald-400 bg-emerald-500/15 font-black' : 'text-zinc-400 font-bold'}">
+                  <i data-lucide="check-square" class="w-4 h-4"></i>
+                  <span class="text-[9px] uppercase tracking-wider mt-0.5">Check</span>
+                </button>
+
+                <button onclick="selectTab('mais')" class="p-2.5 px-3 rounded-2xl flex flex-col items-center ${activeTab === 'mais' ? 'text-purple-400 bg-purple-500/15 font-black' : 'text-zinc-400 font-bold'}">
+                  <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                  <span class="text-[9px] uppercase tracking-wider mt-0.5">Ajustes</span>
+                </button>
+              </div>
+
+            </div>
+
+            <!-- Botão Central (+) Elevado e Pulsante -->
+            <button onclick="alert('Abrindo Lançamento Rápido!')" class="absolute -top-4 w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-zinc-950 shadow-lg shadow-emerald-500/40 flex items-center justify-center active:scale-95 transition-all pulse-glow">
+              <i data-lucide="plus" class="w-6 h-6 stroke-[3]"></i>
+            </button>
+
+          </div>
+        `;
+      } else if (currentStyle === 3) {
+        // ==========================================
+        // ESTILO 3: SEGMENTED NEON LASER (SEGMENTOS CHANFRADOS)
+        // ==========================================
+        tag.innerText = 'Estilo 3: Segmented Neon Laser';
+        tag.className = 'text-xs font-black text-cyan-400 uppercase bg-cyan-500/10 px-2.5 py-0.5 rounded-xl border border-cyan-500/20';
+        desc.innerHTML = `<b>Estilo 3 — Segmented Neon Laser:</b> Segmentos retangulares de precisão suíça com micro-divisores verticais e <b>linha de laser neon deslizante</b> na base da aba ativa. Visual moderno e corporativo.`;
+
+        container.innerHTML = `
+          <div class="bg-[#121216]/95 backdrop-blur-xl border border-cyan-500/30 rounded-2xl p-1.5 flex items-center justify-between w-full max-w-[370px] shadow-2xl">
+            
+            <button onclick="selectTab('painel')" class="flex-1 py-2 rounded-xl flex flex-col items-center relative transition-all ${activeTab === 'painel' ? 'bg-cyan-500/10 text-cyan-300' : 'text-zinc-400 hover:text-white'}">
+              <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+              <span class="text-[9.5px] font-black uppercase tracking-wider mt-1">Painel</span>
+              ${activeTab === 'painel' ? '<div class="absolute bottom-0 w-8 h-0.5 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]"></div>' : ''}
+            </button>
+
+            <div class="w-px h-6 bg-zinc-800"></div>
+
+            <button onclick="selectTab('dinheiro')" class="flex-1 py-2 rounded-xl flex flex-col items-center relative transition-all ${activeTab === 'dinheiro' ? 'bg-cyan-500/10 text-cyan-300' : 'text-zinc-400 hover:text-white'}">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+              <span class="text-[9.5px] font-black uppercase tracking-wider mt-1">Dinheiro</span>
+              ${activeTab === 'dinheiro' ? '<div class="absolute bottom-0 w-8 h-0.5 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]"></div>' : ''}
+            </button>
+
+            <div class="w-px h-6 bg-zinc-800"></div>
+
+            <button onclick="selectTab('pos')" class="flex-1 py-2 rounded-xl flex flex-col items-center relative transition-all ${activeTab === 'pos' ? 'bg-cyan-500/10 text-cyan-300' : 'text-zinc-400 hover:text-white'}">
+              <i data-lucide="credit-card" class="w-4 h-4"></i>
+              <span class="text-[9.5px] font-black uppercase tracking-wider mt-1">POS</span>
+              ${activeTab === 'pos' ? '<div class="absolute bottom-0 w-8 h-0.5 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]"></div>' : ''}
+            </button>
+
+            <div class="w-px h-6 bg-zinc-800"></div>
+
+            <button onclick="selectTab('check')" class="flex-1 py-2 rounded-xl flex flex-col items-center relative transition-all ${activeTab === 'check' ? 'bg-cyan-500/10 text-cyan-300' : 'text-zinc-400 hover:text-white'}">
+              <i data-lucide="check-square" class="w-4 h-4"></i>
+              <span class="text-[9.5px] font-black uppercase tracking-wider mt-1">Check</span>
+              ${activeTab === 'check' ? '<div class="absolute bottom-0 w-8 h-0.5 bg-cyan-400 rounded-full shadow-[0_0_8px_#22d3ee]"></div>' : ''}
+            </button>
+
+          </div>
+        `;
+      } else if (currentStyle === 4) {
+        // ==========================================
+        // ESTILO 4: LIVE STATUS PILL (TOTAL AO VIVO NO TOPO DO DOCK)
+        // ==========================================
+        tag.innerText = 'Estilo 4: Live Status Pill';
+        tag.className = 'text-xs font-black text-emerald-400 uppercase bg-emerald-500/10 px-2.5 py-0.5 rounded-xl border border-emerald-500/20';
+        desc.innerHTML = `<b>Estilo 4 — Live Status Pill:</b> O dock possui uma <b>mini-barra de status ao vivo integrada</b> mostrando o Total do Caixa e status da nuvem, e logo abaixo os botões rápidos. O operador nunca perde o total de vista!`;
+
+        container.innerHTML = `
+          <div class="bg-[#121216]/95 backdrop-blur-xl border border-zinc-800 rounded-[26px] p-2 px-3.5 flex flex-col gap-1.5 w-full max-w-[370px] shadow-2xl">
+            
+            <!-- Mini Barra de Status Ao Vivo -->
+            <div class="flex items-center justify-between px-1 text-[10px] font-bold text-zinc-400 border-b border-zinc-800/80 pb-1">
+              <div class="flex items-center gap-1.5">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                <span class="text-zinc-300 uppercase font-black tracking-wider">Caixa 2701</span>
+              </div>
+              <div class="mono font-black text-white text-xs">
+                R$ 7.340,98
+              </div>
+            </div>
+
+            <!-- Abas Rápidas -->
+            <div class="flex items-center justify-between pt-0.5">
+              <button onclick="selectTab('painel')" class="flex items-center gap-1.5 py-1.5 px-3 rounded-xl ${activeTab === 'painel' ? 'bg-emerald-500 text-zinc-950 font-black' : 'text-zinc-400 font-bold'}">
+                <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
+                <span class="text-[10px] uppercase">Painel</span>
+              </button>
+
+              <button onclick="selectTab('dinheiro')" class="flex items-center gap-1.5 py-1.5 px-3 rounded-xl ${activeTab === 'dinheiro' ? 'bg-emerald-500 text-zinc-950 font-black' : 'text-zinc-400 font-bold'}">
+                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                <span class="text-[10px] uppercase">Dinheiro</span>
+              </button>
+
+              <button onclick="selectTab('pos')" class="flex items-center gap-1.5 py-1.5 px-3 rounded-xl ${activeTab === 'pos' ? 'bg-emerald-500 text-zinc-950 font-black' : 'text-zinc-400 font-bold'}">
+                <i data-lucide="credit-card" class="w-3.5 h-3.5"></i>
+                <span class="text-[10px] uppercase">POS</span>
+              </button>
+
+              <button onclick="selectTab('check')" class="flex items-center gap-1.5 py-1.5 px-3 rounded-xl ${activeTab === 'check' ? 'bg-emerald-500 text-zinc-950 font-black' : 'text-zinc-400 font-bold'}">
+                <i data-lucide="check-square" class="w-3.5 h-3.5"></i>
+                <span class="text-[10px] uppercase">Check</span>
+              </button>
+            </div>
+
+          </div>
+        `;
+      } else if (currentStyle === 5) {
+        // ==========================================
+        // ESTILO 5: PIXEL ART RETRO-CHIC (SQUIRREL 8-BIT DOCK)
+        // ==========================================
+        tag.innerText = 'Estilo 5: Pixel Art Retro-Chic';
+        tag.className = 'text-xs font-black text-amber-400 uppercase bg-amber-500/10 px-2.5 py-0.5 rounded-xl border border-amber-500/20';
+        desc.innerHTML = `<b>Estilo 5 — Pixel Art Retro-Chic:</b> Borda sólida chanfrada inspirada em consoles clássicos, com a aba ativa destacada em <b>ouro 8-bit</b>. Combinação perfeita com o esquilinho animado do rodapé!`;
+
+        container.innerHTML = `
+          <div class="bg-[#121216] border-2 border-zinc-700 rounded-2xl p-1.5 flex items-center justify-between w-full max-w-[360px] shadow-[0_10px_0_0_#09090b]">
+            
+            <button onclick="selectTab('painel')" class="flex-1 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all ${activeTab === 'painel' ? 'bg-amber-400 text-zinc-950 font-black shadow' : 'text-zinc-400 hover:text-white font-bold'}">
+              <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+              ${activeTab === 'painel' ? '<span class="text-[10px] uppercase tracking-wider">PAINEL</span>' : ''}
+            </button>
+
+            <button onclick="selectTab('dinheiro')" class="flex-1 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all ${activeTab === 'dinheiro' ? 'bg-amber-400 text-zinc-950 font-black shadow' : 'text-zinc-400 hover:text-white font-bold'}">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+              ${activeTab === 'dinheiro' ? '<span class="text-[10px] uppercase tracking-wider">DINHEIRO</span>' : ''}
+            </button>
+
+            <button onclick="selectTab('pos')" class="flex-1 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all ${activeTab === 'pos' ? 'bg-amber-400 text-zinc-950 font-black shadow' : 'text-zinc-400 hover:text-white font-bold'}">
+              <i data-lucide="credit-card" class="w-4 h-4"></i>
+              ${activeTab === 'pos' ? '<span class="text-[10px] uppercase tracking-wider">POS</span>' : ''}
+            </button>
+
+            <button onclick="selectTab('check')" class="flex-1 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all ${activeTab === 'check' ? 'bg-amber-400 text-zinc-950 font-black shadow' : 'text-zinc-400 hover:text-white font-bold'}">
+              <i data-lucide="check-square" class="w-4 h-4"></i>
+              ${activeTab === 'check' ? '<span class="text-[10px] uppercase tracking-wider">CHECK</span>' : ''}
+            </button>
+
+          </div>
+        `;
+      } else if (currentStyle === 6) {
+        // ==========================================
+        // ESTILO 6: MINIMAL LIGHT BEAM (FEIXE DE LUZ SUTIL)
+        // ==========================================
+        tag.innerText = 'Estilo 6: Minimal Light Beam';
+        tag.className = 'text-xs font-black text-indigo-400 uppercase bg-indigo-500/10 px-2.5 py-0.5 rounded-xl border border-indigo-500/20';
+        desc.innerHTML = `<b>Estilo 6 — Minimal Light Beam:</b> Design ultra-leve e flutuante com altura compacta (48px). A aba ativa emite um <b>foco suave de luz</b> que ilumina a tela com elegância e sofisticação pura.`;
+
+        container.innerHTML = `
+          <div class="bg-[#121216]/80 backdrop-blur-2xl border border-zinc-800/90 rounded-full p-1.5 px-3 flex items-center justify-between w-full max-w-[340px] shadow-[0_20px_50px_rgba(0,0,0,0.9)]">
+            
+            <button onclick="selectTab('painel')" class="p-2.5 rounded-full relative transition-all ${activeTab === 'painel' ? 'text-white bg-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'text-zinc-500 hover:text-zinc-300'}">
+              <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+            </button>
+
+            <button onclick="selectTab('dinheiro')" class="p-2.5 rounded-full relative transition-all ${activeTab === 'dinheiro' ? 'text-white bg-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'text-zinc-500 hover:text-zinc-300'}">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            </button>
+
+            <button onclick="selectTab('pos')" class="p-2.5 rounded-full relative transition-all ${activeTab === 'pos' ? 'text-white bg-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'text-zinc-500 hover:text-zinc-300'}">
+              <i data-lucide="credit-card" class="w-4 h-4"></i>
+            </button>
+
+            <button onclick="selectTab('check')" class="p-2.5 rounded-full relative transition-all ${activeTab === 'check' ? 'text-white bg-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.5)]' : 'text-zinc-500 hover:text-zinc-300'}">
+              <i data-lucide="check-square" class="w-4 h-4"></i>
+            </button>
+
+          </div>
+        `;
+      }
+
+      lucide.createIcons();
+    }
+
+    render();
+  </script>
+</body>
+</html>
